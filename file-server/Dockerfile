@@ -1,15 +1,20 @@
+# Test this Dockerfile build with:
+# (from the polis root directory)
+# docker build -t polis-file-server:dev -f file-server/Dockerfile .
+# docker run --name file-server --env PORT=8080 -p 8080:8080 polis-file-server:dev
+
 ######################## POLIS CLIENT ADMIN ########################
 #FROM client-base AS client-admin # <- switch back to basing on client admin once we upgrade other clients
 FROM docker.io/node:18-alpine AS client-admin
 
 ARG ENABLE_TWITTER_WIDGETS
 ARG FB_APP_ID
-ENV ENABLE_TWITTER_WIDGETS ${ENABLE_TWITTER_WIDGETS}
-ENV FB_APP_ID ${FB_APP_ID}
+ENV ENABLE_TWITTER_WIDGETS=${ENABLE_TWITTER_WIDGETS}
+ENV FB_APP_ID=${FB_APP_ID}
 
 # Set default NODE_ENV to production unless overridden at build time with --build-arg NODE_ENV=development
 ARG NODE_ENV
-ENV NODE_ENV ${NODE_ENV:-production}
+ENV NODE_ENV=${NODE_ENV:-production}
 
 WORKDIR /app
 
@@ -29,13 +34,13 @@ FROM docker.io/node:18-alpine AS client-participation
 ARG EMBED_SERVICE_HOSTNAME
 ARG FB_APP_ID
 ARG GA_TRACKING_ID
-ENV EMBED_SERVICE_HOSTNAME ${EMBED_SERVICE_HOSTNAME}
-ENV FB_APP_ID ${FB_APP_ID}
-ENV GA_TRACKING_ID ${GA_TRACKING_ID}
+ENV EMBED_SERVICE_HOSTNAME=${EMBED_SERVICE_HOSTNAME}
+ENV FB_APP_ID=${FB_APP_ID}
+ENV GA_TRACKING_ID=${GA_TRACKING_ID}
 
 # Set default NODE_ENV to production unless overridden at build time with --build-arg NODE_ENV=development
 ARG NODE_ENV
-ENV NODE_ENV ${NODE_ENV:-production}
+ENV NODE_ENV=${NODE_ENV:-production}
 
 WORKDIR /app
 
@@ -55,7 +60,7 @@ FROM docker.io/node:18-alpine AS client-report
 
 # Set default NODE_ENV to production unless overridden at build time with --build-arg NODE_ENV=development
 ARG NODE_ENV
-ENV NODE_ENV ${NODE_ENV:-production}
+ENV NODE_ENV=${NODE_ENV:-production}
 
 WORKDIR /app
 
@@ -70,8 +75,8 @@ COPY client-report/. .
 # GIT_HASH will be set properly when running `make` (see Makefile).
 ARG GIT_HASH
 ARG SERVICE_URL
-ENV GIT_HASH ${GIT_HASH:-placeholder}
-ENV SERVICE_URL ${SERVICE_URL}
+ENV GIT_HASH=${GIT_HASH:-placeholder}
+ENV SERVICE_URL=${SERVICE_URL}
 
 RUN npm run build:prod
 
@@ -82,7 +87,7 @@ FROM docker.io/node:18-alpine
 
 # Set default NODE_ENV to production unless overridden at build time with --build-arg NODE_ENV=development
 ARG NODE_ENV
-ENV NODE_ENV ${NODE_ENV:-production}
+ENV NODE_ENV=${NODE_ENV:-production}
 
 WORKDIR /app
 

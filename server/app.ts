@@ -5,11 +5,14 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 "use strict";
 
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 dotenv.config();
 
 import Promise from "bluebird";
 import express from "express";
+// import compression from "compression";
+// import cookieParser from "cookie-parser";
+// import bodyParser from "body-parser";
 import morgan from "morgan";
 
 import Config from "./src/config";
@@ -20,13 +23,12 @@ const app = express();
 
 // 'dev' format is
 // :method :url :status :response-time ms - :res[content-length]
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
 // Trust the X-Forwarded-Proto and X-Forwarded-Host, but only on private subnets.
 // See: https://github.com/pol-is/polis/issues/546
 // See: https://expressjs.com/en/guide/behind-proxies.html
 app.set("trust proxy", "uniquelocal");
-
 
 var helpersInitialized = new Promise(function (resolve, reject) {
   resolve(server.initializePolisHelpers());
@@ -84,6 +86,8 @@ helpersInitialized.then(
       handle_GET_math_correlationMatrix,
       handle_GET_dataExport,
       handle_GET_dataExport_results,
+      handle_GET_reportNarrative,
+      handle_GET_reportExport,
       handle_GET_domainWhitelist,
       handle_GET_dummyButton,
       handle_GET_einvites,
@@ -94,7 +98,6 @@ helpersInitialized.then(
       handle_GET_implicit_conversation_generation,
       handle_GET_launchPrep,
       handle_GET_locations,
-      handle_GET_logMaxmindResponse,
       handle_GET_math_pca,
       handle_GET_math_pca2,
       handle_GET_metadata,
@@ -298,6 +301,15 @@ helpersInitialized.then(
       want("format", getStringLimitLength(1, 100), assignToP),
       want("unixTimestamp", getStringLimitLength(99), assignToP),
       handle_GET_dataExport
+    );
+
+    app.get(
+      "/api/v3/reportExport/:report_id/:report_type",
+      moveToBody,
+      need("report_id", getReportIdFetchRid, assignToPCustom("rid")),
+      need("report_id", getStringLimitLength(1, 1000), assignToP),
+      need("report_type", getStringLimitLength(1, 1000), assignToP),
+      handle_GET_reportExport
     );
 
     app.get(
@@ -834,7 +846,7 @@ helpersInitialized.then(
       ),
       need("vote", getIntInRange(-1, 1), assignToP),
       want("starred", getBool, assignToP),
-      want("weight", getNumberInRange(-1, 1), assignToP, 0),
+      want("high_priority", getBool, assignToP, false),
       resolve_pidThing("pid", assignToP, "post:votes"),
       want("xid", getStringLimitLength(1, 999), assignToP),
       want("lang", getStringLimitLength(1, 10), assignToP), // language of the next comment to be returned
@@ -851,18 +863,6 @@ helpersInitialized.then(
       ),
       want("show_translation_activated", getBool, assignToP),
       handle_PUT_participants_extended
-    );
-
-    app.get(
-      "/api/v3/logMaxmindResponse",
-      auth(assignToP),
-      need("user_uid", getInt, assignToP),
-      need(
-        "conversation_id",
-        getConversationIdFetchZid,
-        assignToPCustom("zid")
-      ),
-      handle_GET_logMaxmindResponse
     );
 
     app.post(
@@ -1003,6 +1003,7 @@ helpersInitialized.then(
       want("strict_moderation", getBool, assignToP),
       want("topic", getOptionalStringLimitLength(1000), assignToP),
       want("description", getOptionalStringLimitLength(50000), assignToP),
+      want("importance_enabled", getBool, assignToP),
       want("vis_type", getInt, assignToP),
       want("help_type", getInt, assignToP),
       want("write_type", getInt, assignToP),
@@ -1171,6 +1172,13 @@ helpersInitialized.then(
       ),
       want("report_id", getReportIdFetchRid, assignToPCustom("rid")), // Knowing the report_id grants the user permission to view the report
       handle_GET_reports
+    );
+
+    app.get(
+      "/api/v3/reportNarrative",
+      moveToBody,
+      need("report_id", getReportIdFetchRid, assignToPCustom("rid")),
+      handle_GET_reportNarrative
     );
 
     app.post(
@@ -1576,6 +1584,10 @@ helpersInitialized.then(
     app.get(/^\/company$/, fetchIndexForAdminPage);
 
     app.get(/^\/report\/r?[0-9][0-9A-Za-z]+(\/.*)?/, fetchIndexForReportPage);
+    app.get(
+      /^\/narrativeReport\/r?[0-9][0-9A-Za-z]+(\/.*)?/,
+      fetchIndexForReportPage
+    );
 
     app.get(/^\/thirdPartyCookieTestPt1\.html$/, fetchThirdPartyCookieTestPt1);
     app.get(/^\/thirdPartyCookieTestPt2\.html$/, fetchThirdPartyCookieTestPt2);
@@ -1600,24 +1612,39 @@ helpersInitialized.then(
     );
     app.get(
       /^\/embedReportPreprod$/,
-      makeFileFetcher(hostname, staticFilesAdminPort, "/embedReportPreprod.html", {
-        "Content-Type": "text/html",
-      })
+      makeFileFetcher(
+        hostname,
+        staticFilesAdminPort,
+        "/embedReportPreprod.html",
+        {
+          "Content-Type": "text/html",
+        }
+      )
     );
     app.get(
       /^\/styleguide$/,
-      makeFileFetcher(hostname, staticFilesParticipationPort, "/styleguide.html", {
-        "Content-Type": "text/html",
-      })
+      makeFileFetcher(
+        hostname,
+        staticFilesParticipationPort,
+        "/styleguide.html",
+        {
+          "Content-Type": "text/html",
+        }
+      )
     );
     // Duplicate url for content at root. Needed so we have something for "About" to link to.
     app.get(/^\/about$/, makeRedirectorTo("/home"));
     app.get(/^\/home(\/.*)?/, fetchIndexForAdminPage);
     app.get(
       /^\/s\/CTE\/?$/,
-      makeFileFetcher(hostname, staticFilesParticipationPort, "/football.html", {
-        "Content-Type": "text/html",
-      })
+      makeFileFetcher(
+        hostname,
+        staticFilesParticipationPort,
+        "/football.html",
+        {
+          "Content-Type": "text/html",
+        }
+      )
     );
     app.get(
       /^\/twitterAuthReturn(\/.*)?$/,
@@ -1677,7 +1704,6 @@ helpersInitialized.then(
 
     app.listen(Config.serverPort);
     logger.info("started on port " + Config.serverPort);
-
   },
 
   function (err) {

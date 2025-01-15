@@ -1,3 +1,4 @@
+.DS_Store
 .clj-kondo/
 .env
 .envrc
@@ -6,3 +7,6 @@
 build/
 prod.env
 xids.csv
+preprod.env
+.venv
+server/jigsaw-vertex-integration-92ef30330cf7.json

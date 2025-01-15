@@ -25,8 +25,9 @@ class Comment extends React.Component {
 
   render() {
     return (
-      <Card sx={{ mb: [3], minWidth: '35em' }}>
+      <Card sx={{ mb: [3], minWidth: '35em' }} data-test-id="pending-comment">
         <Box>
+          <Text sx={{ mb: [3], color: 'red', fontSize: 12 }}>{this.props.comment.active ? null : 'Comment flagged as toxic by Jigsaw Perspective API. Comment not shown to participants. Accept to override.'}</Text>
           <Text sx={{ mb: [3] }}>{this.props.comment.txt}</Text>
           <Flex
             sx={{
@@ -43,7 +44,7 @@ class Comment extends React.Component {
                 </Button>
               ) : null}
               {this.props.rejectButton ? (
-                <Button onClick={this.onRejectClicked.bind(this)}>
+                <Button onClick={this.onRejectClicked.bind(this)} data-test-id="reject-comment">
                   {this.props.rejectButtonText}
                 </Button>
               ) : null}
@@ -83,6 +84,7 @@ Comment.propTypes = {
   rejectButtonText: PropTypes.string,
   isMetaCheckbox: PropTypes.bool,
   comment: PropTypes.shape({
+    active: PropTypes.bool,
     txt: PropTypes.string,
     is_meta: PropTypes.bool
   })

@@ -1,3 +1,4 @@
+import Config from "../config";
 import sql from "sql"; // see here for useful syntax: https://github.com/brianc/node-sql/blob/bbd6ed15a02d4ab8fbc5058ee2aff1ad67acd5dc/lib/node/valueExpression.js
 
 const sql_conversations: any = sql.define({
@@ -27,6 +28,7 @@ const sql_conversations: any = sql.define({
     "parent_url",
     "vis_type",
     "write_type",
+    "importance_enabled",
     "help_type",
     "socialbtn_type",
     "subscribe_type",
@@ -72,42 +74,48 @@ const sql_comments = sql.define({
   ],
 });
 
-const sql_votes_latest_unique = sql.define({
+const sql_votes_latest_unique: any = sql.define({
   name: "votes_latest_unique",
-  columns: ["zid", "tid", "pid", "modified", "vote"],
+  columns: ["zid", "tid", "pid", "modified", "vote", "weight", "high_priority"],
 });
 
-const sql_participant_metadata_answers = sql.define({
+const sql_participant_metadata_answers: any = sql.define({
   name: "participant_metadata_answers",
   columns: ["pmaid", "pmqid", "zid", "value", "alive"],
 });
 
-const sql_participants_extended = sql.define({
+const baseParticipantsExtendedColumns = [
+  "uid",
+  "zid",
+  "referrer",
+  "parent_url",
+  "created",
+  "modified",
+  "show_translation_activated",
+  "permanent_cookie",
+  "origin",
+];
+
+const sql_participants_extended: any = sql.define({
   name: "participants_extended",
-  columns: [
-    "uid",
-    "zid",
-    "referrer",
-    "parent_url",
-    "created",
-    "modified",
-
-    "show_translation_activated",
-
-    "permanent_cookie",
-    "origin",
-    "encrypted_ip_address",
-    "encrypted_x_forwarded_for",
-  ],
+  // These fields only exist on the PolisWebServer deployment.
+  columns:
+    Config.applicationName === "PolisWebServer"
+      ? [
+          ...baseParticipantsExtendedColumns,
+          "encrypted_ip_address",
+          "encrypted_x_forwarded_for",
+        ]
+      : baseParticipantsExtendedColumns,
 });
 
 //first we define our tables
-const sql_users = sql.define({
+const sql_users: any = sql.define({
   name: "users",
   columns: ["uid", "hname", "email", "created"],
 });
 
-const sql_reports = sql.define({
+const sql_reports: any = sql.define({
   name: "reports",
   columns: [
     "rid",

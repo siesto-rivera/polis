@@ -62,12 +62,19 @@ If you are deploying to a custom domain (not `pol.is`) then you need to update b
 ### Database
 
 - **`READ_ONLY_DATABASE_URL`** (optional) Database replica for reads.
+
+#### Required when using the docker postgres service (optional)
+
 - **`POSTGRES_DB`** database name (e.g. `polis-dev`)
 - **`POSTGRES_HOST`** database host (e.g. `postgres:5432` if using docker compose, `localhost:5432` if using local db)
 - **`POSTGRES_PASSWORD`** database password
 - **`POSTGRES_PORT`** typically 5432
 - **`POSTGRES_USER`** typically `postgres`. Any username will be used by the docker container to create a db user.
+
+#### Required in all cases
+
 - **`DATABASE_URL`** should be the combination of above values, `postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}`
+- **`POSTGRES_DOCKER`** Set to `false` if using a postgres database outside of docker. Defaults to `true`. Read by Makefile.
 
 ### Docker Concerns
 
@@ -97,6 +104,7 @@ If you are deploying to a custom domain (not `pol.is`) then you need to update b
 
 - **`BACKFILL_COMMENT_LANG_DETECTION`** Set to `true`, if Comment Translation was enabled, to instruct the server upon the next initialization (reboot) to backfill detected language of stored comments. Default `false`.
 - **`CACHE_MATH_RESULTS`** Set this to `true` to instruct the API server to use LRU caching for results from the math service. Default is `true` if left blank.
+- **`DATABASE_SSL`** Set this to `true` for some production environments. Default is `false`.
 - **`DEV_MODE`** Set this to `true` in development and `false` otherwise. Used by API Server to make a variety of assumptions about HTTPS, logging, notifications, etc.
 - **`RUN_PERIODIC_EXPORT_TESTS`** Set this to `true` to run periodic export tests, sent to the **`ADMIN_EMAIL_DATA_EXPORT_TEST`** address.
 - **`SERVER_LOG_TO_FILE`** Set this to `true` to tell Winston.js to also write log files to server/logs/. Defaults to `false`. *Note that if using docker compose, server/logs is mounted as a persistent volume.*
@@ -124,7 +132,6 @@ If you are deploying to a custom domain (not `pol.is`) then you need to update b
 - **`GOOGLE_CREDENTIALS_BASE64`** Required if using Google Translate API. (See below).
 - **`GOOGLE_CREDS_STRINGIFIED`** Alternative to **`GOOGLE_CREDENTIALS_BASE64`** (See below).
 - **`MAILGUN_API_KEY`**, **`MAILGUN_DOMAIN`** If using Mailgun as an email transport.
-- **`MAXMIND_LICENSEKEY`**, **`MAXMIND_USERID`** If using IP Geolocation service Maxmind.
 - **`TWITTER_CONSUMER_KEY`**, **`TWITTER_CONSUMER_SECRET`** For Twitter integration.
 - **`AWS_ACCESS_KEY_ID`**, **`AWS_SECRET_ACCESS_KEY`** If using Amazon SES as an email transport.
 
