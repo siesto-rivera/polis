@@ -60,7 +60,13 @@ export class CdkStack extends cdk.Stack {
       engine: rds.DatabaseInstanceEngine.mysql({ version: rds.MysqlEngineVersion.VER_8_4_3 }),
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       vpc,
-      //TODO ... other RDS configurations (storage, credentials, etc.)
+      allocatedStorage: 20,
+      storageType: rds.StorageType.GP2, // General Purpose SSD
+      credentials: rds.Credentials.fromGeneratedSecret('dbUser'),
+      databaseName: 'postgresql-aws',
+      removalPolicy: cdk.RemovalPolicy.SNAPSHOT, // Destroy the database instance when the stack is deleted, but retain a snapshot
+      deletionProtection: true,
+      publiclyAccessible: false
     });
 
     // Route53
