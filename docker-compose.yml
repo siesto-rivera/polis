@@ -26,9 +26,11 @@
 
 services:
   server:
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
     env_file:
       - ${SERVER_ENV_FILE:-.env}
-    image: docker.io/compdem/polis-server:${TAG:-dev}
+    image: docker.io/tevko/polis-server:${TAG:-dev}
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -48,7 +50,7 @@ services:
       - server-logs:/app/logs
 
   math:
-    image: docker.io/compdem/polis-math:${TAG:-dev}
+    image: docker.io/tevko/polis-math:${TAG:-dev}
     build:
       context: ./math
       labels:

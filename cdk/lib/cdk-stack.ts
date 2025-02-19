@@ -76,25 +76,25 @@ function createPolisUserData_DockerCompose(props: PolisStackProps, databaseUrl: 
       '#!/bin/bash',
       'set -e',
       'set -x',
-      'yum update -y',
-      'yum install -y docker-compose-plugin git',
-      'systemctl start docker',
-      'systemctl enable docker',
-      'sleep 10',
-      'systemctl status docker',
+      'sudo yum install -y amazon-linux-extras',
+      'sudo amazon-linux-extras install docker',
+      'sudo systemctl start docker',
+      'sudo usermod -a -G docker $USER',
+      'sudo systemctl enable docker',
+      'sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose',
+      'sudo chmod +x /usr/local/bin/docker-compose',
       'exec 1>>/var/log/user-data.log 2>&1',
       'echo "Starting User Data Execution at $(date)"',
       'cd /opt',
       'git clone https://github.com/compdemocracy/polis.git polis',
       'cd /opt/polis',
-      `git checkout ${props.branch || defaultBranch}`,
+      'git checkout te-cdk-replatform', //DEBUG ENTRY
+      // `git checkout ${props.branch || defaultBranch}`,
       'cp example.env .env',
       `sed -i 's|^DATABASE_URL=.*|DATABASE_URL=${databaseUrl}|' .env`,
-      // Set SERVICE environment variable based on isMathWorker
       `export SERVICE=${isMathWorker ? 'math' : 'server'}`,
-      `export DATABASE_URL="${databaseUrl}"`, // Pass the database URL
-      // Use a single docker compose command
-      'docker compose up -d'
+      `export DATABASE_URL="${databaseUrl}"`,
+      `docker-compose up -d ${isMathWorker ? 'math' : 'server'}`
   ];
   userData.addCommands(...baseCommands);
   return userData;
@@ -224,12 +224,14 @@ export class CdkStack extends cdk.Stack {
       subnetGroup: dbSubnetGroup,
     });
 
-    const databaseUrl = `postgres://${db.secret?.secretValueFromJson('username').unsafeUnwrap()}:${db.secret?.secretValueFromJson('password').unsafeUnwrap()}@${db.instanceEndpoint.socketAddress}:${db.dbInstanceEndpointPort}/polisdb`;
+    // Get the secret *value* as a Token. This is the correct way.
+    const secretValue = db.secret!.secretValueFromJson('password');
+    const username = db.secret!.secretValueFromJson('username');
 
     // --- Launch Templates ---
     const webLaunchTemplate = new ec2.LaunchTemplate(this, 'WebLaunchTemplate', {
       machineImage: machineImageWeb,
-      userData: createPolisUserData_DockerCompose(props, databaseUrl, false),
+      userData: createPolisUserData_DockerCompose(props, `postgres://${cdk.Token.asString(username)}:${cdk.Token.asString(secretValue)}@${db.dbInstanceEndpointAddress}:${db.dbInstanceEndpointPort}/polisdb`, false),
       instanceType: instanceTypeWeb,
       securityGroup: webSecurityGroup,
       keyName: props.enableSSHAccess && props.webKeyPairName ? props.webKeyPairName : undefined, // Conditionally add key pair
@@ -238,7 +240,7 @@ export class CdkStack extends cdk.Stack {
 
     const mathWorkerLaunchTemplate = new ec2.LaunchTemplate(this, 'MathWorkerLaunchTemplate', {
       machineImage: machineImageMathWorker,
-      userData: createPolisUserData_DockerCompose(props, databaseUrl, true),
+      userData: createPolisUserData_DockerCompose(props, `postgres://${cdk.Token.asString(username)}:${cdk.Token.asString(secretValue)}@${db.dbInstanceEndpointAddress}:${db.dbInstanceEndpointPort}/polisdb`, true),
       instanceType: instanceTypeMathWorker,
       securityGroup: mathWorkerSecurityGroup,
       keyName: props.enableSSHAccess && props.mathWorkerKeyPairName ? props.mathWorkerKeyPairName : undefined,
