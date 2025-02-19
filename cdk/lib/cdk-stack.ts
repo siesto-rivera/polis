@@ -8,6 +8,7 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 import { readFileSync } from 'fs';
 
@@ -81,11 +82,18 @@ export class CdkStack extends cdk.Stack {
     const vpc = new ec2.Vpc(this, 'Vpc', {
       maxAzs: 2,
       natGateways: 0,
-      subnetConfiguration: [{
-        cidrMask: 24,
-        name: 'Public',
-        subnetType: ec2.SubnetType.PUBLIC,
-      }]
+      subnetConfiguration: [
+        {
+          cidrMask: 24,
+          name: 'Public',
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+        {
+          cidrMask: 24,
+          name: 'Private',
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED, // Use PRIVATE_ISOLATED
+        },
+      ]
     });
 
     const instanceTypeWeb = ec2.InstanceType.of(ec2.InstanceClass.M3, ec2.InstanceSize.MEDIUM);
@@ -109,22 +117,23 @@ export class CdkStack extends cdk.Stack {
       webSecurityGroup.addIngressRule(ec2.Peer.ipv4(props.sshAllowedIpRange || defaultSSHRange), ec2.Port.tcp(22), 'Allow SSH access');
       mathWorkerSecurityGroup.addIngressRule(ec2.Peer.ipv4(props.sshAllowedIpRange || defaultSSHRange), ec2.Port.tcp(22), 'Allow SSH access');
     }
-    // Create key pair for web instances if SSH is enabled and a key name is provided
-    let webKeyPair;
-    if (props.enableSSHAccess && props.webKeyPairName) {
-        webKeyPair = new ec2.CfnKeyPair(this, 'WebKeyPair', {
-            keyName: props.webKeyPairName,
-        });
-    }
 
-    // Create key pair for math instance if SSH is enabled and a key name is provided
-    let mathWorkerKeyPair;
-    if (props.enableSSHAccess && props.mathWorkerKeyPairName) {
-      mathWorkerKeyPair = new ec2.CfnKeyPair(this, 'MathWorkerKeyPair', {
-        keyName: props.mathWorkerKeyPairName
+    // Key Pair Creation
+    let webKeyPairName = props.webKeyPairName;
+    if (props.enableSSHAccess && !webKeyPairName) {
+      webKeyPairName = `${id}-WebKeyPair-${this.region}`;
+      new ec2.CfnKeyPair(this, 'WebKeyPair', {
+        keyName: webKeyPairName,
       });
     }
 
+    let mathWorkerKeyPairName = props.mathWorkerKeyPairName;
+    if (props.enableSSHAccess && !mathWorkerKeyPairName) {
+      mathWorkerKeyPairName = `${id}-MathWorkerKeyPair-${this.region}`;
+      new ec2.CfnKeyPair(this, 'MathWorkerKeyPair', {
+        keyName: mathWorkerKeyPairName,
+      });
+    }
 
     // Create IAM role for the math instance
     const mathRole = new iam.Role(this, 'MathWorkerRole', {
@@ -132,6 +141,15 @@ export class CdkStack extends cdk.Stack {
     });
 
     mathRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
+    );
+
+    // Create IAM role for the web instance
+    const webRole = new iam.Role(this, 'WebRole', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+    });
+
+    webRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
     );
 
@@ -147,11 +165,22 @@ export class CdkStack extends cdk.Stack {
 
     // --- Web ASG ---
     webSecurityGroup.addIngressRule(ec2.Peer.ipv4(props.sshAllowedIpRange || defaultSSHRange), ec2.Port.tcp(22), 'Allow SSH'); // Control SSH separately
-    webSecurityGroup.addIngressRule(lbSecurityGroup, ec2.Port.tcp(80), 'Allow HTTP from ALB');  // ONLY from ALB! - do we need to add to 443 as well?
+    webSecurityGroup.addIngressRule(lbSecurityGroup, ec2.Port.tcp(80), 'Allow HTTP from ALB');  // ONLY from ALB!
 
     // --- Postgres ---
+
+    const dbSubnetGroup = new rds.SubnetGroup(this, 'DatabaseSubnetGroup', {
+      vpc,
+      subnetGroupName: 'PolisDatabaseSubnetGroup', // Give it a name
+      description: 'Subnet group for the postgres database', // Add a description
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     const db = new rds.DatabaseInstance(this, 'Database', {
-      engine: rds.DatabaseInstanceEngine.postgres({version: rds.PostgresEngineVersion.VER_17_2 }),
+      engine: rds.DatabaseInstanceEngine.postgres({version: rds.PostgresEngineVersion.VER_17 }),
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       vpc,
       allocatedStorage: 20,
@@ -159,49 +188,63 @@ export class CdkStack extends cdk.Stack {
       credentials: rds.Credentials.fromGeneratedSecret('dbUser'),
       databaseName: 'polisdb',
       removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
-      deletionProtection: true,
+      // deletionProtection: true, // turned off for now until preprod / prod phase
       publiclyAccessible: false,
-      vpcSubnets: {
-        subnetType: ec2.SubnetType.PUBLIC,
-      },
+      subnetGroup: dbSubnetGroup,
     });
 
     const databaseUrl = `postgres://${db.secret?.secretValueFromJson('username').unsafeUnwrap()}:${db.secret?.secretValueFromJson('password').unsafeUnwrap()}@${db.instanceEndpoint.socketAddress}:${db.dbInstanceEndpointPort}/polisdb`;
 
+    // --- Launch Templates ---
+    const webLaunchTemplate = new ec2.LaunchTemplate(this, 'WebLaunchTemplate', {
+      machineImage: machineImageWeb,
+      userData: createPolisUserData(props, false, databaseUrl),
+      instanceType: instanceTypeWeb,
+      securityGroup: webSecurityGroup,
+      keyName: props.enableSSHAccess && props.webKeyPairName ? props.webKeyPairName : undefined, // Conditionally add key pair
+      role: webRole,
+  });
+
+    const mathWorkerLaunchTemplate = new ec2.LaunchTemplate(this, 'MathWorkerLaunchTemplate', {
+      machineImage: machineImageMathWorker,
+      userData: createPolisUserData(props, true, databaseUrl),
+      instanceType: instanceTypeMathWorker,
+      securityGroup: mathWorkerSecurityGroup,
+      keyName: props.enableSSHAccess && props.mathWorkerKeyPairName ? props.mathWorkerKeyPairName : undefined,
+      role: mathRole,
+    });
+
     const asgWeb = new autoscaling.AutoScalingGroup(this, 'Asg', {
       vpc,
-      instanceType: instanceTypeWeb,
-      machineImage: machineImageWeb,
+      launchTemplate: webLaunchTemplate,
       minCapacity: 2,
       maxCapacity: 10,
       vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
-      securityGroup: webSecurityGroup,
-        keyPair: props.enableSSHAccess && webKeyPair ?
-            ec2.KeyPair.fromKeyPairName(this, 'ImportedWebKeyPair', webKeyPair.keyName) :
-            undefined, // Conditionally add key pair
-      userData: createPolisUserData(props, false, databaseUrl),
+      signals: autoscaling.Signals.waitForMinCapacity({
+        minSuccessPercentage: 90,
+        // Optional: Add a warm-up period:
+        // timeout: cdk.Duration.minutes(10),
+      }),
     });
 
     const asgMathWorker = new autoscaling.AutoScalingGroup(this, 'AsgMathWorker', {
       vpc,
-      instanceType: instanceTypeMathWorker,
-      machineImage: machineImageMathWorker,
+      launchTemplate: mathWorkerLaunchTemplate,
       minCapacity: 1,
       maxCapacity: 5,
-      securityGroup: mathWorkerSecurityGroup,
-      keyPair: props.enableSSHAccess && mathWorkerKeyPair?
-        ec2.KeyPair.fromKeyPairName(this, 'ImportedMathWorkerKeyPair', mathWorkerKeyPair.keyName) :
-        undefined, // Conditionally add
-      role: mathRole,
-      userData: createPolisUserData(props, true, databaseUrl),
       vpcSubnets: {
         subnetType: ec2.SubnetType.PUBLIC,
       },
+      signals: autoscaling.Signals.waitForMinCapacity({
+        minSuccessPercentage: 90,
+        // Optional: Add a warm-up period:
+        // timeout: cdk.Duration.minutes(10),
+      }),
     });
 
-     // Allow traffic from the web ASG to the database
-     db.connections.allowFrom(asgWeb, ec2.Port.tcp(5432), 'Allow database access from web ASG');
-     db.connections.allowFrom(asgMathWorker, ec2.Port.tcp(5432), 'Allow database access from math ASG');
+    // Allow traffic from the web ASG to the database
+    db.connections.allowFrom(asgWeb, ec2.Port.tcp(5432), 'Allow database access from web ASG');
+    db.connections.allowFrom(asgMathWorker, ec2.Port.tcp(5432), 'Allow database access from math ASG');
 
     // ELB
     const lb = new elbv2.ApplicationLoadBalancer(this, 'Lb', {
@@ -230,6 +273,76 @@ export class CdkStack extends cdk.Stack {
     asgMathWorker.node.addDependency(logGroup);
     asgWeb.node.addDependency(db);
     asgMathWorker.node.addDependency(db);
+
+    // Custom Resource to update the default versions of Web & Math Worker Launch Template
+    const getLatestWebLTVersion = new cr.AwsCustomResource(this, 'GetLatestWebLTVersion', {
+      onCreate: {
+        service: 'EC2',
+        action: 'describeLaunchTemplateVersions',
+        parameters: {
+        LaunchTemplateId: webLaunchTemplate.launchTemplateId,
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(`${webLaunchTemplate.launchTemplateId}-get-version`),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE })
+    });
+
+    new cr.AwsCustomResource(this, 'ModifyWebLaunchTemplateDefaultVersion', {
+      onCreate: {
+        service: 'EC2',
+        action: 'modifyLaunchTemplate',
+        parameters: {
+        LaunchTemplateId: webLaunchTemplate.launchTemplateId,
+        DefaultVersion: getLatestWebLTVersion.getResponseField('LaunchTemplateVersions.0.VersionNumber'),
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(webLaunchTemplate.launchTemplateId as string),
+      },
+      onUpdate: {
+        service: 'EC2',
+        action: 'modifyLaunchTemplate',
+        parameters: {
+        LaunchTemplateId: webLaunchTemplate.launchTemplateId,
+        DefaultVersion: '$LATEST'  // On update, use $LATEST
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(webLaunchTemplate.launchTemplateId as string),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE }),
+    });
+
+    // Custom Resource to update the default version of Math Worker Launch Template
+    const getLatestMathWorkerLTVersion = new cr.AwsCustomResource(this, 'GetLatestMathWorkerLTVersion', {
+      onCreate: {
+        service: 'EC2',
+        action: 'describeLaunchTemplateVersions',
+        parameters: {
+        LaunchTemplateId: mathWorkerLaunchTemplate.launchTemplateId,
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(`${mathWorkerLaunchTemplate.launchTemplateId}-get-version`),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE })
+    });
+
+    new cr.AwsCustomResource(this, 'ModifyMathWorkerLaunchTemplateDefaultVersion', {
+      onCreate: {
+        service: 'EC2',
+        action: 'modifyLaunchTemplate',
+        parameters: {
+        LaunchTemplateId: mathWorkerLaunchTemplate.launchTemplateId,
+        DefaultVersion: getLatestMathWorkerLTVersion.getResponseField('LaunchTemplateVersions.0.VersionNumber'),
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(mathWorkerLaunchTemplate.launchTemplateId as string),
+      },
+      onUpdate: {
+        service: 'EC2',
+        action: 'modifyLaunchTemplate',
+        parameters: {
+        LaunchTemplateId: mathWorkerLaunchTemplate.launchTemplateId,
+        DefaultVersion: '$LATEST' // On update, use $LATEST
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(mathWorkerLaunchTemplate.launchTemplateId as string),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE }),
+    });
 
     new cdk.CfnOutput(this, 'LoadBalancerDNS', {
       value: lb.loadBalancerDnsName,
