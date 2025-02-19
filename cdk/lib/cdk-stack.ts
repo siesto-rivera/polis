@@ -26,14 +26,19 @@ function createPolisUserData(props: PolisStackProps, isMathWorker: boolean, data
   const userData = ec2.UserData.forLinux();
 
   const baseCommands = [
-      '#!/bin/bash',
-      'set -e',
-      'set -x',
-      'dnf update -y',
-      'dnf install -y docker git',
-      'systemctl start docker',
-      'systemctl enable docker',
-      'exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1',
+    '#!/bin/bash',
+    'set -e',
+    'set -x',
+    // Use yum instead of dnf
+    'yum update -y',
+    'yum install -y docker git',
+    'systemctl start docker',
+    'systemctl enable docker',
+    // Improved logging
+    'exec 1>>/var/log/user-data.log 2>&1',
+    'echo "Starting User Data Execution at $(date)"', // Timestamp
+    'pwd',
+    'ls -l',
   ];
 
   // Read environment file and modify DATABASE_URL
