@@ -30,7 +30,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     env_file:
       - ${SERVER_ENV_FILE:-.env}
-    image: ${ECR_REPO_URI}/polis-server:${TAG:-dev}
+    image: 050917022930.dkr.ecr.us-east-1.amazonaws.com/polis/polis-server:${TAG:-initial-tag}
     build:
       context: ./server
       dockerfile: Dockerfile

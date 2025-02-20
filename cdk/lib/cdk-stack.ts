@@ -235,6 +235,8 @@ export class CdkStack extends cdk.Stack {
       publicReadAccess: false,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
     });
+
+    deploymentBucket.grantRead(instanceRole);
   
     const deploymentGroup = new codedeploy.ServerDeploymentGroup(this, 'DeploymentGroup', {
       application,
