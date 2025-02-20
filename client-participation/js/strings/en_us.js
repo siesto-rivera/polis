@@ -91,7 +91,7 @@ s.helpWhatDoIDoTitle = " What do I do?";
 s.helpWhatDoIDo =
   "Vote on other people's statements by clicking 'agree' or 'disagree'. Write a statement (keep each to a single idea). Invite your friends to the conversation!";
 s.writeCommentHelpText =
-  "Are your perspectives or experiences missing from the conversation? If so,</b>add them </b> in the box below — </b>one at a time</b>.";
+  "Are your perspectives or experiences missing from the conversation? If so, </b>add them </b> in the box below — </b>one at a time</b>.";
 s.helpWriteListIntro = "What makes for a good statement?";
 s.helpWriteListStandalone = "A stand-alone idea";
 s.helpWriteListRaisNew = "A new perspective, experience, or issue";
