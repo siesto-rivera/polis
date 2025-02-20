@@ -170,36 +170,6 @@ export class CdkStack extends cdk.Stack {
         'set -x',
         'sudo yum update -y',
         'sudo yum install -y amazon-cloudwatch-agent -y',
-        `cat << EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
-  {
-    "agent": {
-      "metrics_collection_interval": 60,
-      "run_as_user": "root"
-    },
-    "logs": {
-      "logs_collected": {
-        "files": {
-          "collect_list": [
-            {
-              "file_path": "/var/log/user-data.log",
-              "log_group_name": "${CLOUDWATCH_LOG_GROUP_NAME}",
-              "log_stream_name": "{instance_id}-user-data",
-              "timestamp_format": "%Y-%m-%d %H:%M:%S UTC"
-            },
-            {
-              "file_path": "/var/log/docker/containers/*.log",
-              "log_group_name": "${CLOUDWATCH_LOG_GROUP_NAME}",
-              "log_stream_name": "{instance_id}-docker-container",
-              "timestamp_format": "%Y-%m-%dT%H:%M:%S.%fZ",
-              "multi_line_start_pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d+Z"
-            }
-          ]
-        }
-      }
-    }
-  }
-  EOF`,
-        'sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s',
         'sudo yum install -y amazon-linux-extras',
         'sudo amazon-linux-extras install docker -y',
         'sudo systemctl start docker',
