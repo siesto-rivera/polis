@@ -30,7 +30,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     env_file:
       - ${SERVER_ENV_FILE:-.env}
-    image: docker.io/tevko/polis-server:${TAG:-dev}
+    image: ${ECR_REPO_URI}/polis-server:${TAG:-dev}
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -50,7 +50,7 @@ services:
       - server-logs:/app/logs
 
   math:
-    image: docker.io/tevko/polis-math:${TAG:-dev}
+    image: ${ECR_REPO_URI}/polis-math:${TAG:-dev}
     build:
       context: ./math
       labels:

@@ -4,6 +4,7 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as codedeploy from 'aws-cdk-lib/aws-codedeploy';
@@ -254,6 +255,15 @@ export class CdkStack extends cdk.Stack {
     // DEPLOY STUFF
     const application = new codedeploy.ServerApplication(this, 'CodeDeployApplication', {
       applicationName: 'PolisApplication',
+    });
+
+    const deploymentBucket = new s3.Bucket(this, 'DeploymentPackageBucket', {
+      bucketName: `polis-deployment-packages-${cdk.Stack.of(this).account}-${cdk.Stack.of(this).region}`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      versioned: true,
+      publicReadAccess: false,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
     });
   
     const deploymentGroup = new codedeploy.ServerDeploymentGroup(this, 'DeploymentGroup', {
