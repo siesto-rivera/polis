@@ -69,8 +69,10 @@ echo "Retrieved DB_HOST and DB_PORT from SSM Parameters"
 
 # 5. Update DATABASE_URL in .env file
 sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/polisdb|" .env
+# and SSL
+sed -i "s|^DATABASE_SSL=.*|DATABASE_SSL=true|" .env
 
-echo "Updated DATABASE_URL in .env file"
+echo "Updated DATABASE_URL in .env file and SSL"
 
 # --- Docker Compose ---
 
