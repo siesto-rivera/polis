@@ -284,6 +284,9 @@ export class CdkStack extends cdk.Stack {
     listener.addTargets('Target', {
       port: 80,
       targets: [asgWeb], // web app accessible from port 80
+      healthCheck: {
+        path: "/api/v3/testConnection"
+      }
     });
 
     // Route53 - implimenting later
