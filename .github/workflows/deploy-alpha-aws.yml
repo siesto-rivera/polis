@@ -51,7 +51,7 @@ jobs:
           docker-compose build server
           docker tag polis_server "${SERVER_IMAGE_NAME}"
           docker push "${SERVER_IMAGE_NAME}"
-          echo "SERVER_IMAGE_NAME=${SERVER_IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "SERVER_IMAGE_NAME=${SERVER_IMAGE_NAME}" >> $GITHUB_OUTPUT # Output SERVER_IMAGE_NAME
 
           # Build and push math image
           MATH_ECR_REPO="050917022930.dkr.ecr.us-east-1.amazonaws.com/polis/math"
@@ -60,18 +60,31 @@ jobs:
           docker-compose build math
           docker tag polis_math "${MATH_IMAGE_NAME}"
           docker push "${MATH_IMAGE_NAME}"
-          echo "MATH_IMAGE_NAME=${MATH_IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "MATH_IMAGE_NAME=${MATH_IMAGE_NAME}" >> $GITHUB_OUTPUT # Output MATH_IMAGE_NAME
 
       - name: Create deployment package
         run: |
-          zip -r deployment.zip appspec.yml scripts/* docker-compose.yml
+          zip -r deployment.zip appspec.yml scripts/* docker-compose.yml deployment-vars.env
 
+      - name: Create deployment vars file
+        run: |
+          SERVER_IMAGE_NAME_OUTPUT=$(echo ${{ steps.docker-build-push.outputs.SERVER_IMAGE_NAME }})
+          MATH_IMAGE_NAME_OUTPUT=$(echo ${{ steps.docker-build-push.outputs.MATH_IMAGE_NAME }})
+          echo "SERVER_IMAGE_NAME=$SERVER_IMAGE_NAME_OUTPUT" >> deployment-vars.env
+          echo "MATH_IMAGE_NAME=$MATH_IMAGE_NAME_OUTPUT" >> deployment-vars.env
+          cat deployment-vars.env
+  
       - name: Upload deployment package to S3
         run: |
           aws s3 cp deployment.zip s3://polis-deployment-packages-050917022930-us-east-1/deployments/deployment.zip
-
+  
       - name: Create CodeDeploy deployment
         run: |
+          SERVER_IMAGE_NAME_OUTPUT=$(echo ${{ steps.docker-build-push.outputs.SERVER_IMAGE_NAME }})
+          MATH_IMAGE_NAME_OUTPUT=$(echo ${{ steps.docker-build-push.outputs.MATH_IMAGE_NAME }})
+          echo "Server Image Name Output: $SERVER_IMAGE_NAME_OUTPUT"
+          echo "Math Image Name Output: $MATH_IMAGE_NAME_OUTPUT"
+
           aws deploy create-deployment \
             --application-name PolisApplication \
             --deployment-group-name PolisDeploymentGroup \

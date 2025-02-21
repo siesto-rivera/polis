@@ -2,6 +2,18 @@
 set -e
 set -x
 
+# --- Source deployment-vars.env to get SERVER_IMAGE_NAME and MATH_IMAGE_NAME ---
+if [ -f "/opt/polis/deployment-vars.env" ]; then
+  echo "Sourcing deployment-vars.env to set image names"
+  source /opt/polis/deployment-vars.env
+  echo "SERVER_IMAGE_NAME: $SERVER_IMAGE_NAME" # Verify in logs
+  echo "MATH_IMAGE_NAME: $MATH_IMAGE_NAME"     # Verify in logs
+else
+  echo "Error: deployment-vars.env not found in /opt/polis/. Exiting."
+  exit 1
+fi
+# --- END Sourcing deployment-vars.env ---
+
 cd /opt/polis
 sudo yum install -y git # Still needed, but consider moving to UserData if used by other services
 GIT_REPO_URL="https://github.com/compdemocracy/polis.git" # Standard HTTPS URL - PUBLIC REPO
@@ -74,13 +86,7 @@ sed -i "s|^DATABASE_SSL=.*|DATABASE_SSL=true|" .env
 
 echo "Updated DATABASE_URL in .env file and SSL"
 
-# --- Docker Compose ---
-
-# Get the image tag from SSM (already present, but might be updated later for image tags)
-# IMAGE_TAG=$(aws ssm get-parameter --name /polis/image-tag --query 'Parameter.Value' --output text --with-decryption)
-ECR_REPO_URI=$(aws ecr describe-repositories --repository-names polis --query 'repositories[0].repositoryUri' --output text --region us-east-1)
-
-# Set environment variable for docker-compose (already present)
-# export IMAGE_TAG
 /usr/local/bin/docker-compose config # Validate
+SERVICE="server math" # Define services to start (both server and math)
+export SERVER_IMAGE_NAME MATH_IMAGE_NAME # Ensure these are exported for docker-compose
 /usr/local/bin/docker-compose up -d $SERVICE # Start Docker Compose service

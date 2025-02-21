@@ -31,7 +31,7 @@ services:
       - DATABASE_SSL=true
     env_file:
       - ${SERVER_ENV_FILE:-.env}
-    image: 050917022930.dkr.ecr.us-east-1.amazonaws.com/polis/server
+    image: ${SERVER_IMAGE_NAME}
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -49,7 +49,7 @@ services:
       - server-logs:/app/logs
 
   math:
-    image: 050917022930.dkr.ecr.us-east-1.amazonaws.com/polis/math
+    image: ${MATH_IMAGE_NAME}
     build:
       context: ./math
     environment:
