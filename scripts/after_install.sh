@@ -78,7 +78,16 @@ SERVICE_FROM_FILE=$(cat /tmp/service_type.txt) # Read file content into variable
 
 echo "DEBUG: Service type read from /tmp/service_type.txt: [$SERVICE_FROM_FILE]"
 
-# Set environment variable for docker-compose (already present)
 # export IMAGE_TAG
 /usr/local/bin/docker-compose config # Validate
-/usr/local/bin/docker-compose up -d $SERVICE_FROM_FILE # Start Docker Compose service
+
+if [ "$SERVICE_FROM_FILE" == "server" ]; then
+  echo "Starting docker-compose up for 'server' and 'nginx-proxy' services"
+  /usr/local/bin/docker-compose up -d server nginx-proxy  # <-----  START BOTH server AND nginx-proxy
+elif [ "$SERVICE_FROM_FILE" == "math" ]; then
+  echo "Starting docker-compose up for 'math' service"
+  /usr/local/bin/docker-compose up -d math
+else
+  echo "Error: Unknown service type: [$SERVICE_FROM_FILE]. Starting all services (default docker-compose up -d)"
+  /usr/local/bin/docker-compose up -d # Fallback - start all if service type is unknown
+fi
