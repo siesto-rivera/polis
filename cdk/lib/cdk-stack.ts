@@ -97,7 +97,8 @@ export class CdkStack extends cdk.Stack {
           iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'),
           iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonEC2RoleforAWSCodeDeploy'),
           iam.ManagedPolicy.fromAwsManagedPolicyName('SecretsManagerReadWrite'),
-          iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly')
+          iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly'),
+          iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchLogsFullAccess')
       ],
     });
 
@@ -210,6 +211,19 @@ export class CdkStack extends cdk.Stack {
         `export SERVICE=${service}`,
         'exec 1>>/var/log/user-data.log 2>&1',
         'echo "Finished User Data Execution at $(date)"',
+        'sudo mkdir -p /etc/docker', // Ensure /etc/docker directory exists
+        `sudo tee /etc/docker/daemon.json << EOF
+{
+  "log-driver": "awslogs",
+  "log-opts": {
+    "awslogs-group": "${CLOUDWATCH_LOG_GROUP_NAME}",
+    "awslogs-region": "${cdk.Stack.of(this).region}",
+    "awslogs-stream": "${service}"
+  }
+}
+EOF`,
+        'sudo systemctl restart docker',
+        'sudo systemctl status docker'
       );
       return ld;
     };
