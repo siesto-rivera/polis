@@ -300,45 +300,57 @@ EOF`,
       securityGroup: lbSecurityGroup, // Use the dedicated ALB security group
     });
 
-    const listener = lb.addListener('Listener', { port: 80 });
-    listener.addTargets('Target', {
+    const webTargetGroup = new elbv2.ApplicationTargetGroup(this, 'WebAppTargetGroup', {
+      vpc,
       port: 80,
-      targets: [asgWeb], // web app accessible from port 80
-      healthCheck: {
-        path: "/api/v3/testConnection"
-      }
-    });
-
-    // --- Route53 and ACM ---
-    const domainName = "awstest.pol.is";
-    const hostedZone = route53.HostedZone.fromLookup(this, 'Zone', { domainName: 'pol.is' }); // Assuming 'pol.is' is the parent domain
-    const certificate = new acm.Certificate(this, 'Certificate', {
-      domainName: domainName, // e.g., awstest.pol.is
-      validation: acm.CertificateValidation.fromDns(),
-    });
-
-    const httpsListener = lb.addListener('HttpsListener', {
-      port: 443,
-      certificates: [elbv2.ListenerCertificate.fromCertificateManager(certificate)],
-      open: true,
-    });
-
-    httpsListener.addTargets('HttpsTarget', {
-      port: 80, // ASG is listening on port 80
+      protocol: elbv2.ApplicationProtocol.HTTP,
       targets: [asgWeb],
       healthCheck: {
         path: "/api/v3/testConnection"
       }
     });
 
+    const listener80 = lb.addListener('HttpListener', {
+      port: 80,
+    });
+    listener80.addAction('RedirectToHttps', {
+      action: elbv2.ListenerAction.redirect({
+        protocol: elbv2.ApplicationProtocol.HTTPS,
+        port: '443',
+        permanent: true,
+      }),
+    });
+
+    // --- Route53 and ACM ---
+    const domainName = "awstest.pol.is";
+    const hostedZone = new route53.HostedZone(this, 'Zone', {
+      zoneName: 'pol.is',
+      comment: 'Hosted zone for pol.is',
+    });
+    const certificate = new acm.Certificate(this, 'Certificate', {
+      domainName: domainName, // e.g., awstest.pol.is
+      validation: acm.CertificateValidation.fromDns(),
+    });
+    const httpsListener = lb.addListener('HttpsListener', {
+      port: 443,
+      certificates: [elbv2.ListenerCertificate.fromCertificateManager(certificate)],
+      open: true,
+      defaultTargetGroups: [webTargetGroup], // Forward HTTPS traffic to the Target Group
+    });
+
     new route53.ARecord(this, 'AliasRecord', {
-      zone: hostedZone,
       recordName: domainName.replace('.pol.is', ''), // 'awstest'
       target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(lb)),
+      zone: hostedZone,
     });
 
     // Redirect HTTP to HTTPS
-    lb.addRedirect();
+    lb.addRedirect({
+      sourceProtocol: elbv2.ApplicationProtocol.HTTP,
+      sourcePort: 80,
+      targetProtocol: elbv2.ApplicationProtocol.HTTPS,
+      targetPort: 443
+    });
 
     asgWeb.node.addDependency(logGroup);
     asgMathWorker.node.addDependency(logGroup);
