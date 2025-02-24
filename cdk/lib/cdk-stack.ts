@@ -15,7 +15,6 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 
 interface PolisStackProps extends cdk.StackProps {
-  domainName?: string;
   enableSSHAccess?: boolean; // Make optional, default to false
   envFile: string;
   branch?: string;
@@ -28,10 +27,6 @@ const defaultBranch = 'edge';
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PolisStackProps) {
     super(scope, id, props);
-
-    // if (!props.domainName) {
-    //   throw new Error("domainName is a required property.");
-    // }
 
     const defaultSSHRange = '0.0.0.0/0';
 
@@ -314,13 +309,37 @@ EOF`,
       }
     });
 
-    // Route53 - implimenting later
-    // const zone = route53.HostedZone.fromLookup(this, 'Zone', { domainName: props?.domainName as string });
-    // new route53.ARecord(this, 'ARecord', {
-    //   zone,
-    //   recordName: props?.domainName,
-    //   target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(lb)),
-    // });
+    // --- Route53 and ACM ---
+    const domainName = "awstest.pol.is";
+    const hostedZone = route53.HostedZone.fromLookup(this, 'Zone', { domainName: 'pol.is' }); // Assuming 'pol.is' is the parent domain
+    const certificate = new acm.Certificate(this, 'Certificate', {
+      domainName: domainName, // e.g., awstest.pol.is
+      validation: acm.CertificateValidation.fromDns(hostedZone), // DNS validation
+    });
+
+    const httpsListener = lb.addListener('HttpsListener', {
+      port: 443,
+      certificates: [elbv2.ListenerCertificate.fromCertificateManager(certificate)],
+      open: true,
+    });
+
+    httpsListener.addTargets('HttpsTarget', {
+      port: 80, // ASG is listening on port 80
+      targets: [asgWeb],
+      healthCheck: {
+        path: "/api/v3/testConnection"
+      }
+    });
+
+    new route53.ARecord(this, 'AliasRecord', {
+      zone: hostedZone,
+      recordName: domainName.replace('.pol.is', ''), // 'awstest'
+      target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(lb)),
+    });
+
+    // Redirect HTTP to HTTPS
+    lb.addRedirect();
+
     asgWeb.node.addDependency(logGroup);
     asgMathWorker.node.addDependency(logGroup);
     asgWeb.node.addDependency(db);
