@@ -139,7 +139,8 @@ export class CdkStack extends cdk.Stack {
 
     // --- Web ASG ---
     webSecurityGroup.addIngressRule(ec2.Peer.ipv4(props.sshAllowedIpRange || defaultSSHRange), ec2.Port.tcp(22), 'Allow SSH'); // Control SSH separately
-    webSecurityGroup.addIngressRule(lbSecurityGroup, ec2.Port.tcp(80), 'Allow HTTP from ALB');  // ONLY from ALB!
+    webSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow HTTP from anywhere (for Cloudflare Flexible SSL)');
+    webSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS from anywhere (for Cloudflare Flexible SSL - optional)');
 
     // --- Postgres ---
 
@@ -310,46 +311,23 @@ EOF`,
       }
     });
 
-    const listener80 = lb.addListener('HttpListener', {
+    const httpListener = lb.addListener('HttpListener', {
       port: 80,
-    });
-    listener80.addAction('RedirectToHttps', {
-      action: elbv2.ListenerAction.redirect({
-        protocol: elbv2.ApplicationProtocol.HTTPS,
-        port: '443',
-        permanent: true,
-      }),
+      open: true,
+      defaultTargetGroups: [webTargetGroup],
     });
 
-    // --- Route53 and ACM ---
-    const domainName = "awstest.pol.is";
-    const hostedZone = new route53.HostedZone(this, 'Zone', {
-      zoneName: 'pol.is',
-      comment: 'Hosted zone for pol.is',
+    // ACM Certificate Request
+    const certificate = new acm.Certificate(this, 'WebAppCertificate', {
+      domainName: 'awstest.pol.is', // Your domain name
+      validation: acm.CertificateValidation.fromDns(), // Using DNS validation
     });
-    const certificate = new acm.Certificate(this, 'Certificate', {
-      domainName: domainName, // e.g., awstest.pol.is
-      validation: acm.CertificateValidation.fromDns(),
-    });
+
     const httpsListener = lb.addListener('HttpsListener', {
       port: 443,
-      certificates: [elbv2.ListenerCertificate.fromCertificateManager(certificate)],
+      certificates: [certificate], // Attach the ACM certificate
       open: true,
-      defaultTargetGroups: [webTargetGroup], // Forward HTTPS traffic to the Target Group
-    });
-
-    new route53.ARecord(this, 'AliasRecord', {
-      recordName: domainName.replace('.pol.is', ''), // 'awstest'
-      target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(lb)),
-      zone: hostedZone,
-    });
-
-    // Redirect HTTP to HTTPS
-    lb.addRedirect({
-      sourceProtocol: elbv2.ApplicationProtocol.HTTP,
-      sourcePort: 80,
-      targetProtocol: elbv2.ApplicationProtocol.HTTPS,
-      targetPort: 443
+      defaultTargetGroups: [webTargetGroup],
     });
 
     asgWeb.node.addDependency(logGroup);
