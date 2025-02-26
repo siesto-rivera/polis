@@ -45,7 +45,7 @@ fi
 echo "Retrieved Secret JSON from Secrets Manager"
 
 # 3. Parse secrets JSON using jq
-SECRETS_VARS=$(echo "$SECRET_JSON" | jq -r 'to_entries[] | .key + "=" + .value')
+SECRETS_VARS=$(echo "$SECRET_JSON" | jq -r 'to_entries[] | .key + "=" + (.value | tostring)')
 
 # 4. Read existing .env file into an associative array
 declare -A ENV_VARS
