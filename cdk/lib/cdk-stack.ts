@@ -9,6 +9,7 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as codedeploy from 'aws-cdk-lib/aws-codedeploy';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -328,6 +329,11 @@ EOF`,
       certificates: [certificate], // Attach the ACM certificate
       open: true,
       defaultTargetGroups: [webTargetGroup],
+    });
+
+    const webAppEnvVarsSecret = new secretsmanager.Secret(this, 'WebAppEnvVarsSecret', {
+      secretName: 'polis-web-app-env-vars',
+      description: 'Environment variables for the Polis web application',
     });
 
     asgWeb.node.addDependency(logGroup);

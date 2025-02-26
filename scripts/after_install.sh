@@ -23,7 +23,7 @@ else
   echo "Warning: example.env not found in repository root."
 fi
 
-# --- Database Configuration ---
+# --- Database Configuration and Environment Variables from Secrets Manager ---
 
 # 1. Get Secret ARN from SSM Parameter
 SECRET_ARN=$(aws ssm get-parameter --name /polis/db-secret-arn --query 'Parameter.Value' --output text --region us-east-1)
@@ -40,39 +40,38 @@ SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$SECRET_ARN" --qu
 
 if [ -z "$SECRET_JSON" ]; then
   echo "Error: Could not retrieve DB Secret from Secrets Manager using ARN: $SECRET_ARN"
-  exit 1 # Exit if Secret Value cannot be retrieved
 fi
 
 echo "Retrieved Secret JSON from Secrets Manager"
 
-# 3. Parse username and password from JSON using jq
-DB_USER=$(echo "$SECRET_JSON" | jq -r '.username')
-DB_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.password')
+# 3. Parse secrets JSON using jq
+SECRETS_VARS=$(echo "$SECRET_JSON" | jq -r 'to_entries[] | .key + "=" + .value')
 
-if [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]; then
-  echo "Error: Could not parse username or password from Secret JSON"
-  exit 1 # Exit if parsing fails
-fi
+# 4. Read existing .env file into an associative array
+declare -A ENV_VARS
+while IFS='=' read -r key value; do
+  ENV_VARS["$key"]="$value"
+done < .env
 
-echo "Parsed DB_USER and DB_PASSWORD from Secret JSON"
+echo "Existing .env file content read into ENV_VARS array"
 
-# 4. Get DB Host and Port from SSM Parameters (already present, but ensure correct parameter names)
-DB_HOST=$(aws ssm get-parameter --name /polis/db-host --query 'Parameter.Value' --output text --region us-east-1)
-DB_PORT=$(aws ssm get-parameter --name /polis/db-port --query 'Parameter.Value' --output text --region us-east-1)
+# 5. Iterate through Secrets Manager variables and update/add to .env
+while IFS= read -r secret_key_value; do
+  IFS='=' read -r secret_key secret_value <<< "$secret_key_value"
 
-if [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ]; then
-  echo "Error: Could not retrieve DB_HOST or DB_PORT from SSM Parameters"
-  exit 1 # Exit if host or port not found
-fi
+  if [[ -z "${ENV_VARS[$secret_key]}" ]]; then
+    echo "Adding new variable from Secrets Manager to .env: $secret_key=$secret_value"
+    echo "$secret_key=$secret_value" >> .env
+  elif [[ -z "${ENV_VARS[$secret_key]}" ]]; then
+    echo "Updating empty variable in .env from Secrets Manager: $secret_key=$secret_value"
+    sed -i "s|^${secret_key}=.*|${secret_key}=${secret_value}|" .env
+  else
+    echo "Variable '$secret_key' already has a value in .env, skipping update from Secrets Manager."
+  fi
+done < <(echo "$SECRETS_VARS")
 
-echo "Retrieved DB_HOST and DB_PORT from SSM Parameters"
-
-# 5. Update DATABASE_URL in .env file
-sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/polisdb|" .env
-# and SSL
-sed -i "s|^DATABASE_SSL=.*|DATABASE_SSL=true|" .env
-
-echo "Updated DATABASE_URL in .env file and SSL"
+echo ".env file updated with Secrets Manager variables."
+cat .env # Display the final .env file content for debugging
 
 SERVICE_FROM_FILE=$(cat /tmp/service_type.txt) # Read file content into variable
 
