@@ -16,15 +16,21 @@ fi
 
 cd polis
 
-if [ -f "example.env" ]; then
-  echo "Copying example.env to .env"
-  cp example.env .env
-else
-  echo "Warning: example.env not found in repository root."
+# --- Fetch pre-configured .env from SSM Parameter Store ---
+PRE_CONFIGURED_ENV=$(aws ssm get-parameter --name "/polis/pre-configured-env" --query 'Parameter.Value' --output text --region us-east-1)
+
+if [ -z "$PRE_CONFIGURED_ENV" ]; then
+  echo "Error: Could not retrieve pre-configured .env from SSM Parameter /polis/pre-configured-env"
+  exit 1
 fi
 
-# --- Database Configuration and Environment Variables from Secrets Manager ---
+echo "Retrieved pre-configured .env from SSM Parameter"
 
+# --- Create .env file with pre-configured content ---
+echo "$PRE_CONFIGURED_ENV" > .env
+echo ".env file created with pre-configured content."
+
+# --- Database Configuration and Environment Variables from Secrets Manager ---
 # 1. Get Secret ARN from SSM Parameter
 SECRET_ARN=$(aws ssm get-parameter --name /polis/db-secret-arn --query 'Parameter.Value' --output text --region us-east-1)
 
@@ -48,37 +54,22 @@ echo "Retrieved Secret JSON from Secrets Manager"
 # 3. Parse secrets JSON using jq
 SECRETS_VARS=$(echo "$SECRET_JSON" | jq -r 'to_entries[] | .key + "=" + (.value | tostring)')
 
-# 4. Read existing .env file into an associative array (Not needed for replacement logic)
-# declare -A ENV_VARS
-# while IFS='=' read -r key value; do
-#   ENV_VARS["$key"]="$value"
-# done < .env
-# echo "Existing .env file content read into ENV_VARS array"
+# --- Construct DATABASE_URL from secrets ---
+DATABASE_URL="postgres://${username}:${password}@${host}:${port}/${dbname}" # **IMPORTANT: Use variable names from Secrets Manager JSON**
+DATABASE_URL=$(echo "$SECRET_JSON" | jq -r '"postgres://\(.username):\(.password)@\(.host):\(.port)/\(.dbname)"') # Construct DATABASE_URL using jq
 
-echo "--- .env file content BEFORE replacement ---"
+echo "Constructed DATABASE_URL: $DATABASE_URL"
+
+# --- Append DATABASE_URL to the end of .env ---
+echo "Appending DATABASE_URL to .env"
+echo "DATABASE_URL=$DATABASE_URL" >> .env
+
+echo "--- Final .env file content (Appended DATABASE_URL) ---"
 cat .env
 
-# 5. Iterate through Secrets Manager variables and REPLACE in .env using sed
-while IFS= read -r secret_key_value; do
-  IFS='=' read -r secret_key secret_value <<< "$secret_key_value"
-
-  # Use sed to replace the line starting with SECRET_KEY= in .env
-  if grep -q "^${secret_key}=" .env; then
-    echo "Replacing variable '$secret_key' in .env with value from Secrets Manager."
-    sed -i "s|^${secret_key}=.*|${secret_key}=${secret_value}|" .env
-  else
-    echo "Variable '$secret_key' not found in .env, adding it." # If key not found, ADD it (for robustness)
-    echo "$secret_key=$secret_value" >> .env
-  fi
-done < <(echo "$SECRETS_VARS")
-
-
-echo "--- .env file content AFTER replacement ---"
-cat .env # Display the final .env file content for debugging
-
 SERVICE_FROM_FILE=$(cat /tmp/service_type.txt)
-
 echo "DEBUG: Service type read from /tmp/service_type.txt: [$SERVICE_FROM_FILE]"
+
 /usr/local/bin/docker-compose config
 
 if [ "$SERVICE_FROM_FILE" == "server" ]; then
