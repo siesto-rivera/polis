@@ -78,13 +78,7 @@ cat .env
 SERVICE_FROM_FILE=$(cat /tmp/service_type.txt)
 echo "DEBUG: Service type read from /tmp/service_type.txt: [$SERVICE_FROM_FILE]"
 
-echo "--- Port 443 status BEFORE stopping ssm-agent ---"
-sudo lsof -i :443
-echo "--- Stopping amazon-ssm-agent ---"
-sudo systemctl stop amazon-ssm-agent
-sleep 5
-echo "--- Port 443 status AFTER stopping ssm-agent ---"
-sudo lsof -i :443
+/usr/local/bin/docker-compose stop
 
 /usr/local/bin/docker-compose config
 
