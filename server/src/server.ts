@@ -695,7 +695,11 @@ function initializePolisHelpers() {
     next: () => any
   ) {
     // Exempt dev mode or healthcheck path from HTTPS check
-    if (devMode || req.path === "/api/v3/testConnection" || isTrueString(process.env.USE_NETWORK_HOST)) {
+    if (
+      devMode ||
+      req.path === "/api/v3/testConnection" ||
+      isTrueString(process.env.USE_NETWORK_HOST)
+    ) {
       return next();
     }
 
@@ -11117,7 +11121,10 @@ Thanks for using Polis!
         end: () => void;
       }
     ) {
-      let protocol = (devMode || isTrueString(process.env.USE_NETWORK_HOST)) ? "http://" : "https://";
+      let protocol =
+        devMode || isTrueString(process.env.USE_NETWORK_HOST)
+          ? "http://"
+          : "https://";
       let url = protocol + req?.headers?.host + path;
       res.writeHead(302, {
         Location: url,
@@ -11304,11 +11311,7 @@ Thanks for using Polis!
       //   Property 'pipe' is missing in type '{ path: string; headers?: { host: string; } | undefined; }' but required in type '{ headers?: { host: any; } | undefined; path: any; pipe: (arg0: any) => void; }'.ts(2345)
       // @ts-ignore
       return fetchUnsupportedBrowserPage(req, res);
-    } else if (
-      !browserSupportsPushState(req) &&
-      req.path.length > 1 &&
-      !/^\/api/.exec(req.path) // TODO probably better to create a list of client-side route regexes (whitelist), rather than trying to blacklist things like API calls.
-    ) {
+    } else if (false) {
       // Redirect to the same URL with the path behind the fragment "#"
       res.writeHead(302, {
         Location: "https://" + req?.headers?.host + "/#" + req.path,
