@@ -24,6 +24,7 @@ import timeout from "connect-timeout";
 import _ from "underscore";
 import pg from "pg";
 import { encode } from "html-entities";
+import isTrue from "boolean";
 
 import { METRICS_IN_RAM, addInRamMetric, MPromise } from "./utils/metered";
 import CreateUser from "./auth/create-user";
@@ -11116,7 +11117,7 @@ Thanks for using Polis!
         end: () => void;
       }
     ) {
-      let protocol = devMode ? "http://" : "https://";
+      let protocol = (devMode || isTrue(process.env.USE_NETWORK_HOST)) ? "http://" : "https://";
       let url = protocol + req?.headers?.host + path;
       res.writeHead(302, {
         Location: url,
