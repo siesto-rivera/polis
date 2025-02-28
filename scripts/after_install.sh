@@ -89,11 +89,11 @@ echo "Docker containers stopped and removed."
 
 if [ "$SERVICE_FROM_FILE" == "server" ]; then
   echo "Starting docker-compose up for 'server' and 'nginx-proxy' services"
-  /usr/local/bin/docker-compose up -d server nginx-proxy
+  /usr/local/bin/docker-compose up -d server nginx-proxy --build --force-recreate
 elif [ "$SERVICE_FROM_FILE" == "math" ]; then
   echo "Starting docker-compose up for 'math' service"
-  /usr/local/bin/docker-compose up -d math
+  /usr/local/bin/docker-compose up -d math --build --force-recreate
 else
   echo "Error: Unknown service type: [$SERVICE_FROM_FILE]. Starting all services (default docker-compose up -d)"
-  /usr/local/bin/docker-compose up -d # Fallback
+  /usr/local/bin/docker-compose up -d --build --force-recreate # Fallback
 fi
