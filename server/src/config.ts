@@ -44,7 +44,7 @@ export default {
   },
 
   getServerHostname: (): string => {
-    if (devMode) {
+    if (devMode  || isTrue(process.env.USE_NETWORK_HOST)) {
       return devHostname;
     }
     if (domainOverride) {
@@ -54,7 +54,7 @@ export default {
   },
 
   getServerUrl: (): string => {
-    if (devMode) {
+    if (devMode  || isTrue(process.env.USE_NETWORK_HOST)) {
       return `http://${devHostname}`;
     } else {
       return `https://${prodHostname}`;
