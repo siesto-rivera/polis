@@ -11094,7 +11094,7 @@ Thanks for using Polis!
       return;
     }
 
-    if (devMode) {
+    if (devMode || isTrue(process.env.USE_NETWORK_HOST)) {
       addStaticFileHeaders(res);
     }
     let port = Config.staticFilesParticipationPort;
