@@ -11278,7 +11278,7 @@ Thanks for using Polis!
     let headers = {
       "Content-Type": "text/html",
     };
-    if (!devMode) {
+    if (!devMode && !isTrue(process.env.USE_NETWORK_HOST)) {
       Object.assign(headers, {
         // 'Cache-Control': 'no-transform,public,max-age=60,s-maxage=60', // Cloudflare will probably cache it for one or two hours
         "Cache-Control": "no-cache", // Cloudflare will probably cache it for one or two hours
