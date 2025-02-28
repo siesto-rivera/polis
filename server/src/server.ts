@@ -694,7 +694,11 @@ function initializePolisHelpers() {
     next: () => any
   ) {
     // Exempt dev mode or healthcheck path from HTTPS check
-    if (devMode || req.path === "/api/v3/testConnection") {
+    if (
+      devMode ||
+      req.path === "/api/v3/testConnection" ||
+      process.env.USE_NETWORK_HOST
+    ) {
       return next();
     }
 
