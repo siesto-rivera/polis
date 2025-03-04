@@ -7,16 +7,20 @@
 # For a dev build, use `--target dev`.
 # Should default to prod build, but you can also explicitly use `--target prod`
 
-FROM node:18-bullseye-slim AS base
+FROM docker.io/node:20-alpine as base
 
 ARG NODE_ENV
 
 WORKDIR /app
 
-# Install git and libpq-dev using apt-get (Debian's package manager)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git libpq-dev python3 python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+# Install Python and necessary tools (including pip)
+RUN apk add --no-cache python3 py3-pip
+
+# This package is needed at runtime
+RUN apk add libpq-dev
+
+RUN apk add --no-cache --virtual .build \
+  g++ make python3
 
 COPY package*.json ./
 
@@ -44,6 +48,9 @@ FROM base as prod
 ENV NODE_ENV ${NODE_ENV:-production}
 
 RUN npm ci --production=false
+
+# For prod builds, to minimize the image size, remove the dependencies tagged with `--virtual .build` above.
+RUN apk del .build
 
 COPY . .
 
