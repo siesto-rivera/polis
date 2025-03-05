@@ -50,10 +50,10 @@ export class CdkStack extends cdk.Stack {
 
     const logGroup = new logs.LogGroup(this, 'LogGroup');
 
-    const instanceTypeWeb = ec2.InstanceType.of(ec2.InstanceClass.M3, ec2.InstanceSize.MEDIUM);
-    const machineImageWeb = new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2 });
+    const instanceTypeWeb = ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MEDIUM);
+    const machineImageWeb = new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2023 });
     const instanceTypeMathWorker = ec2.InstanceType.of(ec2.InstanceClass.C5, ec2.InstanceSize.XLARGE2);
-    const machineImageMathWorker = new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2 });
+    const machineImageMathWorker = new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2023 });
 
     const webSecurityGroup = new ec2.SecurityGroup(this, 'WebSecurityGroup', {
       vpc,
@@ -231,6 +231,16 @@ EOF`,
     // --- Launch Templates ---
     const webLaunchTemplate = new ec2.LaunchTemplate(this, 'WebLaunchTemplate', {
       machineImage: machineImageWeb,
+      blockDevices: [
+        {
+          deviceName: '/dev/xvda',
+          volume: ec2.BlockDeviceVolume.ebs(30, {
+            volumeType: ec2.EbsDeviceVolumeType.GP3,
+            encrypted: true,
+            deleteOnTermination: true,
+          }),
+        },
+      ],
       userData: usrdata(logGroup.logGroupName, "server"),
       instanceType: instanceTypeWeb,
       securityGroup: webSecurityGroup,

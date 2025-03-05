@@ -83,6 +83,9 @@ echo "Stopping and removing existing Docker containers..."
 docker rm -f $(docker ps -aq) || true      # Forcefully remove all containers, ignore errors
 echo "Docker containers stopped and removed."
 
+docker system prune -a --filter "until=72h"
+echo "Docker cache cleared"
+
 /usr/local/bin/docker-compose config
 
 if [ "$SERVICE_FROM_FILE" == "server" ]; then
