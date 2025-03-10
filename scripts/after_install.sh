@@ -16,6 +16,7 @@ fi
 
 cd polis
 sudo git config --global --add safe.directory /opt/polis/polis
+sudo git config pull.rebase true
 sudo git reset --hard origin/$GIT_BRANCH && sudo git pull
 
 # --- Fetch pre-configured .env from SSM Parameter Store ---
