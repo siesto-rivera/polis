@@ -375,7 +375,7 @@ EOF`,
       autoRollback: {
         failedDeployment: true,
         stoppedDeployment: true,
-        deploymentInAlarm: true,
+        // deploymentInAlarm: true,
       },
     });
 

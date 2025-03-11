@@ -285,7 +285,7 @@ const getModelResponse = async (
             {
               "clauses": [
                 {
-                  "text": "There are currently too many comments in this conversation for our AI to generate a topic response" : "There was an error generating the narrative. Please refresh the page once all sections have been generated. It may also be a problem with this model, especially if your content discussed sensitive topics.",
+                  "text": "There was an error generating the narrative. Please refresh the page once all sections have been generated. It may also be a problem with this model, especially if your content discussed sensitive topics.",
                   "citations": []
                 }
               ]
