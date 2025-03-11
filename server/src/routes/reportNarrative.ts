@@ -4,7 +4,7 @@ import fail from "../utils/fail";
 import { getZidForRid } from "../utils/zinvite";
 
 import Anthropic from "@anthropic-ai/sdk";
-import { countTokens } from '@anthropic-ai/tokenizer';
+import { countTokens } from "@anthropic-ai/tokenizer";
 import {
   GenerateContentRequest,
   GoogleGenerativeAI,
@@ -149,8 +149,7 @@ const isFreshData = (timestamp: string) => {
   const then = new Date(timestamp).getTime();
   const elapsed = Math.abs(now - then);
   return (
-    elapsed <
-    (((process.env.MAX_REPORT_CACHE_DURATION as unknown) as number) || 3600000)
+    elapsed < 87000000 // 24 hours
   );
 };
 
@@ -216,7 +215,14 @@ const getModelResponse = async (
                   }
                   \`\`\`
   
-                  Make sure the JSON is VALID. DO NOT begin with an array '[' - begin with an object '{' - All keys MUST be enclosed in double quotes. NO trailing comma's should be included after the last element in a block (not valid json). Do NOT include any additional text outside of the JSON object.  Do not provide explanations, only the JSON.
+                  Make sure the JSON is VALID, as defined at https://www.json.org/json-en.html. DO NOT begin with an array '[' - begin with an object '{' - All keys MUST be enclosed in double quotes. NO trailing comma's should be included after the last element in a block (not valid json). Do NOT include any additional text outside of the JSON object.  Do not provide explanations, only the JSON.
+
+                  The following is an example of an INVALID response:
+                  \`\`\`json
+                  {
+                  "key1": "string value",
+                  "array": [1,2,3], // <-- THIS IS INVALID BECAUSE OF A TRAILING COMMA. NO TRAILING COMMAS ARE PERMITTED IN THE RESPONSE .VALID JSON ONLY
+                  }
                 `,
             },
           ],
@@ -661,7 +667,6 @@ export async function handle_GET_topics(
         );
         // it's possible that the last response is cached, so the stream will hang unless we explicitly attempt to close it in both forks
         if (arr.length - 1 === i) {
-          console.log("all promises completed");
           res.end();
         }
       } else {
@@ -681,9 +686,7 @@ export async function handle_GET_topics(
           "polis-comments-and-group-demographics",
           json
         );
-        // res.write(`POLIS-PING: calling topic timeout`);
         setTimeout(async () => {
-          // res.write(`POLIS-PING: calling topic`);
           const resp = await getModelResponse(
             model,
             system_lore,
