@@ -372,11 +372,11 @@ EOF`,
       role: codeDeployRole, // The IAM role for CodeDeploy
       installAgent: true, // Installs the CodeDeploy agent.
       alarms: [webUnhealthyHostAlarm, mathUnhealthyHostAlarm, mathWorkerCPUAlarmHigh, mathWorkerCPUAlarmLow],
-      autoRollback: {
-        failedDeployment: true,
-        stoppedDeployment: true,
-        // deploymentInAlarm: true,
-      },
+      // autoRollback: {
+      //   failedDeployment: true,
+      //   stoppedDeployment: true,
+      //   deploymentInAlarm: true,
+      // },
     });
 
     // Allow traffic from the web ASG to the database
