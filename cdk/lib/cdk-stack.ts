@@ -11,7 +11,6 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
-import * as cw_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -274,25 +273,6 @@ EOF`,
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(2) }),
     });
 
-    const webUnhealthyHostAlarm = new logs.MetricFilter(this, 'WebUnhealthyHostAlarm', {
-      logGroup: logGroup,
-      metricNamespace: 'Polis/WebServer',
-      metricName: 'UnhealthyHostCount',
-      filterPattern: logs.FilterPattern.anyTerm('ERROR', 'Error', 'error'), // Adjust as needed
-      metricValue: '1',
-    }).metric().with({
-      statistic: 'Sum',
-      period: cdk.Duration.minutes(1),
-    }).createAlarm(this, 'WebUnhealthyHostCountAlarm', {
-      threshold: 1,  // Trigger if any unhealthy hosts
-      evaluationPeriods: 1,
-      alarmDescription: 'Alarm if there are any unhealthy web server hosts',
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      actionsEnabled: true,
-    });
-    webUnhealthyHostAlarm.addAlarmAction(new cw_actions.SnsAction(alarmTopic));
-
     const mathWorkerCpuMetric = new cloudwatch.Metric({
       namespace: 'AWS/EC2',
       metricName: 'CPUUtilization',
@@ -303,50 +283,11 @@ EOF`,
       period: cdk.Duration.minutes(10),
     });
 
-    //Scale up alarm
-    const mathWorkerCPUAlarmHigh = new cloudwatch.Alarm(this, 'MathWorkerCPUAlarmHigh', {
-      metric: mathWorkerCpuMetric,
-      threshold: 70,
-      evaluationPeriods: 3,
-      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    mathWorkerCPUAlarmHigh.addAlarmAction(new cw_actions.SnsAction(alarmTopic));
-
-    //Scale down alarm
-    const mathWorkerCPUAlarmLow = new cloudwatch.Alarm(this, 'MathWorkerCPUAlarmLow', {
-      metric: mathWorkerCpuMetric,
-      threshold: .15,
-      evaluationPeriods: 3,
-      comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    mathWorkerCPUAlarmLow.addAlarmAction(new cw_actions.SnsAction(alarmTopic));
-
     asgMathWorker.scaleToTrackMetric('CpuTracking', {
       metric: mathWorkerCpuMetric,
       targetValue: 50,  // Target 50% CPU utilization
+      disableScaleIn: true, // unneeded hosts will be disabled manualy
     });
-
-    // Add an alarm for Unhealthy Hosts (Math Worker)
-    const mathUnhealthyHostAlarm = new logs.MetricFilter(this, 'MathUnhealthyHostAlarm', {
-      logGroup: logGroup,
-      metricNamespace: 'Polis/MathWorker',
-      metricName: 'UnhealthyHostCount',
-      filterPattern: logs.FilterPattern.anyTerm('ERROR', 'Error', 'error'), // Adjust as needed
-      metricValue: '1',
-    }).metric().with({
-      statistic: 'Sum',
-      period: cdk.Duration.minutes(1),
-    }).createAlarm(this, 'MathUnhealthyHostCountAlarm', {
-      threshold: 1,
-      evaluationPeriods: 1,
-      alarmDescription: 'Alarm if there are any unhealthy math worker hosts',
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-        actionsEnabled: true,
-    });
-    mathUnhealthyHostAlarm.addAlarmAction(new cw_actions.SnsAction(alarmTopic));
 
     // DEPLOY STUFF
     const application = new codedeploy.ServerApplication(this, 'CodeDeployApplication', {
@@ -371,12 +312,6 @@ EOF`,
       deploymentConfig: codedeploy.ServerDeploymentConfig.ONE_AT_A_TIME,
       role: codeDeployRole, // The IAM role for CodeDeploy
       installAgent: true, // Installs the CodeDeploy agent.
-      alarms: [webUnhealthyHostAlarm, mathUnhealthyHostAlarm, mathWorkerCPUAlarmHigh, mathWorkerCPUAlarmLow],
-      // autoRollback: {
-      //   failedDeployment: true,
-      //   stoppedDeployment: true,
-      //   deploymentInAlarm: true,
-      // },
     });
 
     // Allow traffic from the web ASG to the database
@@ -424,6 +359,7 @@ EOF`,
     // Web Server - Target Tracking Scaling based on ALB Request Count
     const webScalingPolicy = asgWeb.scaleOnRequestCount('WebScalingPolicy', {
       targetRequestsPerMinute: 600,
+      disableScaleIn: true, // unneeded hosts will be disabled manualy
     });
 
     const webAppEnvVarsSecret = new secretsmanager.Secret(this, 'WebAppEnvVarsSecret', {
