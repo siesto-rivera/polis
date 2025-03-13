@@ -4,7 +4,7 @@ import fail from "../utils/fail";
 import { getZidForRid } from "../utils/zinvite";
 
 import Anthropic from "@anthropic-ai/sdk";
-import { countTokens } from '@anthropic-ai/tokenizer';
+import { countTokens } from "@anthropic-ai/tokenizer";
 import {
   GenerateContentRequest,
   GoogleGenerativeAI,
@@ -149,8 +149,7 @@ const isFreshData = (timestamp: string) => {
   const then = new Date(timestamp).getTime();
   const elapsed = Math.abs(now - then);
   return (
-    elapsed <
-    (((process.env.MAX_REPORT_CACHE_DURATION as unknown) as number) || 3600000)
+    elapsed < 87000000 // 24 hours
   );
 };
 
@@ -216,7 +215,14 @@ const getModelResponse = async (
                   }
                   \`\`\`
   
-                  Make sure the JSON is VALID. DO NOT begin with an array '[' - begin with an object '{' - All keys MUST be enclosed in double quotes. NO trailing comma's should be included after the last element in a block (not valid json). Do NOT include any additional text outside of the JSON object.  Do not provide explanations, only the JSON.
+                  Make sure the JSON is VALID, as defined at https://www.json.org/json-en.html. DO NOT begin with an array '[' - begin with an object '{' - All keys MUST be enclosed in double quotes. NO trailing comma's should be included after the last element in a block (not valid json). Do NOT include any additional text outside of the JSON object.  Do not provide explanations, only the JSON.
+
+                  The following is an example of an INVALID response:
+                  \`\`\`json
+                  {
+                  "key1": "string value",
+                  "array": [1,2,3], // <-- THIS IS INVALID BECAUSE OF A TRAILING COMMA. NO TRAILING COMMAS ARE PERMITTED IN THE RESPONSE .VALID JSON ONLY
+                  }
                 `,
             },
           ],
@@ -279,7 +285,7 @@ const getModelResponse = async (
             {
               "clauses": [
                 {
-                  "text": "There are currently too many comments in this conversation for our AI to generate a topic response" : "There was an error generating the narrative. Please refresh the page once all sections have been generated. It may also be a problem with this model, especially if your content discussed sensitive topics.",
+                  "text": "There was an error generating the narrative. Please refresh the page once all sections have been generated. It may also be a problem with this model, especially if your content discussed sensitive topics.",
                   "citations": []
                 }
               ]
@@ -325,11 +331,7 @@ export async function handle_GET_groupInformedConsensus(
   // @ts-expect-error function args ignore temp
   const structured_comments = await getCommentsAsXML(zid, section.filter);
   // send cached response first if avalable
-  if (
-    Array.isArray(cachedResponse) &&
-    cachedResponse?.length &&
-    isFreshData(cachedResponse[0].timestamp)
-  ) {
+  if (Array.isArray(cachedResponse) && cachedResponse?.length) {
     res.write(
       JSON.stringify({
         [section.name]: {
@@ -345,12 +347,6 @@ export async function handle_GET_groupInformedConsensus(
   } else {
     const fileContents = await fs.readFile(section.templatePath, "utf8");
     const json = await convertXML(fileContents);
-    if (Array.isArray(cachedResponse) && cachedResponse?.length) {
-      storage?.deleteReportItem(
-        cachedResponse[0].rid_section_model,
-        cachedResponse[0].timestamp
-      );
-    }
     json.polisAnalysisPrompt.children[
       json.polisAnalysisPrompt.children.length - 1
     ].data.content = { structured_comments };
@@ -419,11 +415,7 @@ export async function handle_GET_uncertainty(
   // @ts-expect-error function args ignore temp
   const structured_comments = await getCommentsAsXML(zid, section.filter);
   // send cached response first if avalable
-  if (
-    Array.isArray(cachedResponse) &&
-    cachedResponse?.length &&
-    isFreshData(cachedResponse[0].timestamp)
-  ) {
+  if (Array.isArray(cachedResponse) && cachedResponse?.length) {
     res.write(
       JSON.stringify({
         [section.name]: {
@@ -439,12 +431,6 @@ export async function handle_GET_uncertainty(
   } else {
     const fileContents = await fs.readFile(section.templatePath, "utf8");
     const json = await convertXML(fileContents);
-    if (Array.isArray(cachedResponse) && cachedResponse?.length) {
-      storage?.deleteReportItem(
-        cachedResponse[0].rid_section_model,
-        cachedResponse[0].timestamp
-      );
-    }
     json.polisAnalysisPrompt.children[
       json.polisAnalysisPrompt.children.length - 1
     ].data.content = { structured_comments };
@@ -514,11 +500,7 @@ export async function handle_GET_groups(
   // @ts-expect-error function args ignore temp
   const structured_comments = await getCommentsAsXML(zid, section.filter);
   // send cached response first if avalable
-  if (
-    Array.isArray(cachedResponse) &&
-    cachedResponse?.length &&
-    isFreshData(cachedResponse[0].timestamp)
-  ) {
+  if (Array.isArray(cachedResponse) && cachedResponse?.length) {
     res.write(
       JSON.stringify({
         [section.name]: {
@@ -534,12 +516,6 @@ export async function handle_GET_groups(
   } else {
     const fileContents = await fs.readFile(section.templatePath, "utf8");
     const json = await convertXML(fileContents);
-    if (Array.isArray(cachedResponse) && cachedResponse?.length) {
-      storage?.deleteReportItem(
-        cachedResponse[0].rid_section_model,
-        cachedResponse[0].timestamp
-      );
-    }
     json.polisAnalysisPrompt.children[
       json.polisAnalysisPrompt.children.length - 1
     ].data.content = { structured_comments };
@@ -600,15 +576,9 @@ export async function handle_GET_topics(
     `${rid}#topics`
   );
 
-  if (cachedTopics?.length && isFreshData(cachedTopics[0].timestamp)) {
+  if (cachedTopics?.length) {
     topics = cachedTopics[0].report_data;
   } else {
-    if (cachedTopics?.length) {
-      storage?.deleteReportItem(
-        cachedTopics[0].rid_section_model,
-        cachedTopics[0].timestamp
-      );
-    }
     topics = await getTopicsFromRID(zid);
     const reportItemTopics = {
       rid_section_model: `${rid}#topics`,
@@ -630,105 +600,96 @@ export async function handle_GET_topics(
     })
   );
 
-  sections.forEach(
-    async (
-      section: { name: any; templatePath: PathLike | fs.FileHandle },
-      i: number,
-      arr: any
-    ) => {
-      const cachedResponse = await storage?.queryItemsByRidSectionModel(
-        `${rid}#${section.name}#${model}`
-      );
-      // @ts-expect-error function args ignore temp
-      const structured_comments = await getCommentsAsXML(zid, section.filter);
-      // send cached response first if avalable
-      if (
-        Array.isArray(cachedResponse) &&
-        cachedResponse?.length &&
-        isFreshData(cachedResponse[0].timestamp)
-      ) {
-        res.write(
-          JSON.stringify({
-            [section.name]: {
-              modelResponse: cachedResponse[0].report_data,
-              model,
-              errors:
-                structured_comments?.trim().length === 0
-                  ? "NO_CONTENT_AFTER_FILTER"
-                  : undefined,
-            },
-          }) + `|||`
+  await Promise.all(
+    sections.map(
+      async (
+        section: { name: any; templatePath: PathLike | fs.FileHandle },
+        i: number
+      ) => {
+        const cachedResponse = await storage?.queryItemsByRidSectionModel(
+          `${rid}#${section.name}#${model}`
         );
-        // it's possible that the last response is cached, so the stream will hang unless we explicitly attempt to close it in both forks
-        if (arr.length - 1 === i) {
-          console.log("all promises completed");
-          res.end();
-        }
-      } else {
-        const fileContents = await fs.readFile(section.templatePath, "utf8");
-        const json = await convertXML(fileContents);
+        // @ts-expect-error function args ignore temp
+        const structured_comments = await getCommentsAsXML(zid, section.filter);
+        // send cached response first if avalable
         if (Array.isArray(cachedResponse) && cachedResponse?.length) {
-          storage?.deleteReportItem(
-            cachedResponse[0].rid_section_model,
-            cachedResponse[0].timestamp
-          );
-        }
-        json.polisAnalysisPrompt.children[
-          json.polisAnalysisPrompt.children.length - 1
-        ].data.content = { structured_comments };
+          await new Promise<void>((resolve) => {
+            res.write(
+              JSON.stringify({
+                [section.name]: {
+                  modelResponse: cachedResponse[0].report_data,
+                  model,
+                  errors:
+                    structured_comments?.trim().length === 0
+                      ? "NO_CONTENT_AFTER_FILTER"
+                      : undefined,
+                },
+              }) + `|||`
+            );
+            resolve();
+          });
+        } else {
+          await new Promise<void>((resolve) => {
+            setTimeout(async () => {
+              const fileContents = await fs.readFile(
+                section.templatePath,
+                "utf8"
+              );
+              const json = await convertXML(fileContents);
+              json.polisAnalysisPrompt.children[
+                json.polisAnalysisPrompt.children.length - 1
+              ].data.content = { structured_comments };
 
-        const prompt_xml = js2xmlparser.parse(
-          "polis-comments-and-group-demographics",
-          json
-        );
-        // res.write(`POLIS-PING: calling topic timeout`);
-        setTimeout(async () => {
-          // res.write(`POLIS-PING: calling topic`);
-          const resp = await getModelResponse(
-            model,
-            system_lore,
-            prompt_xml,
-            modelVersion,
-            true
-          );
+              const prompt_xml = js2xmlparser.parse(
+                "polis-comments-and-group-demographics",
+                json
+              );
 
-          const reportItem = {
-            rid_section_model: `${rid}#${section.name}#${model}`,
-            timestamp: new Date().toISOString(),
-            model,
-            report_data: resp,
-            errors:
-              structured_comments?.trim().length === 0
-                ? "NO_CONTENT_AFTER_FILTER"
-                : undefined,
-          };
-
-          storage?.putItem(reportItem);
-
-          res.write(
-            JSON.stringify({
-              [section.name]: {
-                modelResponse: resp,
+              const resp = await getModelResponse(
                 model,
+                system_lore,
+                prompt_xml,
+                modelVersion,
+                true
+              );
+
+              const reportItem = {
+                rid_section_model: `${rid}#${section.name}#${model}`,
+                timestamp: new Date().toISOString(),
+                model,
+                report_data: resp,
                 errors:
                   structured_comments?.trim().length === 0
                     ? "NO_CONTENT_AFTER_FILTER"
                     : undefined,
-              },
-            }) + `|||`
-          );
-          console.log("topic over: ", section.name);
-          // @ts-expect-error flush - calling due to use of compression
-          res.flush();
+              };
 
-          if (arr.length - 1 === i) {
-            console.log("all promises completed");
-            res.end();
-          }
-        }, 500 * i);
+              storage?.putItem(reportItem);
+
+              res.write(
+                JSON.stringify({
+                  [section.name]: {
+                    modelResponse: resp,
+                    model,
+                    errors:
+                      structured_comments?.trim().length === 0
+                        ? "NO_CONTENT_AFTER_FILTER"
+                        : undefined,
+                  },
+                }) + `|||`
+              );
+              // @ts-expect-error flush - calling due to use of compression
+              res.flush();
+              resolve();
+            }, (model === "gemini" ? 500 : 250) * i);
+          });
+        }
+        console.log("topic over: ", section.name);
       }
-    }
+    )
   );
+  console.log("all promises completed");
+  res.end();
 }
 
 export async function handle_GET_reportNarrative(
@@ -778,6 +739,16 @@ export async function handle_GET_reportNarrative(
   // @ts-expect-error flush - calling due to use of compression
   res.flush();
   try {
+    const cachedResponse = await storage?.getAllByReportID(rid);
+    if (
+      Array.isArray(cachedResponse) &&
+      cachedResponse?.length &&
+      !isFreshData(cachedResponse[0].timestamp)
+    ) {
+      res.write(`POLIS-PING: pruining cache`);
+      await storage?.deleteAllByReportID(rid);
+      res.write(`POLIS-PING: cache pruined`);
+    }
     const promises = [
       handle_GET_groupInformedConsensus(
         rid,
