@@ -129,11 +129,33 @@ export class CdkStack extends cdk.Stack {
       imageScanOnPush: true, // Enable image scanning (recommended)
     });
 
+    ecrWebRepository.addToResourcePolicy(new iam.PolicyStatement({ // allow docker pull from anywhere
+      sid: 'AllowPublicPull',
+      effect: iam.Effect.ALLOW,
+      principals: [new iam.AnyPrincipal()],
+      actions: [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+      ],
+    }));
+
     const ecrMathRepository = new ecr.Repository(this, 'PolisRepositoryMath', {
       repositoryName: 'polis/math',
       removalPolicy: cdk.RemovalPolicy.DESTROY, // fine for alpha testing - change to retain after
       imageScanOnPush: true, // Enable image scanning (recommended)
     });
+
+    ecrMathRepository.addToResourcePolicy(new iam.PolicyStatement({
+      sid: 'AllowPublicPull',
+      effect: iam.Effect.ALLOW,
+      principals: [new iam.AnyPrincipal()],
+      actions: [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+      ],
+    }));
 
     ecrWebRepository.grantPull(instanceRole);
     ecrMathRepository.grantPull(instanceRole);
