@@ -13,8 +13,9 @@ This directory contains Jupyter notebooks and scripts for analyzing Pol.is conve
 To run these notebooks:
 
 1. Use the provided launch script:
+
    ```bash
-   cd python_conversion/eda_notebooks
+   cd delphi/eda_notebooks
    ./launch_notebook.sh
    ```
 
@@ -22,10 +23,11 @@ To run these notebooks:
    - Activate the virtual environment with the required dependencies
    - Start Jupyter Lab
    - You can then open the `biodiversity_analysis.ipynb` notebook
-   
+
 3. Alternative method:
+
    ```bash
-   cd python_conversion
+   cd delphi
    source polis_env/bin/activate
    jupyter lab
    ```
@@ -35,11 +37,12 @@ To run these notebooks:
 To verify the analysis works without Jupyter, you can run:
 
 ```bash
-cd python_conversion/eda_notebooks
+cd delphi/eda_notebooks
 python run_analysis.py
 ```
 
 This will:
+
 1. Load the biodiversity conversation dataset
 2. Process all votes and compute PCA, clustering, and representativeness
 3. Save the results to the `output` directory
