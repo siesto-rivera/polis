@@ -38,6 +38,8 @@ services:
       target: prod
       args:
         NODE_ENV: production
+    labels:
+      polis_tag: ${TAG:-dev}
     depends_on:
       - "file-server"
     networks:
@@ -52,6 +54,8 @@ services:
     image: 050917022930.dkr.ecr.us-east-1.amazonaws.com/polis/math:latest
     build:
       context: ./math
+    labels:
+      polis_tag: ${TAG:-dev}
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - LOGGING_LEVEL=${MATH_LOG_LEVEL:-warn}
@@ -61,8 +65,19 @@ services:
     networks:
       - "polis-net"
 
+  delphi:
+    build:
+      context: ./delphi
+    labels:
+      polis_tag: ${TAG:-dev}
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - LOG_LEVEL=${DELPHI_LOG_LEVEL:-warn}
+      - MATH_ENV=${DELPHI_ENV:-prod}
+    networks:
+      - "polis-net"
+
   postgres:
-    image: docker.io/compdem/polis-postgres:${TAG:-dev}
     restart: always
     build:
       context: ./server
@@ -86,8 +101,8 @@ services:
     build:
       context: ./file-server
       dockerfile: nginx.Dockerfile
-      labels:
-        polis_tag: ${TAG:-dev}
+    labels:
+      polis_tag: ${TAG:-dev}
     depends_on:
       - "server"
     networks:
@@ -101,16 +116,12 @@ services:
     build:
       context: ./
       dockerfile: file-server/Dockerfile
-      labels:
-        polis_tag: ${TAG:-dev}
       args:
-        EMBED_SERVICE_HOSTNAME: ${EMBED_SERVICE_HOSTNAME}
-        ENABLE_TWITTER_WIDGETS: ${ENABLE_TWITTER_WIDGETS:-false}
-        FB_APP_ID: ${FB_APP_ID}
         GA_TRACKING_ID: ${GA_TRACKING_ID}
         GIT_HASH: "${GIT_HASH:-placeholder}"
         NODE_ENV: production
-        SERVICE_URL: ${SERVICE_URL}
+    labels:
+      polis_tag: ${TAG:-dev}
     environment:
       - PORT=${STATIC_FILES_PORT:-8080}
     networks:
@@ -118,7 +129,6 @@ services:
 
   dynamodb:
     image: amazon/dynamodb-local
-    container_name: polis-dynamodb
     ports:
       - "8000:8000"
     networks:
