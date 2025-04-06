@@ -508,10 +508,11 @@ class PostgresClient:
         for m in mods:
             tid = str(m["tid"])
 
-            # Check moderation status
-            if m["mod"] == 1:
+            # Check moderation status with support for string values
+            mod_value = m["mod"]
+            if mod_value == 1 or mod_value == '1':
                 mod_in_tids.append(tid)
-            elif m["mod"] == -1:
+            elif mod_value == -1 or mod_value == '-1':
                 mod_out_tids.append(tid)
 
             # Check meta status
@@ -526,7 +527,7 @@ class PostgresClient:
             participants
         WHERE
             zid = :zid
-            AND mod = -1
+            AND (mod = -1 OR mod = '-1')
         """
 
         # Execute query
