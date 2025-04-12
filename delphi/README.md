@@ -11,7 +11,7 @@ docker exec delphi-app python /app/create_dynamodb_tables.py --endpoint-url=http
 ```
 
 ```bash
-run_delphi.sh --zid=36416
+./run_delphi.sh --zid=36416
 ```
 
 This is a Python implementation of the mathematical components of the [Pol.is](https://pol.is) conversation system, converted from the original Clojure codebase.
