@@ -71,7 +71,12 @@ def setup_environment(db_host=None, db_port=None, db_name=None, db_user=None, db
     logger.info(f"- USER: {os.environ.get('DATABASE_USER')}")
     
     # DynamoDB settings (for local DynamoDB)
-    os.environ['DYNAMODB_ENDPOINT'] = 'http://localhost:8000'
+    # Only set if not already set in environment
+    if 'DYNAMODB_ENDPOINT' not in os.environ:
+        os.environ['DYNAMODB_ENDPOINT'] = 'http://localhost:8000'
+    logger.info(f"Using DynamoDB endpoint: {os.environ.get('DYNAMODB_ENDPOINT')}")
+    
+    # Always set these credentials for local development
     os.environ['AWS_ACCESS_KEY_ID'] = 'fakeMyKeyId'
     os.environ['AWS_SECRET_ACCESS_KEY'] = 'fakeSecretAccessKey'
     os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
