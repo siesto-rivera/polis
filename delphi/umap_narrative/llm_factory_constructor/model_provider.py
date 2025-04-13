@@ -165,7 +165,7 @@ class OllamaProvider(ModelProvider):
 class AnthropicProvider(ModelProvider):
     """Provider for Anthropic Claude models."""
     
-    def __init__(self, model_name: str = "claude-3-sonnet-20240229", api_key: Optional[str] = None):
+    def __init__(self, model_name: str = None, api_key: Optional[str] = None):
         """
         Initialize the Anthropic provider.
         
@@ -298,7 +298,8 @@ class AnthropicProvider(ModelProvider):
         available_models = [
             "claude-3-opus-20240229", 
             "claude-3-sonnet-20240229",
-            "claude-3-haiku-20240307"
+            "claude-3-haiku-20240307",
+            "claude-3-5-haiku-20241022" 
         ]
         logger.info(f"Available Anthropic models: {available_models}")
         return available_models
@@ -318,7 +319,7 @@ def get_model_provider(provider_type: str = None, model_name: str = None) -> Mod
     provider_type = provider_type or os.environ.get("LLM_PROVIDER", "ollama")
     
     if provider_type.lower() == "anthropic":
-        model_name = model_name or os.environ.get("ANTHROPIC_MODEL", "claude-3-sonnet-20240229")
+        model_name = model_name or os.environ.get("ANTHROPIC_MODEL", "claude-3-5-haiku-20241022")
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         logger.info(f"Using Anthropic provider with model: {model_name}")
         return AnthropicProvider(model_name=model_name, api_key=api_key)

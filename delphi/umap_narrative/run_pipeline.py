@@ -298,8 +298,11 @@ def generate_cluster_topic_labels(cluster_characteristics, comment_texts=None, l
                 prompt += "\nTopic label:"
                 
                 try:
+                    # Get model name from environment variable or use default
+                    model_name = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
+                    logger.info(f"Using Ollama model from environment: {model_name}")
                     response = ollama.chat(
-                        model="gemma3:12b",
+                        model=model_name,
                         messages=[{"role": "user", "content": prompt}]
                     )
                     # Extract just the topic name, not the explanation
@@ -771,11 +774,13 @@ def process_layers_and_create_visualizations(
             # Store in DynamoDB if provided
             if dynamo_storage:
                 logger.info(f"Storing LLM topic names for layer {layer_idx} in DynamoDB...")
+                # Get model name from environment variable or use default
+                model_name = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
                 llm_topic_models = DataConverter.batch_convert_llm_topic_names(
                     conversation_id,
                     cluster_labels,
                     layer_idx,
-                    model_name="gemma3:12b"  # Model used by Ollama
+                    model_name=model_name  # Model used by Ollama
                 )
                 result = dynamo_storage.batch_create_llm_topic_names(llm_topic_models)
                 logger.info(f"Stored {result['success']} LLM topic names with {result['failure']} failures")
