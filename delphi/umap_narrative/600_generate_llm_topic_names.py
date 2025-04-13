@@ -7,7 +7,8 @@ generates meaningful topic names for clusters using Ollama LLM,
 and saves the results to DynamoDB.
 
 Usage:
-    python generate_llm_topic_names.py --conversation_id 36324 --layer 0 --model gemma3:12b
+    python generate_llm_topic_names.py --conversation_id 36324 --layer 0 
+    # Model will default to OLLAMA_MODEL environment variable or "llama3.1:8b" if not specified
 
 Features:
 - Runs as a separate step after the core clustering pipeline
@@ -71,11 +72,30 @@ def check_ollama_availability():
     """Check if Ollama is available and working."""
     try:
         import ollama
+        import os
+        
+        # Check if OLLAMA_HOST is set in environment
+        ollama_host = os.environ.get('OLLAMA_HOST')
+        if ollama_host:
+            logger.info(f"Using OLLAMA_HOST from environment: {ollama_host}")
+            # Try to set the host for the Ollama client
+            try:
+                # For newer versions of ollama client
+                ollama.client._CLIENT_BASE_URL = ollama_host
+                logger.info(f"Set Ollama client base URL to {ollama_host}")
+            except:
+                logger.warning("Could not set ollama.client._CLIENT_BASE_URL, falling back to environment variable")
+                # The client will pick up OLLAMA_HOST automatically in newer versions
+                pass
+        
         # Just check if we can connect to Ollama API
         # Don't try to list models which might be causing issues
         logger.info("Checking Ollama connection...")
+        # Get the model name from environment or default to llama3.1:8b
+        model_name = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
+        logger.info(f"Checking Ollama connection with model: {model_name}")
         # Simple ping to verify Ollama is running
-        ollama.embeddings(model="gemma3:12b", prompt="test")
+        ollama.embeddings(model=model_name, prompt="test")
         logger.info("Ollama is available")
         return True
     except ImportError:
@@ -259,7 +279,7 @@ def load_layer_data(conversation_id, layer_id, dynamo_storage=None, output_base_
     
     return layer_data
 
-def generate_topic_names_with_ollama(layer_data, conversation_name=None, model_name="gemma3:12b"):
+def generate_topic_names(layer_data, conversation_name=None, model_name=None, provider_type=None):
     """
     Generate topic names using Ollama LLM.
     
@@ -273,6 +293,21 @@ def generate_topic_names_with_ollama(layer_data, conversation_name=None, model_n
     """
     try:
         import ollama
+        import os
+        
+        # Check if OLLAMA_HOST is set in environment
+        ollama_host = os.environ.get('OLLAMA_HOST')
+        if ollama_host:
+            logger.info(f"Using OLLAMA_HOST from environment: {ollama_host}")
+            # Try to set the host for the Ollama client
+            try:
+                # For newer versions of ollama client
+                ollama.client._CLIENT_BASE_URL = ollama_host
+                logger.info(f"Set Ollama client base URL to {ollama_host}")
+            except:
+                logger.warning("Could not set ollama.client._CLIENT_BASE_URL, falling back to environment variable")
+                # The client will pick up OLLAMA_HOST automatically in newer versions
+                pass
     except ImportError:
         logger.error("Ollama not installed. Please install with: pip install ollama")
         return {}
@@ -574,7 +609,7 @@ def update_visualization_with_llm_names(conversation_id, layer_id, topic_names, 
         logger.error(f"Error creating visualization: {e}")
         return None
 
-def update_conversation_with_ollama(conversation_id, layer_id=None, model_name="gemma3:12b", output_base_dir="polis_data", dynamo_endpoint=None, start_cluster=None, end_cluster=None):
+def update_conversation_with_ollama(conversation_id, layer_id=None, model_name=None, output_base_dir="polis_data", dynamo_endpoint=None, start_cluster=None, end_cluster=None):
     """
     Update a conversation with Ollama-generated topic names.
     
@@ -592,6 +627,11 @@ def update_conversation_with_ollama(conversation_id, layer_id=None, model_name="
     """
     # Set up environment
     setup_environment(dynamo_endpoint)
+    
+    # Get model name from environment variable or use default
+    if model_name is None:
+        model_name = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
+        logger.info(f"Using model from environment: {model_name}")
     
     # Check Ollama availability
     if not check_ollama_availability():
@@ -729,8 +769,8 @@ def main():
                       help='Conversation ID to process')
     parser.add_argument('--layer', type=int, required=False, default=None,
                       help='Specific layer ID to update (default: all layers)')
-    parser.add_argument('--model', type=str, default="gemma3:12b",
-                      help='Ollama model to use (default: gemma3:12b)')
+    parser.add_argument('--model', type=str, default=None,
+                      help='Ollama model to use (default: uses OLLAMA_MODEL env var or llama3.1:8b)')
     parser.add_argument('--output_dir', type=str, default="polis_data",
                       help='Base directory for output files (default: polis_data)')
     parser.add_argument('--dynamo_endpoint', type=str, default=None,

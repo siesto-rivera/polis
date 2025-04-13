@@ -30,7 +30,7 @@ response = provider.get_response(
 
 ```python
 # Use Ollama
-provider = get_model_provider("ollama", "llama3:8b")
+provider = get_model_provider("ollama", "llama3.1:8b")
 
 # Use Anthropic
 provider = get_model_provider("anthropic", "claude-3-sonnet-20240229")

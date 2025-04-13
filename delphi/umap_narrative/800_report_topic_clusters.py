@@ -765,7 +765,7 @@ class ReportGenerator:
                 
                 if model_name not in available_models:
                     # Try some alternatives
-                    alternatives = ["llama3:8b", "gemma3:12b", "llama3", "llama2", "gemma:2b", "mistral"]
+                    alternatives = ["llama3.1:8b", "gemma3:12b", "llama3", "llama2", "gemma:2b", "mistral"]
                     for alt in alternatives:
                         if alt in available_models:
                             model_name = alt
