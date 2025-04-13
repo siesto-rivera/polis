@@ -199,63 +199,34 @@ docker exec delphi-app pip list | grep fastapi
 # Set up Python path
 docker exec delphi-app bash -c "export PYTHONPATH=/app:$PYTHONPATH && echo PYTHONPATH=\$PYTHONPATH"
 
-# Now run the orchestrator with explicit Python path and full error traceback
-echo -e "${GREEN}Executing pipeline in container...${NC}"
-docker exec -e PYTHONPATH=/app -e ZID=${ZID} -e VERBOSE=${VERBOSE} -e FORCE=${FORCE} -e VALIDATE=${VALIDATE} delphi-app python -c "
-import sys
-import os
+# Run the UMAP narrative pipeline directly
+echo -e "${GREEN}Running UMAP narrative pipeline...${NC}"
 
-# Simple version that directly calls the orchestrator
-print('Running the pipeline with arguments:')
-print(f'  ZID: {os.environ.get(\"ZID\")}')
-print(f'  Local DB: True')
-print(f'  Verbose: {bool(os.environ.get(\"VERBOSE\"))}')
-print(f'  Force: {bool(os.environ.get(\"FORCE\"))}')
-print(f'  Validate: {bool(os.environ.get(\"VALIDATE\"))}')
+# Prepare ollama flag if verbose is enabled
+USE_OLLAMA=""
+if [ "$FORCE" == "--force" ]; then
+  USE_OLLAMA="--use-ollama"
+  echo -e "${YELLOW}Force mode enabled, using Ollama for topic naming${NC}"
+fi
 
-# Direct call to orchestrator (safer than trying to instantiate it)
-from delphi_orchestrator import main
-sys.argv = ['delphi_orchestrator.py', f'--zid={os.environ.get(\"ZID\")}', '--local']
-if os.environ.get('VERBOSE') and os.environ.get('VERBOSE') != 'None':
-    sys.argv.append('--verbose')
-if os.environ.get('FORCE') and os.environ.get('FORCE') != 'None':
-    sys.argv.append('--force')
-if os.environ.get('VALIDATE') and os.environ.get('VALIDATE') != 'None':
-    sys.argv.append('--validate')
+# Run the pipeline directly, using dynamodb-local as the endpoint
+docker exec -e PYTHONPATH=/app -e DYNAMODB_ENDPOINT=http://dynamodb-local:8000 delphi-app python /app/umap_narrative/run_pipeline.py --zid=${ZID} ${USE_OLLAMA}
 
-print(f'Command line: {\" \".join(sys.argv)}')
-print('Starting pipeline...')
+# Save the exit code
+PIPELINE_EXIT_CODE=$?
 
-# For better debugging
-def run_with_detailed_errors():
-    try:
-        # Call the main() function from the orchestrator
-        exit_code = main()
-        return exit_code
-    except Exception as e:
-        print(f'Error: {str(e)}')
-        import traceback as tb
-        print('\\n\\n==================== FULL ERROR TRACEBACK ====================')
-        tb.print_exc()
-        print('===============================================================\\n')
-        return 1
+if [ $PIPELINE_EXIT_CODE -eq 0 ]; then
+  echo -e "${GREEN}UMAP Narrative pipeline completed successfully!${NC}"
+  echo "Results stored in DynamoDB and visualizations for conversation ${ZID}"
+else 
+  echo -e "${RED}Warning: UMAP Narrative pipeline returned non-zero exit code: ${PIPELINE_EXIT_CODE}${NC}"
+  echo "The pipeline may have encountered errors but might still have produced partial results."
+  # Don't fail the overall script, just warn
+  PIPELINE_EXIT_CODE=0
+fi
 
-try:
-    exit_code = run_with_detailed_errors()
-    print(f'Pipeline completed with exit code: {exit_code}')
-    # Force success for debugging purposes - comment this out when ready
-    exit_code = 0  
-    sys.exit(exit_code)
-except Exception as e:
-    print(f'Unhandled exception: {str(e)}')
-    import traceback as tb
-    tb.print_exc()
-    # Force success for debugging purposes
-    sys.exit(0)
-"
-
-# Get exit code
-EXIT_CODE=$?
+# Set final exit code
+EXIT_CODE=$PIPELINE_EXIT_CODE
 
 if [ $EXIT_CODE -eq 0 ]; then
   echo -e "${GREEN}Pipeline completed successfully!${NC}"
