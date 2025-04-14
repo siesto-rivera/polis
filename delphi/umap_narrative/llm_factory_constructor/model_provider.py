@@ -179,15 +179,17 @@ class AnthropicProvider(ModelProvider):
         if not self.api_key:
             logger.warning("No Anthropic API key provided. Set ANTHROPIC_API_KEY env var or pass api_key parameter.")
         
-        # Import anthropic here to allow for optional dependency
-        try:
-            import anthropic
-            self.anthropic = anthropic
-            self.client = anthropic.Anthropic(api_key=self.api_key)
-        except ImportError:
-            logger.warning("Anthropic package not installed. Using direct HTTP requests instead.")
-            self.anthropic = None
-            self.client = None
+        # Force using direct HTTP requests instead of the anthropic package
+        # since we're having issues with the package in the container
+        logger.warning("Forcing use of direct HTTP requests for Anthropic API")
+        self.anthropic = None
+        self.client = None
+        
+        # Log API key presence (without revealing it)
+        if self.api_key:
+            logger.info(f"Anthropic API key is set (starts with: {self.api_key[:8]}...)")
+        else:
+            logger.warning("No Anthropic API key found in environment")
     
     def get_response(self, system_message: str, user_message: str) -> str:
         """
@@ -237,12 +239,16 @@ class AnthropicProvider(ModelProvider):
                 )
                 result = message.content[0].text
             else:
-                # Use direct HTTP request as fallback
+                # Use direct HTTP request
                 headers = {
                     "x-api-key": self.api_key,
                     "anthropic-version": "2023-06-01",
                     "content-type": "application/json"
                 }
+                
+                # Add more debugging
+                logger.info(f"Using Anthropic model '{self.model_name}' via direct HTTP request")
+                logger.info(f"API key starts with: {self.api_key[:8]}...")
                 
                 data = {
                     "model": self.model_name,
