@@ -605,6 +605,113 @@ def process_layers_and_store_characteristics(
     return layer_data
 
 
+def create_static_datamapplot(
+    conversation_id,
+    document_map,
+    cluster_layer,
+    cluster_labels,
+    output_dir,
+    layer_num=0
+):
+    """
+    Generate static datamapplot visualizations for a layer.
+    
+    Args:
+        conversation_id: Conversation ID string
+        document_map: 2D coordinates for visualization
+        cluster_layer: Cluster assignments for this layer
+        cluster_labels: Dictionary mapping cluster IDs to topic names
+        output_dir: Directory to save visualizations
+        layer_num: Layer number (default 0)
+        
+    Returns:
+        Boolean indicating success
+    """
+    logger.info(f"Generating static datamapplot for conversation {conversation_id}, layer {layer_num}")
+    
+    try:
+        # Create visualization directory if it doesn't exist
+        # Default location in the project structure
+        vis_dir = os.path.join("visualizations", str(conversation_id))
+        os.makedirs(vis_dir, exist_ok=True)
+        
+        # Also ensure the output directory exists in the pipeline's structure
+        # This is typically polis_data/zid/python_output/comments_enhanced_multilayer
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Prepare label strings with topic names
+        def clean_topic_name(name):
+            # Remove asterisks from topic names (e.g., "**Topic Name**" becomes "Topic Name")
+            if isinstance(name, str):
+                return name.replace('*', '')
+            return name
+            
+        # Create labels vector
+        label_strings = np.array([
+            clean_topic_name(cluster_labels.get(label, f"Topic {label}")) if label >= 0 else "Unclustered"
+            for label in cluster_layer
+        ])
+        
+        # Generate the static plot - it returns (fig, ax) tuple
+        fig, ax = datamapplot.create_plot(
+            document_map,
+            label_strings,
+            title=f"Conversation {conversation_id} - Layer {layer_num}",
+            label_over_points=True,           # Place labels directly over the point clusters
+            dynamic_label_size=True,          # Vary label size based on cluster size
+            dynamic_label_size_scaling_factor=0.75,
+            max_font_size=28,                 # Maximum font size for labels
+            min_font_size=12,                 # Minimum font size for labels
+            label_wrap_width=15,              # Wrap long cluster names
+            point_size=3,                     # Size of the data points
+            noise_label="Unclustered",        # Label for uncategorized points
+            noise_color="#aaaaaa",            # Grey color for uncategorized points
+            color_label_text=True,            # Color the label text to match points
+            cvd_safer=True                    # Use CVD-safer colors
+        )
+        
+        # Save to both locations: default visualizations directory and pipeline output
+        
+        # 1. Save to visualizations directory
+        # Regular PNG
+        static_png = os.path.join(vis_dir, f"{conversation_id}_layer_{layer_num}_datamapplot_static.png")
+        fig.savefig(static_png, dpi=300, bbox_inches='tight')
+        logger.info(f"Saved static PNG to {static_png}")
+        
+        # High resolution PNG for presentations
+        presentation_png = os.path.join(vis_dir, f"{conversation_id}_layer_{layer_num}_datamapplot_presentation.png")
+        fig.savefig(presentation_png, dpi=600, bbox_inches='tight')
+        logger.info(f"Saved high-resolution PNG to {presentation_png}")
+        
+        # SVG for vector graphics
+        svg_file = os.path.join(vis_dir, f"{conversation_id}_layer_{layer_num}_datamapplot_static.svg")
+        fig.savefig(svg_file, format='svg', bbox_inches='tight')
+        logger.info(f"Saved vector SVG to {svg_file}")
+        
+        # 2. Save the same files to the pipeline output directory
+        if output_dir != vis_dir:
+            # Regular PNG
+            output_static_png = os.path.join(output_dir, f"{conversation_id}_layer_{layer_num}_datamapplot_static.png")
+            fig.savefig(output_static_png, dpi=300, bbox_inches='tight')
+            logger.info(f"Saved static PNG to pipeline output: {output_static_png}")
+            
+            # High resolution PNG for presentations
+            output_presentation_png = os.path.join(output_dir, f"{conversation_id}_layer_{layer_num}_datamapplot_presentation.png")
+            fig.savefig(output_presentation_png, dpi=600, bbox_inches='tight')
+            logger.info(f"Saved high-resolution PNG to pipeline output: {output_presentation_png}")
+            
+            # SVG for vector graphics
+            output_svg_file = os.path.join(output_dir, f"{conversation_id}_layer_{layer_num}_datamapplot_static.svg")
+            fig.savefig(output_svg_file, format='svg', bbox_inches='tight')
+            logger.info(f"Saved vector SVG to pipeline output: {output_svg_file}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error generating static datamapplot: {str(e)}")
+        logger.error(traceback.format_exc())
+        return False
+
 def create_visualizations(
     conversation_id,
     conversation_name,
@@ -691,6 +798,48 @@ def create_visualizations(
             f"Comment topics (to be updated with LLM topic names)"
         )
         
+        # Generate static datamapplot visualizations
+        create_static_datamapplot(
+            conversation_id,
+            document_map,
+            cluster_layer,
+            numeric_topic_names,
+            output_dir,
+            layer_idx
+        )
+        
+        # Generate consensus/divisive visualization 
+        try:
+            logger.info(f"Generating consensus/divisive visualization for layer {layer_idx}...")
+            # Use subprocess to run as a separate process to avoid any memory leaks
+            import subprocess
+            script_path = os.path.join(os.path.dirname(__file__), "702_consensus_divisive_datamapplot.py")
+            command = [
+                "python", script_path, 
+                "--zid", str(conversation_id),
+                "--layer", str(layer_idx), 
+                "--output_dir", output_dir
+            ]
+            
+            # Run the script with appropriate environment variables
+            env = os.environ.copy()
+            process = subprocess.Popen(
+                command,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True
+            )
+            stdout, stderr = process.communicate()
+            
+            if process.returncode != 0:
+                logger.warning(f"Consensus/divisive visualization failed: {stderr}")
+            else:
+                logger.info(f"Consensus/divisive visualization for layer {layer_idx} completed successfully")
+                
+        except Exception as e:
+            logger.warning(f"Error running consensus/divisive visualization: {e}")
+        
         # Add to list of layer files and info
         if named_file:
             layer_files.append(named_file)
@@ -749,7 +898,7 @@ def process_layers_and_create_visualizations(
         dynamo_storage=dynamo_storage
     )
     
-    # Create visualizations
+    # Create visualizations with basic numeric labels
     index_file = create_visualizations(
         conversation_id,
         conversation_name,
@@ -798,6 +947,17 @@ def process_layers_and_create_visualizations(
                 )
                 result = dynamo_storage.batch_create_llm_topic_names(llm_topic_models)
                 logger.info(f"Stored {result['success']} LLM topic names with {result['failure']} failures")
+                
+            # Create a new static datamapplot with the LLM labels
+            logger.info(f"Generating static datamapplot with LLM labels for layer {layer_idx}...")
+            create_static_datamapplot(
+                conversation_id,
+                document_map,
+                cluster_layer,
+                cluster_labels,
+                output_dir,
+                layer_idx
+            )
     
     return index_file
 
@@ -866,6 +1026,26 @@ def create_enhanced_multilayer_index(
             background-color: #007BFF;
             color: white;
         }}
+        .static-downloads {{
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }}
+        .static-downloads h3 {{
+            margin-top: 0;
+            font-size: 16px;
+        }}
+        .static-downloads a {{
+            display: inline-block;
+            margin-right: 15px;
+            color: #0066cc;
+            text-decoration: none;
+        }}
+        .static-downloads a:hover {{
+            text-decoration: underline;
+        }}
     </style>
 </head>
 <body>
@@ -883,6 +1063,15 @@ def create_enhanced_multilayer_index(
             basic_view_file = file_name.replace("_named.html", "_enhanced.html")
             named_view_file = file_name
             
+            # Static file references
+            static_png = f"{conversation_name}_layer_{layer_idx}_datamapplot_static.png"
+            presentation_png = f"{conversation_name}_layer_{layer_idx}_datamapplot_presentation.png"
+            static_svg = f"{conversation_name}_layer_{layer_idx}_datamapplot_static.svg"
+            
+            # Consensus/divisive visualization references
+            consensus_png = f"{conversation_name}_consensus_divisive_colored_map.png"
+            consensus_enhanced = f"{conversation_name}_consensus_divisive_enhanced.png"
+            
             description = "Fine-grained grouping" if layer_idx == 0 else "Coarser grouping" if layer_idx == len(layer_info) - 1 else "Medium granularity"
             
             f.write(f"""
@@ -893,6 +1082,21 @@ def create_enhanced_multilayer_index(
             <a href="{basic_view_file}" class="view-link " target="_blank">Basic View</a>
             <a href="{named_view_file}" class="view-link active" target="_blank">Named View (LLM-labeled)</a>
         </div>
+        
+        <div class="static-downloads">
+            <h3>Static Visualizations:</h3>
+            <a href="{static_png}" target="_blank">Standard PNG</a>
+            <a href="{presentation_png}" target="_blank">Presentation PNG (HiRes)</a>
+            <a href="{static_svg}" target="_blank">Vector SVG</a>
+        </div>
+        
+        <div class="static-downloads">
+            <h3>Consensus/Divisive Visualizations:</h3>
+            <a href="{consensus_png}" target="_blank">Consensus Map</a>
+            <a href="{consensus_enhanced}" target="_blank">Enhanced Consensus Map</a>
+            <p><strong>Color legend:</strong> Green = Consensus Comments, Yellow = Mixed Opinions, Red = Divisive Comments</p>
+        </div>
+        
         <iframe src="{named_view_file}"></iframe>
     </div>
 """)
