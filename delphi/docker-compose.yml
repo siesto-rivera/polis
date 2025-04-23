@@ -1,18 +1,20 @@
 services:
-  # DynamoDB Local for development
-  dynamodb-local:
-    image: amazon/dynamodb-local:latest
-    container_name: delphi-dynamodb-local
-    ports:
-      - "8000:8000"
-    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
-    volumes:
-      - dynamodb-data:/home/dynamodblocal/data
-    environment:
-      - JAVA_OPTS=-Xmx1G
-    networks:
-      - delphi-network
-    user: root
+  # NOTE: DynamoDB has been moved to the main docker-compose.yml
+  # If running this compose file standalone, uncomment the following section:
+  #
+  # dynamodb-local:
+  #   image: amazon/dynamodb-local:latest
+  #   container_name: delphi-dynamodb-local
+  #   ports:
+  #     - "8000:8000"
+  #   command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
+  #   volumes:
+  #     - dynamodb-data:/home/dynamodblocal/data
+  #   environment:
+  #     - JAVA_OPTS=-Xmx1G
+  #   networks:
+  #     - delphi-network
+  #   user: root
 
   # Ollama for LLM processing
   ollama:
@@ -35,7 +37,7 @@ services:
       dockerfile: Dockerfile
     container_name: delphi-app
     depends_on:
-      - dynamodb-local
+      # DynamoDB reference is now in the main docker-compose
       - ollama
     env_file:
       - ${DELPHI_ENV_FILE:-.env}
@@ -47,6 +49,11 @@ services:
       - DATABASE_MAX_OVERFLOW=${DATABASE_MAX_OVERFLOW}
       # Set Python path explicitly
       - PYTHONPATH=/app
+      # DynamoDB settings - point to shared main service
+      - DYNAMODB_ENDPOINT=http://host.docker.internal:8000
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - AWS_REGION=us-west-2
     ports:
       - "8080:8080"
     extra_hosts:
