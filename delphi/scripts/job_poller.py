@@ -70,7 +70,9 @@ class JobProcessor:
     def find_pending_job(self):
         """Find a pending job to process."""
         try:
+            # Query the secondary index for PENDING jobs
             response = self.table.query(
+                IndexName='StatusCreatedIndex',
                 KeyConditionExpression='#s = :status',
                 ExpressionAttributeNames={
                     '#s': 'status'
@@ -79,88 +81,98 @@ class JobProcessor:
                     ':status': 'PENDING'
                 },
                 Limit=1,
-                ConsistentRead=True  # Important for distributed systems
+                ScanIndexForward=True  # Get oldest jobs first
             )
             
             items = response.get('Items', [])
             if items:
-                return items[0]
+                # Now do a consistent read to get the full item
+                job_id = items[0]['job_id']
+                full_item = self.table.get_item(
+                    Key={
+                        'job_id': job_id
+                    },
+                    ConsistentRead=True  # Important for distributed systems
+                )
+                
+                if 'Item' in full_item:
+                    return full_item['Item']
+                    
             return None
         except Exception as e:
             logger.error(f"Error finding pending job: {e}")
             return None
     
     def claim_job(self, job):
-        """Attempt to claim a job for processing."""
+        """Attempt to claim a job for processing using optimistic locking."""
         job_id = job['job_id']
-        old_status = job['status']
-        created_at = job['created_at']
+        current_version = job.get('version', 1)
         
         try:
-            # First, attempt to delete the item from the PENDING status
-            # This is a single atomic operation
+            # Update the job status using optimistic locking with conditional update
+            now = datetime.now().isoformat()
+            
+            # Try to atomically update the job status
             try:
-                response = self.table.delete_item(
+                response = self.table.update_item(
                     Key={
-                        'status': 'PENDING',  # Using literal 'PENDING' to be sure
-                        'created_at': created_at
+                        'job_id': job_id
                     },
-                    ConditionExpression='job_id = :job_id',
+                    UpdateExpression='''
+                        SET #status = :new_status, 
+                            #updated_at = :now, 
+                            #started_at = :now,
+                            #worker_id = :worker_id,
+                            #version = :new_version,
+                            completed_at = :empty_str
+                    ''',
+                    ConditionExpression='#status = :old_status AND #version = :current_version',
+                    ExpressionAttributeNames={
+                        '#status': 'status',
+                        '#updated_at': 'updated_at',
+                        '#started_at': 'started_at',
+                        '#worker_id': 'worker_id',
+                        '#version': 'version'
+                    },
                     ExpressionAttributeValues={
-                        ':job_id': job_id
+                        ':old_status': 'PENDING',
+                        ':new_status': 'PROCESSING',
+                        ':now': now,
+                        ':worker_id': self.worker_id,
+                        ':current_version': current_version,
+                        ':new_version': current_version + 1,
+                        ':empty_str': ""
                     },
-                    ReturnValues='ALL_OLD'  # Return the deleted item attributes
+                    ReturnValues='ALL_NEW'  # Get the updated item
                 )
                 
-                # Check if item was found and deleted
                 if 'Attributes' not in response:
-                    logger.warning(f"Job {job_id} was not found or already claimed")
+                    logger.warning(f"Failed to claim job {job_id}")
                     return None
                 
-                # Get the full job details from the deleted item
-                deleted_job = response['Attributes']
-                logger.info(f"Successfully deleted job {job_id} from PENDING status")
+                # Get the updated job with the new status
+                updated_job = response['Attributes']
+                logger.info(f"Successfully claimed job {job_id}")
+                return updated_job
                 
             except ClientError as e:
-                logger.error(f"Error deleting job {job_id}: {e}")
+                if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                    logger.warning(f"Job {job_id} was already claimed or modified by another worker")
+                else:
+                    logger.error(f"Error claiming job {job_id}: {e}")
                 return None
-            
-            # If we get here, we successfully deleted the item, so create a new one
-            now = datetime.now().isoformat()
-            processing_job = {
-                'job_id': job_id,
-                'status': 'PROCESSING',
-                'created_at': created_at,
-                'updated_at': now,
-                'started_at': now,
-                'completed_at': now,  # Use placeholder timestamp
-                'worker_id': self.worker_id,
-                'job_type': job.get('job_type', 'UNKNOWN'),
-                'priority': job.get('priority', 50),
-                'conversation_id': job.get('conversation_id', 'UNKNOWN'),
-                'retry_count': job.get('retry_count', 0),
-                'max_retries': job.get('max_retries', 3),
-                'timeout_seconds': job.get('timeout_seconds', 7200),
-                'job_config': job.get('job_config', '{}'),
-                'job_results': job.get('job_results', '{}'),
-                'logs': job.get('logs', '{}'),
-                'created_by': job.get('created_by', 'job_poller')
-            }
-            
-            # Put the new item
-            self.table.put_item(Item=processing_job)
-            
-            logger.info(f"Successfully claimed job {job_id}")
-            return processing_job
+                
         except Exception as e:
             logger.error(f"Unexpected error claiming job {job_id}: {e}")
             return None
     
     def update_job_logs(self, job, log_entry):
-        """Add a log entry to the job logs."""
+        """Add a log entry to the job logs with optimistic locking."""
         try:
-            # Get current logs
+            # Get current logs and version
             current_logs = json.loads(job.get('logs', '{}'))
+            current_version = job.get('version', 1)
+            
             if not current_logs:
                 current_logs = {'entries': []}
             
@@ -179,32 +191,47 @@ class JobProcessor:
             if len(current_logs['entries']) > 50:
                 current_logs['entries'] = current_logs['entries'][-50:]
             
-            # Update DynamoDB - use job's current status as the key
-            self.table.update_item(
-                Key={
-                    'status': job['status'],
-                    'created_at': job['created_at']
-                },
-                UpdateExpression='SET logs = :logs, updated_at = :updated_at',
-                ExpressionAttributeValues={
-                    ':logs': json.dumps(current_logs),
-                    ':updated_at': datetime.now().isoformat()
-                }
-            )
+            # Update DynamoDB with optimistic locking
+            try:
+                response = self.table.update_item(
+                    Key={
+                        'job_id': job['job_id']
+                    },
+                    UpdateExpression='SET logs = :logs, updated_at = :updated_at, version = :new_version',
+                    ConditionExpression='version = :current_version',
+                    ExpressionAttributeValues={
+                        ':logs': json.dumps(current_logs),
+                        ':updated_at': datetime.now().isoformat(),
+                        ':current_version': current_version,
+                        ':new_version': current_version + 1
+                    },
+                    ReturnValues='ALL_NEW'
+                )
+                
+                # Update the job reference with the new version
+                if 'Attributes' in response:
+                    job.update(response['Attributes'])
+                
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                    logger.warning(f"Job {job['job_id']} was modified by another process, log update skipped")
+                else:
+                    raise
         except Exception as e:
             logger.error(f"Error updating job logs: {e}")
     
     def complete_job(self, job, success, result=None, error=None):
-        """Mark a job as completed or failed."""
+        """Mark a job as completed or failed using optimistic locking."""
         job_id = job['job_id']
-        old_status = job['status']
+        current_version = job.get('version', 1)
         new_status = 'COMPLETED' if success else 'FAILED'
+        now = datetime.now().isoformat()
         
         try:
             # Prepare results
             job_results = {
                 'result_type': 'SUCCESS' if success else 'FAILURE',
-                'completed_at': datetime.now().isoformat()
+                'completed_at': now
             }
             
             if result:
@@ -213,39 +240,41 @@ class JobProcessor:
             if error:
                 job_results['error'] = str(error)
             
-            # We need to create a new record with the new status as the partition key
-            completed_job = {
-                'job_id': job_id,
-                'status': new_status,
-                'created_at': job['created_at'],
-                'updated_at': datetime.now().isoformat(),
-                'started_at': job.get('started_at', ''),
-                'completed_at': datetime.now().isoformat(),
-                'worker_id': job.get('worker_id', ''),
-                'job_type': job.get('job_type', ''),
-                'priority': job.get('priority', 50),
-                'conversation_id': job.get('conversation_id', ''),
-                'retry_count': job.get('retry_count', 0),
-                'max_retries': job.get('max_retries', 3),
-                'timeout_seconds': job.get('timeout_seconds', 7200),
-                'job_config': job.get('job_config', '{}'),
-                'job_results': json.dumps(job_results),
-                'logs': job.get('logs', '{}'),
-                'created_by': job.get('created_by', 'job_poller')
-            }
-            
-            # First, put the new item with the new status
-            self.table.put_item(Item=completed_job)
-            
-            # Then delete the old item with the old status
-            self.table.delete_item(
-                Key={
-                    'status': old_status,
-                    'created_at': job['created_at']
-                }
-            )
-            
-            logger.info(f"Job {job_id} marked as {new_status}")
+            # Update the job with the new status using optimistic locking
+            try:
+                response = self.table.update_item(
+                    Key={
+                        'job_id': job_id
+                    },
+                    UpdateExpression='''
+                        SET #status = :new_status, 
+                            updated_at = :now, 
+                            completed_at = :now,
+                            job_results = :job_results,
+                            version = :new_version
+                    ''',
+                    ConditionExpression='version = :current_version',
+                    ExpressionAttributeNames={
+                        '#status': 'status'
+                    },
+                    ExpressionAttributeValues={
+                        ':new_status': new_status,
+                        ':now': now,
+                        ':job_results': json.dumps(job_results),
+                        ':current_version': current_version,
+                        ':new_version': current_version + 1
+                    },
+                    ReturnValues='ALL_NEW'
+                )
+                
+                logger.info(f"Job {job_id} marked as {new_status}")
+                return response.get('Attributes')
+                
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                    logger.warning(f"Job {job_id} was modified by another process, completion state may not be accurate")
+                else:
+                    raise
         except Exception as e:
             logger.error(f"Error completing job {job_id}: {e}")
     
