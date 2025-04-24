@@ -110,21 +110,23 @@ def submit_job(dynamodb, zid, job_type='FULL_PIPELINE', priority=50, max_votes=N
         job_config['stages'] = stages
         job_config['visualizations'] = ["basic", "enhanced", "multilayer"]
     
-    # Create job item
+    # Create job item with version number for optimistic locking
+    # Use empty strings instead of None for DynamoDB compatibility
     job_item = {
-        'job_id': job_id,
-        'status': 'PENDING',
-        'created_at': now,
+        'job_id': job_id,                     # Primary key
+        'status': 'PENDING',                  # Secondary index key
+        'created_at': now,                    # Secondary index key
         'updated_at': now,
-        'started_at': now,  # Use current time instead of empty string
-        'completed_at': now,
-        'worker_id': "none",  # Use a placeholder instead of empty string
+        'version': 1,                         # Version for optimistic locking
+        'started_at': "",                     # Using empty strings for nullable fields
+        'completed_at': "",
+        'worker_id': "none",                  # Non-empty placeholder for index
         'job_type': job_type,
         'priority': priority,
         'conversation_id': str(zid),
         'retry_count': 0,
         'max_retries': 3,
-        'timeout_seconds': 7200,  # 2 hours default timeout
+        'timeout_seconds': 7200,              # 2 hours default timeout
         'job_config': json.dumps(job_config),
         'job_results': json.dumps({}),
         'logs': json.dumps({
@@ -135,7 +137,7 @@ def submit_job(dynamodb, zid, job_type='FULL_PIPELINE', priority=50, max_votes=N
                     'message': f'Job created for conversation {zid}'
                 }
             ],
-            'log_location': "none"
+            'log_location': ""
         }),
         'created_by': 'delphi_cli'
     }
@@ -150,8 +152,9 @@ def list_jobs(dynamodb, status=None, limit=10):
     table = dynamodb.Table('DelphiJobQueue')
     
     if status:
-        # Query for jobs with specific status
+        # Query for jobs with specific status using the StatusCreatedIndex
         response = table.query(
+            IndexName='StatusCreatedIndex',
             KeyConditionExpression='#s = :status',
             ExpressionAttributeNames={
                 '#s': 'status'
@@ -208,17 +211,16 @@ def get_job_details(dynamodb, job_id):
     """Get detailed information about a specific job."""
     table = dynamodb.Table('DelphiJobQueue')
     
-    response = table.query(
-        IndexName='JobIdIndex',
-        KeyConditionExpression='job_id = :job_id',
-        ExpressionAttributeValues={
-            ':job_id': job_id
-        }
+    # Direct lookup by job_id (now the primary key)
+    response = table.get_item(
+        Key={
+            'job_id': job_id
+        },
+        ConsistentRead=True  # Use strong consistency for reading
     )
     
-    items = response.get('Items', [])
-    if items:
-        return items[0]
+    if 'Item' in response:
+        return response['Item']
     return None
 
 def display_job_details(job):

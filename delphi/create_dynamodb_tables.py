@@ -152,28 +152,27 @@ def create_job_queue_table(dynamodb, delete_existing=False):
     # Get list of existing tables
     existing_tables = [t.name for t in dynamodb.tables.all()]
     
-    # Define table schema for job queue
+    # Define table schema for job queue - Redesigned with job_id as partition key
     tables = {
         'DelphiJobQueue': {
             'KeySchema': [
-                {'AttributeName': 'status', 'KeyType': 'HASH'},   # Partition key
-                {'AttributeName': 'created_at', 'KeyType': 'RANGE'}  # Sort key
+                {'AttributeName': 'job_id', 'KeyType': 'HASH'}   # Partition key
             ],
             'AttributeDefinitions': [
+                {'AttributeName': 'job_id', 'AttributeType': 'S'},
                 {'AttributeName': 'status', 'AttributeType': 'S'},
                 {'AttributeName': 'created_at', 'AttributeType': 'S'},
-                {'AttributeName': 'job_id', 'AttributeType': 'S'},
                 {'AttributeName': 'conversation_id', 'AttributeType': 'S'},
                 {'AttributeName': 'job_type', 'AttributeType': 'S'},
                 {'AttributeName': 'priority', 'AttributeType': 'N'},
-                {'AttributeName': 'worker_id', 'AttributeType': 'S'},
-                {'AttributeName': 'started_at', 'AttributeType': 'S'}
+                {'AttributeName': 'worker_id', 'AttributeType': 'S'}
             ],
             'GlobalSecondaryIndexes': [
                 {
-                    'IndexName': 'JobIdIndex',
+                    'IndexName': 'StatusCreatedIndex',
                     'KeySchema': [
-                        {'AttributeName': 'job_id', 'KeyType': 'HASH'}
+                        {'AttributeName': 'status', 'KeyType': 'HASH'},
+                        {'AttributeName': 'created_at', 'KeyType': 'RANGE'}
                     ],
                     'Projection': {'ProjectionType': 'ALL'},
                     'ProvisionedThroughput': {'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5}
@@ -197,10 +196,10 @@ def create_job_queue_table(dynamodb, delete_existing=False):
                     'ProvisionedThroughput': {'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5}
                 },
                 {
-                    'IndexName': 'WorkerIndex',
+                    'IndexName': 'WorkerStatusIndex',
                     'KeySchema': [
                         {'AttributeName': 'worker_id', 'KeyType': 'HASH'},
-                        {'AttributeName': 'started_at', 'KeyType': 'RANGE'}
+                        {'AttributeName': 'status', 'KeyType': 'RANGE'}
                     ],
                     'Projection': {'ProjectionType': 'ALL'},
                     'ProvisionedThroughput': {'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5}
