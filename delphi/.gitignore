@@ -17,6 +17,7 @@ ENV/
 env/
 .env
 .venv
+delphi-env/
 
 # Jupyter Notebook
 .ipynb_checkpoints
