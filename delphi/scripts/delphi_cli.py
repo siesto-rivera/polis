@@ -123,7 +123,7 @@ def submit_job(dynamodb, zid, job_type='FULL_PIPELINE', priority=50, max_votes=N
         'worker_id': "none",                  # Non-empty placeholder for index
         'job_type': job_type,
         'priority': priority,
-        'conversation_id': str(zid),
+        'conversation_id': str(zid),          # Using conversation_id (but still accept zid as input)
         'retry_count': 0,
         'max_retries': 3,
         'timeout_seconds': 7200,              # 2 hours default timeout
@@ -179,7 +179,7 @@ def display_jobs(jobs):
         for job in jobs:
             print(f"Job ID: {job.get('job_id')}")
             print(f"Status: {job.get('status')}")
-            print(f"Conversation: {job.get('conversation_id')}")
+            print(f"ZID: {job.get('conversation_id')}")
             print(f"Created: {job.get('created_at')}")
             print("-" * 40)
         return
@@ -187,7 +187,7 @@ def display_jobs(jobs):
     table = Table(title="Delphi Jobs")
     
     table.add_column("Job ID", style="cyan", no_wrap=True)
-    table.add_column("Conversation", style="green")
+    table.add_column("ZID", style="green")
     table.add_column("Status", style="magenta")
     table.add_column("Type", style="blue")
     table.add_column("Created", style="yellow")
@@ -299,9 +299,10 @@ def interactive_mode():
         console.print("1. [green]Submit a new job[/green]")
         console.print("2. [yellow]List existing jobs[/yellow]")
         console.print("3. [cyan]View job details[/cyan]")
-        console.print("4. [red]Exit[/red]")
+        console.print("4. [magenta]Check conversation status[/magenta]")
+        console.print("5. [red]Exit[/red]")
         
-        choice = Prompt.ask("Enter your choice", choices=["1", "2", "3", "4"])
+        choice = Prompt.ask("Enter your choice", choices=["1", "2", "3", "4", "5"])
         
         if choice == "1":
             # Submit a new job
@@ -379,11 +380,204 @@ def interactive_mode():
                 job = get_job_details(dynamodb=dynamodb, job_id=job_id)
             
             display_job_details(job)
-        
+            
         elif choice == "4":
+            # Check conversation status
+            zid = Prompt.ask("[bold]Enter conversation ID (zid)[/bold]")
+            
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                transient=True,
+            ) as progress:
+                progress.add_task(description="Fetching conversation status...", total=None)
+                status_data, error = get_conversation_status(dynamodb=dynamodb, zid=zid)
+            
+            if error:
+                console.print(f"[bold red]Error: {error}[/bold red]")
+            else:
+                display_conversation_status(status_data)
+        
+        elif choice == "5":
             # Exit
             console.print("[bold green]Goodbye![/bold green]")
             break
+
+def get_conversation_status(dynamodb, zid):
+    """Get detailed information about a conversation run."""
+    # 1. Check ConversationMeta table
+    conversation_meta_table = dynamodb.Table('ConversationMeta')
+    topic_names_table = dynamodb.Table('LLMTopicNames')
+    
+    try:
+        # Query with conversation_id schema
+        meta_response = conversation_meta_table.get_item(
+            Key={
+                'conversation_id': str(zid)
+            }
+        )
+        
+        if 'Item' not in meta_response:
+            return None, f"Conversation {zid} not found in ConversationMeta table."
+        
+        meta_data = meta_response['Item']
+        
+        # Query topics with conversation_id schema
+        topics_response = topic_names_table.query(
+            KeyConditionExpression='conversation_id = :cid',
+            ExpressionAttributeValues={
+                ':cid': str(zid)
+            }
+        )
+        topics_items = topics_response.get('Items', [])
+        
+        # Get the most recent job for this conversation from DelphiJobQueue
+        job_table = dynamodb.Table('DelphiJobQueue')
+        job_response = job_table.scan(
+            FilterExpression='conversation_id = :cid',
+            ExpressionAttributeValues={
+                ':cid': str(zid)
+            }
+        )
+        
+        # Sort jobs by created_at in descending order to get the most recent
+        jobs = job_response.get('Items', [])
+        if jobs:
+            jobs.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+            last_job = jobs[0]
+        else:
+            last_job = None
+        
+        return {
+            'meta': meta_data,
+            'topics': topics_items,
+            'last_job': last_job
+        }, None
+    
+    except Exception as e:
+        error_message = str(e)
+        return None, f"Error retrieving conversation status: {error_message}"
+
+def display_conversation_status(status_data):
+    """Display detailed information about a conversation run."""
+    if not status_data:
+        print("Conversation not found or error occurred.")
+        return
+    
+    meta = status_data.get('meta', {})
+    topics = status_data.get('topics', [])
+    last_job = status_data.get('last_job', {})
+    
+    # Group topics by layer
+    topics_by_layer = {}
+    for topic in topics:
+        layer_id = topic.get('layer_id', {}).get('N', '0')
+        if layer_id not in topics_by_layer:
+            topics_by_layer[layer_id] = []
+        topics_by_layer[layer_id].append(topic)
+    
+    # Sort topics by cluster_id within each layer
+    for layer_id in topics_by_layer:
+        topics_by_layer[layer_id].sort(key=lambda x: int(x.get('cluster_id', {}).get('N', '0')))
+    
+    if not RICH_AVAILABLE or not IS_TERMINAL:
+        print("\nConversation Status:")
+        print("=" * 40)
+        print(f"ZID: {meta.get('conversation_id', '')}")
+        print(f"Name: {meta.get('metadata', {}).get('M', {}).get('conversation_name', {}).get('S', 'Unknown')}")
+        print(f"Comments: {meta.get('num_comments', {}).get('N', '0')}")
+        print(f"Processed on: {meta.get('processed_date', {}).get('S', 'Unknown')}")
+        
+        # Display layers and clusters
+        print("\nClustering Layers:")
+        cluster_layers = meta.get('cluster_layers', {}).get('L', [])
+        for layer in cluster_layers:
+            layer_data = layer.get('M', {})
+            layer_id = layer_data.get('layer_id', {}).get('N', '0')
+            description = layer_data.get('description', {}).get('S', '')
+            num_clusters = layer_data.get('num_clusters', {}).get('N', '0')
+            print(f"- Layer {layer_id}: {description} - {num_clusters} clusters")
+        
+        # Display topic names for each layer (up to 5 per layer)
+        print("\nTopic Names (sample):")
+        for layer_id, layer_topics in topics_by_layer.items():
+            print(f"Layer {layer_id}:")
+            for i, topic in enumerate(layer_topics[:5]):
+                topic_name = topic.get('topic_name', {}).get('S', 'Unknown')
+                cluster_id = topic.get('cluster_id', {}).get('N', '0')
+                print(f"  - Cluster {cluster_id}: {topic_name}")
+            if len(layer_topics) > 5:
+                print(f"  ... and {len(layer_topics) - 5} more topics")
+                
+        # Display most recent job status
+        if last_job:
+            print("\nMost Recent Job:")
+            print(f"Status: {last_job.get('status', '')}")
+            print(f"Submitted: {last_job.get('created_at', '')}")
+            if last_job.get('completed_at'):
+                print(f"Completed: {last_job.get('completed_at', '')}")
+        
+        return
+    
+    # Rich formatting for terminal output
+    meta_name = meta.get('metadata', {}).get('M', {}).get('conversation_name', {}).get('S', 'Unknown')
+    zid_display = meta.get('conversation_id', '')
+    
+    # Main panel with conversation info
+    console.print(Panel(
+        f"[bold]ZID:[/bold] {zid_display}\n"
+        f"[bold]Name:[/bold] {meta_name}\n"
+        f"[bold]Comments:[/bold] {meta.get('num_comments', {}).get('N', '0')}\n"
+        f"[bold]Model:[/bold] {meta.get('embedding_model', {}).get('S', 'Unknown')}\n"
+        f"[bold]Processed:[/bold] {meta.get('processed_date', {}).get('S', 'Unknown')}\n",
+        title="Conversation Status",
+        border_style="blue"
+    ))
+    
+    # Layers and clusters information
+    layers_table = Table(title="Clustering Layers")
+    layers_table.add_column("Layer", style="cyan")
+    layers_table.add_column("Description", style="green")
+    layers_table.add_column("Clusters", style="magenta")
+    
+    cluster_layers = meta.get('cluster_layers', {}).get('L', [])
+    for layer in cluster_layers:
+        layer_data = layer.get('M', {})
+        layer_id = layer_data.get('layer_id', {}).get('N', '0')
+        description = layer_data.get('description', {}).get('S', '')
+        num_clusters = layer_data.get('num_clusters', {}).get('N', '0')
+        layers_table.add_row(layer_id, description, num_clusters)
+    
+    console.print(layers_table)
+    
+    # Sample topic names for each layer
+    for layer_id, layer_topics in topics_by_layer.items():
+        topic_table = Table(title=f"Layer {layer_id} Topics (Sample)")
+        topic_table.add_column("Cluster", style="cyan")
+        topic_table.add_column("Topic Name", style="yellow")
+        
+        for i, topic in enumerate(layer_topics[:5]):  # Show up to 5 topics per layer
+            topic_name = topic.get('topic_name', {}).get('S', 'Unknown')
+            cluster_id = topic.get('cluster_id', {}).get('N', '0')
+            topic_table.add_row(cluster_id, topic_name)
+            
+        if len(layer_topics) > 5:
+            topic_table.add_row("...", f"... and {len(layer_topics) - 5} more topics")
+            
+        console.print(topic_table)
+    
+    # Most recent job information
+    if last_job:
+        job_status = last_job.get('status', '')
+        status_color = 'green' if job_status == 'COMPLETED' else 'yellow' if job_status == 'PENDING' else 'red'
+        
+        console.print(Panel(
+            f"[bold]Status:[/bold] [{status_color}]{job_status}[/]\n"
+            f"[bold]Submitted:[/bold] {last_job.get('created_at', '')}\n"
+            f"[bold]Completed:[/bold] {last_job.get('completed_at', '') or 'Not completed'}\n",
+            title="Most Recent Job",
+            border_style="green"
+        ))
 
 def main():
     """Main entry point for the Delphi CLI."""
@@ -415,6 +609,10 @@ def main():
     # Details command
     details_parser = subparsers.add_parser("details", help="View job details")
     details_parser.add_argument("job_id", help="Job ID to view details for")
+    
+    # Status command - NEW
+    status_parser = subparsers.add_parser("status", help="Check conversation status and results")
+    status_parser.add_argument("zid", help="Conversation ID (zid) to check status for")
     
     # Common options
     parser.add_argument("--endpoint-url", help="DynamoDB endpoint URL")
@@ -470,6 +668,20 @@ def main():
             job_id=args.job_id
         )
         display_job_details(job)
+        
+    elif args.command == "status":
+        status_data, error = get_conversation_status(
+            dynamodb=dynamodb,
+            zid=args.zid
+        )
+        
+        if error:
+            if RICH_AVAILABLE and IS_TERMINAL:
+                console.print(f"[bold red]Error: {error}[/bold red]")
+            else:
+                print(f"Error: {error}")
+        else:
+            display_conversation_status(status_data)
 
 if __name__ == "__main__":
     main()
