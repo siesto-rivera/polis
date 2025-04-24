@@ -471,31 +471,101 @@ def display_conversation_status(status_data):
     # Group topics by layer
     topics_by_layer = {}
     for topic in topics:
-        layer_id = topic.get('layer_id', {}).get('N', '0')
+        # Handle both dictionary and direct value formats
+        if isinstance(topic.get('layer_id'), dict):
+            layer_id = topic.get('layer_id', {}).get('N', '0')
+        else:
+            layer_id = str(topic.get('layer_id', '0'))
+            
         if layer_id not in topics_by_layer:
             topics_by_layer[layer_id] = []
         topics_by_layer[layer_id].append(topic)
     
     # Sort topics by cluster_id within each layer
     for layer_id in topics_by_layer:
-        topics_by_layer[layer_id].sort(key=lambda x: int(x.get('cluster_id', {}).get('N', '0')))
+        # Handle both dictionary and direct value formats for sorting
+        def get_cluster_id(x):
+            if isinstance(x.get('cluster_id'), dict):
+                return int(x.get('cluster_id', {}).get('N', '0'))
+            else:
+                return int(str(x.get('cluster_id', '0')))
+                
+        topics_by_layer[layer_id].sort(key=get_cluster_id)
     
     if not RICH_AVAILABLE or not IS_TERMINAL:
         print("\nConversation Status:")
         print("=" * 40)
         print(f"ZID: {meta.get('conversation_id', '')}")
-        print(f"Name: {meta.get('metadata', {}).get('M', {}).get('conversation_name', {}).get('S', 'Unknown')}")
-        print(f"Comments: {meta.get('num_comments', {}).get('N', '0')}")
-        print(f"Processed on: {meta.get('processed_date', {}).get('S', 'Unknown')}")
+        
+        # Handle both DynamoDB and direct object formats for metadata
+        if isinstance(meta.get('metadata'), dict) and 'M' in meta.get('metadata', {}):
+            metadata = meta.get('metadata', {}).get('M', {})
+            if isinstance(metadata.get('conversation_name'), dict):
+                conv_name = metadata.get('conversation_name', {}).get('S', 'Unknown')
+            else:
+                conv_name = str(metadata.get('conversation_name', 'Unknown'))
+        else:
+            metadata = meta.get('metadata', {})
+            conv_name = str(metadata.get('conversation_name', 'Unknown'))
+            
+        # Handle various number formats
+        if isinstance(meta.get('num_comments'), dict):
+            num_comments = meta.get('num_comments', {}).get('N', '0')
+        else:
+            num_comments = str(meta.get('num_comments', '0'))
+            
+        if isinstance(meta.get('processed_date'), dict):
+            processed_date = meta.get('processed_date', {}).get('S', 'Unknown')
+        else:
+            processed_date = str(meta.get('processed_date', 'Unknown'))
+            
+        print(f"Name: {conv_name}")
+        print(f"Comments: {num_comments}")
+        print(f"Processed on: {processed_date}")
         
         # Display layers and clusters
         print("\nClustering Layers:")
-        cluster_layers = meta.get('cluster_layers', {}).get('L', [])
+        # Get cluster layers, handling both formats
+        if isinstance(meta.get('cluster_layers'), dict):
+            cluster_layers = meta.get('cluster_layers', {}).get('L', [])
+        else:
+            cluster_layers = meta.get('cluster_layers', [])
+            
         for layer in cluster_layers:
-            layer_data = layer.get('M', {})
-            layer_id = layer_data.get('layer_id', {}).get('N', '0')
-            description = layer_data.get('description', {}).get('S', '')
-            num_clusters = layer_data.get('num_clusters', {}).get('N', '0')
+            # Handle dictionary format
+            if isinstance(layer, dict) and 'M' in layer:
+                layer_data = layer.get('M', {})
+                if isinstance(layer_data.get('layer_id'), dict):
+                    layer_id = layer_data.get('layer_id', {}).get('N', '0')
+                else:
+                    layer_id = str(layer_data.get('layer_id', '0'))
+                    
+                if isinstance(layer_data.get('description'), dict):
+                    description = layer_data.get('description', {}).get('S', '')
+                else:
+                    description = str(layer_data.get('description', ''))
+                    
+                if isinstance(layer_data.get('num_clusters'), dict):
+                    num_clusters = layer_data.get('num_clusters', {}).get('N', '0')
+                else:
+                    num_clusters = str(layer_data.get('num_clusters', '0'))
+            # Handle direct object format
+            else:
+                if isinstance(layer.get('layer_id'), dict):
+                    layer_id = layer.get('layer_id', {}).get('N', '0')
+                else:
+                    layer_id = str(layer.get('layer_id', '0'))
+                    
+                if isinstance(layer.get('description'), dict):
+                    description = layer.get('description', {}).get('S', '')
+                else:
+                    description = str(layer.get('description', ''))
+                    
+                if isinstance(layer.get('num_clusters'), dict):
+                    num_clusters = layer.get('num_clusters', {}).get('N', '0')
+                else:
+                    num_clusters = str(layer.get('num_clusters', '0'))
+                    
             print(f"- Layer {layer_id}: {description} - {num_clusters} clusters")
         
         # Display topic names for each layer (up to 5 per layer)
@@ -503,8 +573,17 @@ def display_conversation_status(status_data):
         for layer_id, layer_topics in topics_by_layer.items():
             print(f"Layer {layer_id}:")
             for i, topic in enumerate(layer_topics[:5]):
-                topic_name = topic.get('topic_name', {}).get('S', 'Unknown')
-                cluster_id = topic.get('cluster_id', {}).get('N', '0')
+                # Handle both dictionary and direct value formats
+                if isinstance(topic.get('topic_name'), dict):
+                    topic_name = topic.get('topic_name', {}).get('S', 'Unknown')
+                else:
+                    topic_name = str(topic.get('topic_name', 'Unknown'))
+                    
+                if isinstance(topic.get('cluster_id'), dict):
+                    cluster_id = topic.get('cluster_id', {}).get('N', '0')
+                else:
+                    cluster_id = str(topic.get('cluster_id', '0'))
+                    
                 print(f"  - Cluster {cluster_id}: {topic_name}")
             if len(layer_topics) > 5:
                 print(f"  ... and {len(layer_topics) - 5} more topics")
@@ -520,16 +599,42 @@ def display_conversation_status(status_data):
         return
     
     # Rich formatting for terminal output
-    meta_name = meta.get('metadata', {}).get('M', {}).get('conversation_name', {}).get('S', 'Unknown')
+    # Handle both DynamoDB and direct object formats for metadata
+    if isinstance(meta.get('metadata'), dict) and 'M' in meta.get('metadata', {}):
+        metadata = meta.get('metadata', {}).get('M', {})
+        if isinstance(metadata.get('conversation_name'), dict):
+            meta_name = metadata.get('conversation_name', {}).get('S', 'Unknown')
+        else:
+            meta_name = str(metadata.get('conversation_name', 'Unknown'))
+    else:
+        metadata = meta.get('metadata', {})
+        meta_name = str(metadata.get('conversation_name', 'Unknown'))
+    
     zid_display = meta.get('conversation_id', '')
+    
+    # Handle various number and field formats
+    if isinstance(meta.get('num_comments'), dict):
+        num_comments = meta.get('num_comments', {}).get('N', '0')
+    else:
+        num_comments = str(meta.get('num_comments', '0'))
+        
+    if isinstance(meta.get('embedding_model'), dict):
+        embedding_model = meta.get('embedding_model', {}).get('S', 'Unknown')
+    else:
+        embedding_model = str(meta.get('embedding_model', 'Unknown'))
+        
+    if isinstance(meta.get('processed_date'), dict):
+        processed_date = meta.get('processed_date', {}).get('S', 'Unknown')
+    else:
+        processed_date = str(meta.get('processed_date', 'Unknown'))
     
     # Main panel with conversation info
     console.print(Panel(
         f"[bold]ZID:[/bold] {zid_display}\n"
         f"[bold]Name:[/bold] {meta_name}\n"
-        f"[bold]Comments:[/bold] {meta.get('num_comments', {}).get('N', '0')}\n"
-        f"[bold]Model:[/bold] {meta.get('embedding_model', {}).get('S', 'Unknown')}\n"
-        f"[bold]Processed:[/bold] {meta.get('processed_date', {}).get('S', 'Unknown')}\n",
+        f"[bold]Comments:[/bold] {num_comments}\n"
+        f"[bold]Model:[/bold] {embedding_model}\n"
+        f"[bold]Processed:[/bold] {processed_date}\n",
         title="Conversation Status",
         border_style="blue"
     ))
@@ -540,12 +645,47 @@ def display_conversation_status(status_data):
     layers_table.add_column("Description", style="green")
     layers_table.add_column("Clusters", style="magenta")
     
-    cluster_layers = meta.get('cluster_layers', {}).get('L', [])
+    # Get cluster layers, handling both formats
+    if isinstance(meta.get('cluster_layers'), dict):
+        cluster_layers = meta.get('cluster_layers', {}).get('L', [])
+    else:
+        cluster_layers = meta.get('cluster_layers', [])
+        
     for layer in cluster_layers:
-        layer_data = layer.get('M', {})
-        layer_id = layer_data.get('layer_id', {}).get('N', '0')
-        description = layer_data.get('description', {}).get('S', '')
-        num_clusters = layer_data.get('num_clusters', {}).get('N', '0')
+        # Handle dictionary format
+        if isinstance(layer, dict) and 'M' in layer:
+            layer_data = layer.get('M', {})
+            if isinstance(layer_data.get('layer_id'), dict):
+                layer_id = layer_data.get('layer_id', {}).get('N', '0')
+            else:
+                layer_id = str(layer_data.get('layer_id', '0'))
+                
+            if isinstance(layer_data.get('description'), dict):
+                description = layer_data.get('description', {}).get('S', '')
+            else:
+                description = str(layer_data.get('description', ''))
+                
+            if isinstance(layer_data.get('num_clusters'), dict):
+                num_clusters = layer_data.get('num_clusters', {}).get('N', '0')
+            else:
+                num_clusters = str(layer_data.get('num_clusters', '0'))
+        # Handle direct object format
+        else:
+            if isinstance(layer.get('layer_id'), dict):
+                layer_id = layer.get('layer_id', {}).get('N', '0')
+            else:
+                layer_id = str(layer.get('layer_id', '0'))
+                
+            if isinstance(layer.get('description'), dict):
+                description = layer.get('description', {}).get('S', '')
+            else:
+                description = str(layer.get('description', ''))
+                
+            if isinstance(layer.get('num_clusters'), dict):
+                num_clusters = layer.get('num_clusters', {}).get('N', '0')
+            else:
+                num_clusters = str(layer.get('num_clusters', '0'))
+                
         layers_table.add_row(layer_id, description, num_clusters)
     
     console.print(layers_table)
@@ -557,8 +697,17 @@ def display_conversation_status(status_data):
         topic_table.add_column("Topic Name", style="yellow")
         
         for i, topic in enumerate(layer_topics[:5]):  # Show up to 5 topics per layer
-            topic_name = topic.get('topic_name', {}).get('S', 'Unknown')
-            cluster_id = topic.get('cluster_id', {}).get('N', '0')
+            # Handle both dictionary and direct value formats
+            if isinstance(topic.get('topic_name'), dict):
+                topic_name = topic.get('topic_name', {}).get('S', 'Unknown')
+            else:
+                topic_name = str(topic.get('topic_name', 'Unknown'))
+                
+            if isinstance(topic.get('cluster_id'), dict):
+                cluster_id = topic.get('cluster_id', {}).get('N', '0')
+            else:
+                cluster_id = str(topic.get('cluster_id', '0'))
+                
             topic_table.add_row(cluster_id, topic_name)
             
         if len(layer_topics) > 5:
