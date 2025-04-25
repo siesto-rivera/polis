@@ -26,7 +26,8 @@ This document outlines the roadmap for evolving Delphi from its current state as
 - [x] Merge DynamoDB instances into a single shared resource
 - [x] Update documentation to reflect new shared database approach
 - [x] Ensure Docker networking allows proper communication between services
-- [ ] Fix Delphi container CMD to keep it running stably
+- [x] Fix Delphi container CMD to keep it running stably
+- [x] Set up autoscaling EC2 infrastructure for different workload types
 
 ### Phase 2: Job Queue System ✅
 - [x] Design comprehensive job table schema
@@ -45,7 +46,7 @@ This document outlines the roadmap for evolving Delphi from its current state as
   - [x] Configurable polling interval
   - [x] Graceful error handling
   - [x] Comprehensive logging
-  - [ ] Resource-aware scaling (based on EC2 instance size)
+  - [x] Resource-aware scaling (based on EC2 instance size)
 - [x] Integrate with run_delphi.sh for job execution
 - [x] Implement job status updates with versioning
 - [ ] Create monitoring endpoints for health/status checks
@@ -57,11 +58,11 @@ This document outlines the roadmap for evolving Delphi from its current state as
 - [ ] Implement callback mechanisms for job completion
 - [ ] Build admin interfaces for monitoring job queue
 
-### Phase 5: Testing and Deployment
+### Phase 5: Testing and Deployment ⏳
 - [ ] Create comprehensive test suite for distributed operation
 - [ ] Develop load testing scenarios
-- [ ] Setup staging environment with scaled-down infrastructure
-- [ ] Document deployment procedures
+- [x] Setup staging environment with auto-scaling infrastructure
+- [x] Document deployment procedures for auto-scaling instances
 - [ ] Create runbooks for common operational tasks
 
 ## Implementation Notes
@@ -79,32 +80,60 @@ response = table.get_item(
 
 This ensures we get the most up-to-date data, reflecting all prior successful write operations.
 
-### Resource-Aware Scaling
-The worker should adjust its behavior based on the available resources:
+### Resource-Aware Scaling ✅
+The system now adjusts its behavior based on the EC2 instance size:
 
 ```python
-# Example of resource-aware configuration
+# Implementation in configure_instance.py
 import os
-import multiprocessing
+import logging
 
-# Get EC2 instance size from environment
-instance_type = os.environ.get('EC2_INSTANCE_TYPE', 't2.micro')
-
-# Map instance types to resource configurations
-instance_resources = {
-    't2.micro': {'max_workers': 1, 'max_memory_gb': 1},
-    't2.small': {'max_workers': 1, 'max_memory_gb': 2},
-    't2.medium': {'max_workers': 2, 'max_memory_gb': 4},
-    # Add other instance types as needed
+# Resource settings for different instance types
+INSTANCE_CONFIGS = {
+    "small": {
+        "max_workers": 3,
+        "worker_memory": "2g",
+        "container_memory": "8g",
+        "container_cpus": 2,
+        "description": "Cost-efficient t3.large instance"
+    },
+    "large": {
+        "max_workers": 8,
+        "worker_memory": "8g", 
+        "container_memory": "32g",
+        "container_cpus": 8,
+        "description": "High-performance c6g.4xlarge ARM instance"
+    },
+    "default": {
+        "max_workers": 2,
+        "worker_memory": "1g",
+        "container_memory": "4g", 
+        "container_cpus": 1,
+        "description": "Default configuration"
+    }
 }
 
-# Use available CPU cores as a fallback
-default_workers = max(1, multiprocessing.cpu_count() - 1)
-resources = instance_resources.get(
-    instance_type, 
-    {'max_workers': default_workers, 'max_memory_gb': 8}
-)
+# Detect instance type from file or environment variables
+def detect_instance_type():
+    # First check environment variable
+    instance_type = os.environ.get('DELPHI_INSTANCE_TYPE')
+    if instance_type in INSTANCE_CONFIGS:
+        return instance_type
+        
+    # Then check instance_size.txt file (created by UserData script)
+    if os.path.exists('/tmp/instance_size.txt'):
+        with open('/tmp/instance_size.txt', 'r') as f:
+            instance_type = f.read().strip()
+            if instance_type in INSTANCE_CONFIGS:
+                return instance_type
+    
+    # Fall back to default configuration
+    return "default"
 ```
+
+The AWS infrastructure includes two auto-scaling groups:
+1. Small Instance ASG (t3.large): 2 instances by default, scales up to 5
+2. Large Instance ASG (c6g.4xlarge): 1 ARM instance by default, scales up to 3
 
 ### Docker Integration
 
@@ -122,6 +151,20 @@ The immediate focus should be on:
 1. **Node.js Integration** - Develop a helper for the server to enqueue jobs
 2. **Production Hardening** - Create systemd service files for the poller
 3. **Operational Tools** - Implement job archiving and cleanup mechanisms
-4. **Monitoring** - Set up CloudWatch metrics for job processing
+4. **Monitoring** - Expand CloudWatch metrics for job processing
 
-These steps will complete the journey from a manual execution model to a fully distributed, scalable system integrated with the main Polis application.
+### Completed Infrastructure Work
+
+- [x] **Auto-scaling Infrastructure** - Set up EC2 auto-scaling for different Delphi workloads
+  - Created small instance (t3.large) auto-scaling group for regular workloads
+  - Created large instance (c6g.4xlarge ARM) auto-scaling group for demanding jobs
+  - Added CPU-based scaling triggers (60% target, alarms at 80%)
+  - Set up CloudWatch monitoring and alarms for both instance types
+  
+- [x] **Resource Adaptation** - Implemented system that detects instance type and adjusts resource usage
+  - Created helper script to detect instance size from metadata
+  - Added environment variable configuration for worker threads and memory limits
+  - Updated Docker Compose to respect resource constraints
+  - Modified deployment scripts to configure the environment correctly
+
+These steps have significantly advanced the journey from a manual execution model to a fully distributed, scalable system integrated with the main Polis application.
