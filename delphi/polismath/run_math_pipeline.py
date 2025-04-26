@@ -40,14 +40,24 @@ def prepare_for_json(obj):
 def connect_to_db():
     """Connect to PostgreSQL database using environment variables or defaults."""
     import psycopg2
+    import urllib.parse
+    
     try:
-        conn = psycopg2.connect(
-            dbname=os.environ.get("DATABASE_NAME", "polisDB_prod_local_mar14"),
-            user=os.environ.get("DATABASE_USER", "colinmegill"),
-            password=os.environ.get("DATABASE_PASSWORD", ""),
-            host=os.environ.get("DATABASE_HOST", "localhost"),
-            port=os.environ.get("DATABASE_PORT", 5432)
-        )
+        # Check if DATABASE_URL is set and use it if available
+        database_url = os.environ.get("DATABASE_URL")
+        if database_url:
+            logger.info(f"Using DATABASE_URL: {database_url.split('@')[1] if '@' in database_url else '(hidden)'}")
+            conn = psycopg2.connect(database_url)
+        else:
+            # Fall back to individual connection parameters
+            conn = psycopg2.connect(
+                dbname=os.environ.get("DATABASE_NAME", "polisDB_prod_local_mar14"),
+                user=os.environ.get("DATABASE_USER", "colinmegill"),
+                password=os.environ.get("DATABASE_PASSWORD", ""),
+                host=os.environ.get("DATABASE_HOST", "localhost"),
+                port=os.environ.get("DATABASE_PORT", 5432)
+            )
+        
         logger.info("Connected to database successfully")
         return conn
     except Exception as e:
