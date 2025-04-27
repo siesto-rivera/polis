@@ -103,7 +103,7 @@ fi
 
 # Run the UMAP narrative pipeline
 echo -e "${GREEN}Running UMAP narrative pipeline...${NC}"
-python /app/umap_narrative/run_pipeline.py --zid=${ZID} --use-ollama
+python /app/umap_narrative/run_pipeline.py --zid=${ZID} --use-ollama ${VERBOSE}
 PIPELINE_EXIT_CODE=$?
 
 if [ $PIPELINE_EXIT_CODE -eq 0 ]; then
@@ -114,10 +114,10 @@ if [ $PIPELINE_EXIT_CODE -eq 0 ]; then
   mkdir -p $OUTPUT_DIR
   
   # Generate layer 0 visualization
-  python /app/umap_narrative/700_datamapplot_for_layer.py --conversation_id=${ZID} --layer=0 --output_dir=$OUTPUT_DIR
+  python /app/umap_narrative/700_datamapplot_for_layer.py --conversation_id=${ZID} --layer=0 --output_dir=$OUTPUT_DIR ${VERBOSE}
   
   # Generate layer 1 visualization (if available)
-  python /app/umap_narrative/700_datamapplot_for_layer.py --conversation_id=${ZID} --layer=1 --output_dir=$OUTPUT_DIR
+  python /app/umap_narrative/700_datamapplot_for_layer.py --conversation_id=${ZID} --layer=1 --output_dir=$OUTPUT_DIR ${VERBOSE}
   
   echo -e "${GREEN}UMAP Narrative pipeline completed successfully!${NC}"
   echo "Results stored in DynamoDB and visualizations for conversation ${ZID}"
