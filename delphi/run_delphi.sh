@@ -66,7 +66,7 @@ fi
 echo -e "${GREEN}Processing conversation $ZID...${NC}"
 
 # Set model
-MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+MODEL=${OLLAMA_MODEL}
 echo -e "${YELLOW}Using Ollama model: $MODEL${NC}"
 
 # Set up environment for the pipeline
