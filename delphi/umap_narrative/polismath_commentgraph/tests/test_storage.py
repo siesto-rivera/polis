@@ -17,11 +17,11 @@ class MockTable:
     def put_item(self, Item):
         """Mock put_item method."""
         key_schema = {
-            'ConversationMeta': ('conversation_id',),
-            'CommentEmbeddings': ('conversation_id', 'comment_id'),
-            'CommentClusters': ('conversation_id', 'comment_id'),
-            'ClusterTopics': ('conversation_id', 'cluster_key'),
-            'UMAPGraph': ('conversation_id', 'edge_id'),
+            'Delphi_UMAPConversationConfig': ('conversation_id',),
+            'Delphi_CommentEmbeddings': ('conversation_id', 'comment_id'),
+            'Delphi_CommentHierarchicalClusterAssignments': ('conversation_id', 'comment_id'),
+            'Delphi_CommentClustersStructureKeywords': ('conversation_id', 'cluster_key'),
+            'Delphi_UMAPGraph': ('conversation_id', 'edge_id'),
             'CommentTexts': ('conversation_id', 'comment_id')
         }
         
@@ -37,11 +37,11 @@ class MockTable:
     def get_item(self, Key):
         """Mock get_item method."""
         key_schema = {
-            'ConversationMeta': ('conversation_id',),
-            'CommentEmbeddings': ('conversation_id', 'comment_id'),
-            'CommentClusters': ('conversation_id', 'comment_id'),
-            'ClusterTopics': ('conversation_id', 'cluster_key'),
-            'UMAPGraph': ('conversation_id', 'edge_id'),
+            'Delphi_UMAPConversationConfig': ('conversation_id',),
+            'Delphi_CommentEmbeddings': ('conversation_id', 'comment_id'),
+            'Delphi_CommentHierarchicalClusterAssignments': ('conversation_id', 'comment_id'),
+            'Delphi_CommentClustersStructureKeywords': ('conversation_id', 'cluster_key'),
+            'Delphi_UMAPGraph': ('conversation_id', 'edge_id'),
             'CommentTexts': ('conversation_id', 'comment_id')
         }
         
@@ -74,11 +74,11 @@ class MockDynamoDB:
     """Mock DynamoDB for testing."""
     def __init__(self):
         self.tables = {
-            'ConversationMeta': MockTable('ConversationMeta'),
-            'CommentEmbeddings': MockTable('CommentEmbeddings'),
-            'CommentClusters': MockTable('CommentClusters'),
-            'ClusterTopics': MockTable('ClusterTopics'),
-            'UMAPGraph': MockTable('UMAPGraph'),
+            'Delphi_UMAPConversationConfig': MockTable('Delphi_UMAPConversationConfig'),
+            'Delphi_CommentEmbeddings': MockTable('Delphi_CommentEmbeddings'),
+            'Delphi_CommentHierarchicalClusterAssignments': MockTable('Delphi_CommentHierarchicalClusterAssignments'),
+            'Delphi_CommentClustersStructureKeywords': MockTable('Delphi_CommentClustersStructureKeywords'),
+            'Delphi_UMAPGraph': MockTable('Delphi_UMAPGraph'),
             'CommentTexts': MockTable('CommentTexts')
         }
     
