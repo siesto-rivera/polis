@@ -67,12 +67,12 @@ except ImportError:
                                           aws_access_key_id=DYNAMODB_CONFIG['access_key'],
                                           aws_secret_access_key=DYNAMODB_CONFIG['secret_key'])
             
-            # Define table names based on what we saw in the existing tables
+            # Define table names with the new Delphi_ naming scheme
             self.table_names = {
-                'comment_embeddings': 'CommentEmbeddings',
-                'comment_clusters': 'CommentClusters',
-                'llm_topic_names': 'LLMTopicNames',
-                'umap_graph': 'UMAPGraph'
+                'comment_embeddings': 'Delphi_CommentEmbeddings',
+                'comment_clusters': 'Delphi_CommentHierarchicalClusterAssignments',
+                'llm_topic_names': 'Delphi_CommentClustersLLMTopicNames',
+                'umap_graph': 'Delphi_UMAPGraph'
             }
 
 # Configure logging
@@ -135,11 +135,11 @@ def load_data_from_dynamodb(zid, layer_num=0):
     
     # 1. Get positions from UMAPGraph
     try:
-        edges = scan_table('UMAPGraph', 
+        edges = scan_table('Delphi_UMAPGraph', 
                            filter_expr='conversation_id = :conversation_id',
                            expr_attr_values={':conversation_id': str(zid)})
         
-        logger.info(f'Retrieved {len(edges)} edges from UMAPGraph')
+        logger.info(f'Retrieved {len(edges)} edges from Delphi_UMAPGraph')
         
         # Extract positions from self-referencing edges
         for edge in edges:
@@ -157,7 +157,7 @@ def load_data_from_dynamodb(zid, layer_num=0):
     
     # 2. Get cluster assignments
     try:
-        clusters = scan_table('CommentClusters', 
+        clusters = scan_table('Delphi_CommentHierarchicalClusterAssignments', 
                               filter_expr='conversation_id = :conversation_id',
                               expr_attr_values={':conversation_id': str(zid)})
         
@@ -178,7 +178,7 @@ def load_data_from_dynamodb(zid, layer_num=0):
     
     # 3. Get topic names
     try:
-        topic_name_items = scan_table('LLMTopicNames', 
+        topic_name_items = scan_table('Delphi_CommentClustersLLMTopicNames', 
                                      filter_expr='conversation_id = :conversation_id AND layer_id = :layer_id',
                                      expr_attr_values={':conversation_id': str(zid), ':layer_id': layer_num})
         

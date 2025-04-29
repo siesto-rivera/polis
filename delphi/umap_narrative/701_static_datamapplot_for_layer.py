@@ -38,12 +38,12 @@ except ImportError:
             self.region = os.environ.get("AWS_REGION", "us-west-2")
             self.dynamodb = boto3.resource('dynamodb', endpoint_url=self.endpoint_url, region_name=self.region)
             
-            # Define table names based on what we saw in the existing tables
+            # Define table names using the new Delphi_ naming scheme
             self.table_names = {
-                'comment_embeddings': 'CommentEmbeddings',
-                'comment_clusters': 'CommentClusters',
-                'llm_topic_names': 'LLMTopicNames',
-                'umap_graph': 'UMAPGraph'
+                'comment_embeddings': 'Delphi_CommentEmbeddings',
+                'comment_clusters': 'Delphi_CommentHierarchicalClusterAssignments',
+                'llm_topic_names': 'Delphi_CommentClustersLLMTopicNames',
+                'umap_graph': 'Delphi_UMAPGraph'
             }
 
 def load_data_from_dynamo(zid, layer_id):
