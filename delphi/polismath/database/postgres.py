@@ -87,7 +87,7 @@ class PostgresConfig:
         )
 
         # Set SSL mode
-        self.ssl_mode = ssl_mode or os.environ.get("DATABASE_SSL_MODE", "prefer")
+        self.ssl_mode = ssl_mode or os.environ.get("DATABASE_SSL_MODE", "require")
 
         # Set math environment
         self.math_env = math_env or os.environ.get("MATH_ENV", "dev")
@@ -132,9 +132,10 @@ class PostgresConfig:
         password_str = f":{self.password}" if self.password else ""
 
         # Build URI
-        uri = f"postgresql://{self.user}{password_str}@{self.host}:{self.port}/{self.database}?sslmode=require"
+        uri = f"postgresql://{self.user}{password_str}@{self.host}:{self.port}/{self.database}"
 
-        # todo - remove ssl mode if local or dev
+        if self.ssl_mode: # Check if self.ssl_mode is not None or empty
+            uri = f"{uri}?sslmode={self.ssl_mode}"
 
         return uri
 

@@ -102,7 +102,7 @@ services:
       - DATABASE_NAME=${POSTGRES_DB:-polis}
       - DATABASE_USER=${POSTGRES_USER:-christian}
       - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-polis123}
-      - DATABASE_SSL_MODE=${DATABASE_SSL_MODE:-disable}
+      - DATABASE_SSL_MODE=${DATABASE_SSL_MODE}
     networks:
       - "polis-net"
     extra_hosts:
