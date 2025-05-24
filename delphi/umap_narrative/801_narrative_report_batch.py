@@ -79,7 +79,7 @@ class NarrativeReportService:
         # Get the table
         self.table = self.dynamodb.Table(self.table_name)
 
-    def store_report(self, report_id, section, model, report_data, job_id=None):
+    def store_report(self, report_id, section, model, report_data, job_id=None, metadata=None):
         """Store a report in DynamoDB.
 
         Args:
@@ -88,6 +88,7 @@ class NarrativeReportService:
             model: The model used to generate the report
             report_data: The generated report content
             job_id: The ID of the job that generated this report (optional)
+            metadata: Additional metadata to store with the report (optional)
 
         Returns:
             Response from DynamoDB
@@ -112,6 +113,10 @@ class NarrativeReportService:
             # Add job_id if provided
             if job_id:
                 item['job_id'] = job_id
+                
+            # Add metadata if provided
+            if metadata:
+                item['metadata'] = metadata
 
             # Store in DynamoDB
             response = self.table.put_item(Item=item)
@@ -452,6 +457,11 @@ class BatchReportGenerator:
         if topic_cluster_id is not None:
             layer0_cluster_id = comment.get('layer0_cluster_id')
             if layer0_cluster_id is not None:
+                # Debug logging for cluster 0
+                if str(topic_cluster_id) == "0" and comment_id in [1, 2, 3]:  # Log first few comments
+                    logger.info(f"DEBUG: Checking comment {comment_id} - layer0_cluster_id={layer0_cluster_id}, topic_cluster_id={topic_cluster_id}")
+                    logger.info(f"DEBUG: String comparison: '{str(layer0_cluster_id)}' == '{str(topic_cluster_id)}' = {str(layer0_cluster_id) == str(topic_cluster_id)}")
+                
                 # Simple string comparison is more reliable across different numeric types
                 if str(layer0_cluster_id) == str(topic_cluster_id):
                     return True
@@ -564,9 +574,15 @@ class BatchReportGenerator:
             # Get comments as XML
             structured_comments = await self.get_comments_as_xml(self.filter_topics, filter_args)
             
+            # Debug logging for topic 0
+            if topic_cluster_id == 0 or str(topic_cluster_id) == "0":
+                logger.info(f"DEBUG: Topic 0 filter_args: {filter_args}")
+                logger.info(f"DEBUG: Topic 0 structured_comments length: {len(structured_comments) if structured_comments else 0}")
+                logger.info(f"DEBUG: Topic 0 has content: {bool(structured_comments and structured_comments.strip())}")
+            
             # Skip if no structured comments
             if not structured_comments.strip():
-                logger.warning(f"No content after filter for topic {topic_name}")
+                logger.warning(f"No content after filter for topic {topic_name} (cluster_id={topic_cluster_id})")
                 continue
             
             # Insert structured comments into template
@@ -703,7 +719,11 @@ class BatchReportGenerator:
                     section=section_name,
                     model=self.model,
                     report_data=content,
-                    job_id=self.job_id
+                    job_id=self.job_id,
+                    metadata={
+                        'topic_name': topic_name,
+                        'cluster_id': metadata.get('cluster_id')
+                    }
                 )
                 logger.info(f"Stored report for section {section_name}")
             else:
@@ -966,13 +986,14 @@ class BatchReportGenerator:
                     # Update the job with batch information - fixed version with ExpressionAttributeNames
                     update_response = job_table.update_item(
                         Key={'job_id': self.job_id},
-                        UpdateExpression="SET batch_id = :batch_id, #s = :job_status",
+                        UpdateExpression="SET batch_id = :batch_id, #s = :job_status, model = :model",
                         ExpressionAttributeNames={
                             '#s': 'status'  # Use ExpressionAttributeNames to avoid 'status' reserved keyword
                         },
                         ExpressionAttributeValues={
                             ':batch_id': batch_id_str,
-                            ':job_status': 'PROCESSING'  # Set job status to PROCESSING so poller knows to check batch status
+                            ':job_status': 'PROCESSING',  # Set job status to PROCESSING so poller knows to check batch status
+                            ':model': self.model  # Store the model name
                         },
                         ReturnValues="UPDATED_NEW"
                     )

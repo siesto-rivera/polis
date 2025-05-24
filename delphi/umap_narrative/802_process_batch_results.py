@@ -406,7 +406,11 @@ class BatchResultProcessor:
                 "model": self.batch_job.get('model'),
                 "errors": None,
                 "batch_id": self.batch_id,
-                "request_id": req_id
+                "request_id": req_id,
+                "metadata": {
+                    "topic_name": topic_name,
+                    "cluster_id": metadata.get('cluster_id')
+                }
             }
             
             self.report_storage.put_item(report_item)
