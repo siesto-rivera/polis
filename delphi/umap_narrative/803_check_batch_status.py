@@ -35,8 +35,29 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Anthropic Batch API Statuses
+ANTHROPIC_BATCH_PREPARING = "preparing"
+ANTHROPIC_BATCH_IN_PROGRESS = "in_progress"
+ANTHROPIC_BATCH_COMPLETED = "completed"
+ANTHROPIC_BATCH_ENDED = "ended"  # Anthropic API returns "ended" for completed batches
+ANTHROPIC_BATCH_FAILED = "failed"
+ANTHROPIC_BATCH_CANCELLED = "cancelled"
+
+TERMINAL_BATCH_STATES = [ANTHROPIC_BATCH_COMPLETED, ANTHROPIC_BATCH_ENDED, ANTHROPIC_BATCH_FAILED, ANTHROPIC_BATCH_CANCELLED]
+NON_TERMINAL_BATCH_STATES = [ANTHROPIC_BATCH_PREPARING, ANTHROPIC_BATCH_IN_PROGRESS]
+
+# Script Exit Codes (when --job-id is used)
+EXIT_CODE_TERMINAL_STATE = 0      # Batch is done (completed/failed/cancelled), script handled it.
+EXIT_CODE_SCRIPT_ERROR = 1        # The script itself had an issue processing the specified job.
+EXIT_CODE_PROCESSING_CONTINUES = 3 # Batch is still processing, poller should wait and re-check.
+
 class BatchStatusChecker:
     """Check and process Anthropic Batch API results."""
+
+    # Define exit codes as class attributes for clarity and access in main
+    EXIT_CODE_TERMINAL_STATE = EXIT_CODE_TERMINAL_STATE
+    EXIT_CODE_SCRIPT_ERROR = EXIT_CODE_SCRIPT_ERROR
+    EXIT_CODE_PROCESSING_CONTINUES = EXIT_CODE_PROCESSING_CONTINUES
 
     def __init__(self, log_level=logging.INFO):
         """Initialize the batch status checker."""
@@ -148,6 +169,7 @@ class BatchStatusChecker:
             return result
         except Exception as e:
             logger.error(f"Error finding pending jobs: {str(e)}")
+            logger.error(traceback.format_exc())
             return []
 
     async def check_batch_status(self, job_item: Dict) -> Optional[str]:
@@ -242,8 +264,27 @@ class BatchStatusChecker:
                 # Check for specific error types
                 if "404" in str(api_error) or "not found" in str(api_error).lower():
                     logger.error(f"Job {job_id}: Batch {batch_id} not found in Anthropic API")
-                    # This could be a serious error - the batch ID is invalid or doesn't exist
+                    # This is a terminal error - the batch ID is invalid or doesn't exist
                     error_detail = "Batch ID not found in Anthropic API - may have been deleted or never created properly"
+                    
+                    # Mark the job as FAILED since this is unrecoverable
+                    try:
+                        self.job_table.update_item(
+                            Key={'job_id': job_id},
+                            UpdateExpression="SET #s = :status, error_message = :error, completed_at = :time",
+                            ExpressionAttributeNames={'#s': 'status'},
+                            ExpressionAttributeValues={
+                                ':status': 'FAILED',
+                                ':error': error_detail,
+                                ':time': datetime.now().isoformat()
+                            }
+                        )
+                        logger.info(f"Job {job_id}: Marked as FAILED due to batch not found")
+                    except Exception as update_error:
+                        logger.error(f"Job {job_id}: Failed to mark job as FAILED: {str(update_error)}")
+                    
+                    # Return a special status to indicate terminal failure
+                    return "BATCH_NOT_FOUND"
                 elif "401" in str(api_error) or "unauthorized" in str(api_error).lower():
                     logger.error(f"Job {job_id}: Authentication failed with Anthropic API")
                     error_detail = "Anthropic API authentication failed - check API key"
@@ -612,63 +653,83 @@ class BatchStatusChecker:
 
             return False
 
-    async def check_and_process_jobs(self, specific_job_id=None):
-        """Check and process batch jobs.
-
-        Args:
-            specific_job_id: Optional specific job ID to check
+    async def check_and_process_jobs(self, specific_job_id: Optional[str] = None) -> Optional[int]:
         """
-        # Find pending jobs
-        jobs = self.find_pending_jobs(specific_job_id)
+        Check and process batch jobs.
+        If specific_job_id is provided, returns an exit code for the poller:
+        - EXIT_CODE_TERMINAL_STATE: Batch reached a terminal state.
+        - EXIT_CODE_PROCESSING_CONTINUES: Batch is still processing.
+        - EXIT_CODE_SCRIPT_ERROR: Error in this script's handling of the job.
+        If specific_job_id is None (polling mode), returns None.
+        """
+        jobs_to_check = self.find_pending_jobs(specific_job_id)
 
-        if not jobs:
-            logger.info("No pending batch jobs found")
-            return
+        if not jobs_to_check:
+            if specific_job_id:
+                logger.error(f"Job {specific_job_id} not found or no longer pending for batch checking (batch_id missing or status is COMPLETED).")
+                # This means the specific job isn't in a state we can act on here for batch checking.
+                # It could be already completed, or never had a batch_id.
+                # For the purpose of a single check, this means the "check" task is "done" for this ID.
+                return self.EXIT_CODE_TERMINAL_STATE
+            logger.info("No pending batch jobs found in general poll.")
+            return None # In polling mode, signifies no jobs to process now.
 
-        # Process each job
-        for job in jobs:
-            job_id = job.get('job_id')
-            batch_id = job.get('batch_id')
+        # If specific_job_id is given, we only care about the first job in jobs_to_check (should be only one)
+        job_item = jobs_to_check[0]
+        job_id = job_item.get('job_id')
+        batch_id = job_item.get('batch_id')
+        current_job_processing_signal = self.EXIT_CODE_SCRIPT_ERROR  # Default to error for this job
 
-            logger.info(f"Checking job {job_id} with batch {batch_id}")
+        # This log is useful for both modes
+        logger.info(f"Processing job {job_id} with batch {batch_id}")
 
-            # Check batch status
-            status = await self.check_batch_status(job)
+        batch_api_status = await self.check_batch_status(job_item)  # Returns Anthropic status string or None
 
-            if status == 'ended':
-                # Batch has completed, process results
-                logger.info(f"Batch {batch_id} has completed, processing results")
-                success = await self.process_batch_results(job)
+        if batch_api_status in [ANTHROPIC_BATCH_COMPLETED, ANTHROPIC_BATCH_ENDED]:
+            logger.info(f"Batch {batch_id} for job {job_id} reported status '{batch_api_status}'. Processing results.")
+            # process_batch_results will update the original job (job_id) to COMPLETED or FAILED in DB
+            await self.process_batch_results(job_item)
+            # The task of checking and processing this specific job is now complete.
+            current_job_processing_signal = self.EXIT_CODE_TERMINAL_STATE
+        elif batch_api_status in [ANTHROPIC_BATCH_FAILED, ANTHROPIC_BATCH_CANCELLED, "BATCH_NOT_FOUND"]:
+            logger.error(f"Batch {batch_id} for job {job_id} reported terminal status: {batch_api_status}.")
+            # Ensure the original job (job_id) in Delphi_JobQueue is marked as FAILED.
+            # check_batch_status might log API errors but doesn't always set the job to FAILED.
+            try:
+                self.job_table.update_item(
+                    Key={'job_id': job_id},
+                    UpdateExpression="SET #s = :final_status, completed_at = :time, batch_status = :batch_api_status, error_message = COALESCE(error_message, :default_error)",
+                    ExpressionAttributeNames={'#s': 'status'},
+                    ExpressionAttributeValues={
+                        ':final_status': 'FAILED', # Mark the job itself as FAILED
+                        ':time': datetime.now().isoformat(),
+                        ':batch_api_status': batch_api_status,
+                        ':default_error': f"Batch {batch_id} processed with Anthropic status: {batch_api_status}"
+                    }
+                )
+                logger.info(f"Job {job_id} in Delphi_JobQueue marked as FAILED due to batch status {batch_api_status}.")
+            except Exception as e:
+                logger.error(f"Error updating job {job_id} for batch status {batch_api_status}: {str(e)}")
+                logger.error(traceback.format_exc())
+            # The task of checking and recognizing this terminal state is complete.
+            current_job_processing_signal = self.EXIT_CODE_TERMINAL_STATE
+        elif batch_api_status in NON_TERMINAL_BATCH_STATES:  # 'preparing', 'in_progress'
+            logger.info(f"Batch {batch_id} for job {job_id} is still '{batch_api_status}'. Will need to check again later.")
+            current_job_processing_signal = self.EXIT_CODE_PROCESSING_CONTINUES
+        else:  # batch_api_status is None (error during check_batch_status) or an unexpected value
+            logger.error(f"Batch {batch_id} for job {job_id}: check_batch_status returned '{batch_api_status}'. This indicates an issue with retrieving status or an unexpected status.")
+            # check_batch_status should have logged an error and updated the job with an error_message.
+            # This script considers its attempt to process this job as errored.
+            current_job_processing_signal = self.EXIT_CODE_SCRIPT_ERROR
+        
+        if specific_job_id:
+            return current_job_processing_signal
 
-                if success:
-                    logger.info(f"Successfully processed results for job {job_id}")
-                else:
-                    logger.error(f"Failed to process results for job {job_id}")
-            elif status == 'processing':
-                # Batch is still processing
-                logger.info(f"Batch {batch_id} is still processing")
-            elif status == 'failed':
-                # Batch failed
-                logger.error(f"Batch {batch_id} failed")
-
-                # Mark job as failed with detailed error
-                try:
-                    error_msg = f"Anthropic Batch API reported failure for batch {batch_id}"
-                    self.job_table.update_item(
-                        Key={'job_id': job_id},
-                        UpdateExpression="SET status = :status, completed_at = :time, error_message = :error",
-                        ExpressionAttributeValues={
-                            ':status': 'FAILED',
-                            ':time': datetime.now().isoformat(),
-                            ':error': error_msg
-                        }
-                    )
-                    logger.info(f"Job {job_id} marked as FAILED due to batch failure")
-                except Exception as e:
-                    logger.error(f"Error updating job status for failed batch: {str(e)}")
-            else:
-                # Unknown or null status
-                logger.warning(f"Unknown batch status {status} for job {job_id}")
+        # Fallback for polling mode (should not be reached if specific_job_id logic is exhaustive for single job)
+        # The loop for polling mode would be outside this part of the logic if refactored.
+        # For now, the original script had a loop in main, this function processes one found job at a time.
+        # If in polling mode, this return is not used for sys.exit directly by main's loop.
+        return None
 
 async def main():
     """Main entry point."""
@@ -679,28 +740,45 @@ async def main():
     args = parser.parse_args()
 
     # Set log level
-    log_level = getattr(logging, args.log_level.upper(), logging.INFO)
-    logger.setLevel(log_level)
+    log_level_val = getattr(logging, args.log_level.upper(), logging.INFO)
+    logger.setLevel(log_level_val)
+    # Ensure subordinate loggers also get the level if they don't propagate or have their own handlers
+    # For this script, the main logger setup should suffice.
 
     # Create batch status checker
-    checker = BatchStatusChecker(log_level=log_level)
+    checker = BatchStatusChecker(log_level=log_level_val)
 
     if args.job_id:
-        # Check specific job once
-        await checker.check_and_process_jobs(args.job_id)
+        # Check specific job once and exit with appropriate code
+        logger.info(f"Running in single-check mode for job ID: {args.job_id}")
+        exit_signal = await checker.check_and_process_jobs(args.job_id)
+        
+        if exit_signal is None:
+            # This case should ideally be covered by check_and_process_jobs returning a specific code
+            # (e.g., TERMINAL_STATE if job not found/actionable, or SCRIPT_ERROR).
+            logger.error(f"check_and_process_jobs did not return an explicit exit signal for job {args.job_id}. Defaulting to script error exit code.")
+            sys.exit(EXIT_CODE_SCRIPT_ERROR) # Using module-level constant
+        else:
+            logger.info(f"Exiting with code: {exit_signal} for job ID: {args.job_id}")
+            sys.exit(exit_signal)
     else:
-        # Polling loop
+        # Polling loop for continuous operation
+        logger.info("Running in polling mode.")
         try:
             while True:
-                logger.info(f"Checking for pending batch jobs...")
-                await checker.check_and_process_jobs()
-                logger.info(f"Waiting {args.polling_interval} seconds before next check...")
+                logger.info("Polling for pending batch jobs...")
+                await checker.check_and_process_jobs() # In polling mode, this processes all found pending jobs.
+                                                       # The return value is not used for sys.exit here.
+                logger.info(f"Waiting {args.polling_interval} seconds before next polling cycle...")
                 await asyncio.sleep(args.polling_interval)
         except KeyboardInterrupt:
-            logger.info("Batch status checker stopped by user")
+            logger.info("Batch status checker (polling mode) stopped by user.")
+            sys.exit(0) # Clean exit for Ctrl+C
         except Exception as e:
-            logger.error(f"Error in polling loop: {str(e)}")
+            logger.error(f"Critical error in polling loop: {str(e)}")
+            logger.error(traceback.format_exc())
+            sys.exit(EXIT_CODE_SCRIPT_ERROR) # Error in the polling mechanism itself
 
 if __name__ == "__main__":
-    import asyncio
+    # Module-level constants are accessible here
     asyncio.run(main())

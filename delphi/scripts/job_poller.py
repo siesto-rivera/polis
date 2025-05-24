@@ -38,6 +38,9 @@ logger = logging.getLogger('delphi_poller')
 # Global flag for graceful shutdown
 running = True
 
+# Exit code from 803_check_batch_status.py script if batch is still processing
+EXIT_CODE_PROCESSING_CONTINUES = 3
+
 class JobProcessor:
     """Process jobs from the Delphi_JobQueue."""
     
@@ -122,16 +125,24 @@ class JobProcessor:
             batch_jobs = []
             if processing_items:  # Only log if we found jobs
                 logger.info(f"Found {len(processing_items)} PROCESSING jobs to check for batch_id")
+            else:
+                logger.debug("No PROCESSING jobs found")
+            
             for item in processing_items:
                 job_id = item['job_id']
                 logger.info(f"Checking PROCESSING job {job_id} for batch_id field")
                 # Get full item with consistent read
-                processing_full_item = self.table.get_item(
-                    Key={
-                        'job_id': job_id
-                    },
-                    ConsistentRead=True
-                )
+                try:
+                    processing_full_item = self.table.get_item(
+                        Key={
+                            'job_id': job_id
+                        },
+                        ConsistentRead=True
+                    )
+                    logger.info(f"Got response for {job_id}: has_item={'Item' in processing_full_item}")
+                except Exception as e:
+                    logger.error(f"Error getting item {job_id}: {e}")
+                    continue
 
                 if 'Item' in processing_full_item:
                     full_item = processing_full_item['Item']
@@ -139,34 +150,27 @@ class JobProcessor:
                     has_batch_id = 'batch_id' in full_item
                     job_type = full_item.get('job_type')
                     status = full_item.get('status')
+                    logger.info(f"Got full item for {job_id}: has_batch_id={has_batch_id}, job_type={job_type}, status={status}")
 
-                    # Log detailed information for NARRATIVE_BATCH jobs
-                    if job_type == 'NARRATIVE_BATCH':
-                        logger.info(f"Job {job_id}: has_batch_id={has_batch_id}, job_type={job_type}, status={status}")
-                        # Log all fields for NARRATIVE_BATCH jobs to help debug
-                        logger.info(f"Job {job_id} fields: {list(full_item.keys())}")
-                        # Log specific value of batch_id if present
-                        if has_batch_id:
-                            logger.info(f"Job {job_id} batch_id value: {full_item.get('batch_id')}")
-                        else:
-                            logger.info(f"Job {job_id} is missing batch_id field")
-                    else:
-                        logger.info(f"Job {job_id}: has_batch_id={has_batch_id}, job_type={job_type}, status={status}")
+                    # Log for all jobs
+                    logger.info(f"Job {job_id}: has_batch_id={has_batch_id}, job_type={job_type}, status={status}")
 
-                    # Consider ANY job with job_type=NARRATIVE_BATCH and status=PROCESSING
-                    # This allows 803 to handle jobs even if batch_id field is missing
-                    if full_item.get('job_type') == 'NARRATIVE_BATCH' and full_item.get('status') == 'PROCESSING':
-                        if 'batch_id' in full_item:
-                            logger.info(f"Found job {job_id} with batch_id={full_item.get('batch_id')} for status checking")
-                        else:
-                            logger.info(f"Found NARRATIVE_BATCH job {job_id} without batch_id, will still check status")
+                    # Consider jobs that have batch_id and are in PROCESSING status
+                    # This includes AWAITING_NARRATIVE_BATCH, CREATE_NARRATIVE_BATCH, etc.
+                    logger.info(f"Checking condition: has_batch_id={has_batch_id}, status={full_item.get('status')}, should_add={has_batch_id and full_item.get('status') == 'PROCESSING'}")
+                    if has_batch_id and full_item.get('status') == 'PROCESSING':
+                        logger.info(f"Found job {job_id} with batch_id={full_item.get('batch_id')} for status checking")
                         batch_jobs.append(full_item)
 
             # Return the oldest batch job if any found
             if batch_jobs:
+                logger.info(f"Found {len(batch_jobs)} batch jobs to process")
                 # Sort by created_at timestamp (oldest first)
                 batch_jobs.sort(key=lambda x: x.get('created_at', ''))
+                logger.info(f"Returning oldest batch job: {batch_jobs[0]['job_id']}")
                 return batch_jobs[0]
+            else:
+                logger.debug("No batch jobs found for processing")
 
             return None
         except Exception as e:
@@ -179,9 +183,9 @@ class JobProcessor:
         current_version = job.get('version', 1)
         current_status = job.get('status')
 
-        # If job already has a PROCESSING status and is a NARRATIVE_BATCH job, treat it as a batch check
+        # If job already has a PROCESSING status and has a batch_id, treat it as a batch check
         is_batch_check = (current_status == 'PROCESSING' and
-                          job.get('job_type') == 'NARRATIVE_BATCH')
+                          'batch_id' in job)
 
         logger.info(f"Claiming job {job_id} with status={current_status}, is_batch_check={is_batch_check}")
 
@@ -859,30 +863,67 @@ class JobProcessor:
                 'execution_finished_at': datetime.now().isoformat()
             }
 
-            # Add timeout message if applicable
-            if return_code == -1:
+            # Specific handling for AWAITING_NARRATIVE_BATCH jobs based on new exit codes
+            if job_type == 'AWAITING_NARRATIVE_BATCH':
+                if return_code == EXIT_CODE_PROCESSING_CONTINUES:
+                    logger.info(f"Job {job_id} (AWAITING_NARRATIVE_BATCH): Script 803 indicated underlying batch is still processing (exit code 3). Keeping job active.")
+                    # Update job's last checked time or similar, but don't complete it.
+                    # The job remains in PROCESSING status. Update 'updated_at' and 'version'.
+                    try:
+                        current_job_details = self.table.get_item(Key={'job_id': job_id}).get('Item', {})
+                        current_version = current_job_details.get('version', job.get('version', 1)) # Use latest known version
+
+                        self.table.update_item(
+                            Key={'job_id': job_id},
+                            UpdateExpression='SET updated_at = :now, version = :new_version, batch_check_script_exit_code = :exit_code',
+                            ConditionExpression='attribute_exists(job_id)', # Ensure job still exists
+                            ExpressionAttributeValues={
+                                ':now': datetime.now().isoformat(),
+                                ':new_version': current_version + 1,
+                                ':exit_code': return_code
+                            }
+                        )
+                        logger.info(f"Job {job_id} updated_at timestamp refreshed, will be checked again.")
+                    except Exception as e:
+                        logger.error(f"Failed to update timestamp for job {job_id} after script exit code 3: {e}")
+                    return True # Indicate poller handled this, job processing for this cycle is "done" but job itself is not final
+
+                elif return_code == 0: # Script 803 indicated terminal state (completed/failed) and handled it
+                    logger.info(f"Job {job_id} (AWAITING_NARRATIVE_BATCH): Script 803 indicated terminal state for batch (exit code 0). Marking check job COMPLETED.")
+                    self.complete_job(job, True, result=result) # Mark the AWAITING_NARRATIVE_BATCH job as COMPLETED
+                elif return_code == -1: # Timeout
+                    logger.error(f"Job {job_id} (AWAITING_NARRATIVE_BATCH): Script 803 timed out.")
+                    result['error'] = f"Batch status check script timed out after {timeout_seconds} seconds"
+                    self.complete_job(job, False, result=result, error=result['error'])
+                else: # Script 803 itself failed or reported an issue (e.g. exit 1)
+                    logger.error(f"Job {job_id} (AWAITING_NARRATIVE_BATCH): Script 803 failed or reported error (exit code {return_code}). Marking check job FAILED.")
+                    error_msg = f"Batch status check script 803 exited with code {return_code}"
+                    self.complete_job(job, False, result=result, error=error_msg)
+                
+                return success # Which will be True if return_code was 0, False otherwise for AWAITING_NARRATIVE_BATCH
+
+            # General handling for other job types or if specific AWAITING_NARRATIVE_BATCH logic wasn't hit
+            if return_code == -1: # Timeout
                 result['error'] = f"Job timed out after {timeout_seconds} seconds"
-                # Only mark job as failed for timeouts
-                self.complete_job(job, False, result=result, error=f"Job timed out after {timeout_seconds} seconds")
-            elif not success:
-                # Only mark job as failed for non-zero exit codes
-                self.complete_job(job, False, result=result, error=f"Process exited with code {return_code}")
-            else:
+                self.complete_job(job, False, result=result, error=result['error'])
+            elif not success: # Script failed (non-zero exit code) for other job types
+                error_msg = f"Process exited with code {return_code}"
+                self.complete_job(job, False, result=result, error=error_msg)
+            else: # Script succeeded (exit code 0) for other job types
+                logger.info(f"Job {job_id} process completed successfully with exit code 0 for job_type {job_type}")
                 # For successful completion, check if the job status was changed by the script
-                logger.info(f"Job {job_id} process completed successfully with exit code 0")
-
-                # First, get the current job state to see if status changed
+                # This logic primarily applies if the script itself can update the job status to COMPLETED/FAILED
+                # For AWAITING_NARRATIVE_BATCH, we've handled completion above based on 803's exit code.
                 try:
-                    current_job = self.table.get_item(Key={'job_id': job_id})
-                    if 'Item' in current_job:
-                        current_status = current_job['Item'].get('status')
-                        original_status = job.get('status')
+                    current_job = self.table.get_item(Key={'job_id': job_id}).get('Item')
+                    if current_job:
+                        current_status = current_job.get('status')
+                        original_status = job.get('status') # Status when job was claimed for processing
+                        current_version = current_job.get('version', job.get('version', 1))
 
-                        if current_status != original_status:
-                            logger.info(f"Job {job_id} status changed by script from {original_status} to {current_status}, preserving status change")
-
-                            # Update job with execution results but preserve the status change
-                            current_version = current_job['Item'].get('version', 1)
+                        # If the script itself marked the job as COMPLETED or FAILED
+                        if current_status in ['COMPLETED', 'FAILED'] and current_status != original_status:
+                            logger.info(f"Job {job_id} status was changed by script from {original_status} to {current_status}. Updating results.")
                             self.table.update_item(
                                 Key={'job_id': job_id},
                                 UpdateExpression='SET job_results = :results, updated_at = :now, version = :new_version',
@@ -890,21 +931,22 @@ class JobProcessor:
                                 ExpressionAttributeValues={
                                     ':results': json.dumps(result),
                                     ':now': datetime.now().isoformat(),
-                                    ':current_version': current_version,
+                                    ':current_version': current_version, # Use the version from the freshly read job
                                     ':new_version': current_version + 1
                                 }
                             )
-                            logger.info(f"Updated job {job_id} with execution results while preserving status {current_status}")
                         else:
-                            # Job completed successfully and status wasn't changed by the script
-                            # Mark the job as COMPLETED
-                            self.complete_job(job, True, result=result)
-                            logger.info(f"Job {job_id} marked as COMPLETED")
+                            # Script exited with 0, but didn't change status to a final one.
+                            # The poller should mark it COMPLETED.
+                            logger.info(f"Job {job_id} (type {job_type}) script exited 0, poller marking COMPLETED.")
+                            self.complete_job(job, True, result=result) # Pass original claimed job for version consistency
                     else:
-                        logger.error(f"Job {job_id} not found after script execution")
+                        logger.error(f"Job {job_id} not found after script execution, cannot finalize.")
+                        # This is an edge case; the job should exist.
                 except Exception as e:
-                    logger.error(f"Failed to update job {job_id} with execution results: {e}")
-            
+                    logger.error(f"Failed to finalize job {job_id} after successful script execution: {e}")
+                    # As a fallback, try to mark original job as FAILED to avoid it getting stuck
+                    self.complete_job(job, False, error=f"Post-processing error after successful script: {str(e)}")
             
             return success
         except Exception as e:
