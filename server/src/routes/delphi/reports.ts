@@ -106,10 +106,31 @@ export async function handle_GET_delphi_reports(req: Request, res: Response) {
       // Process results - organize reports by section and model
       const items = data.Items;
       
-      // Group by section and model
-      const reportsBySection: Record<string, any> = {};
+      // First, group by timestamp to identify different runs
+      const reportRuns: Record<string, any[]> = {};
       
       items.forEach(item => {
+        const timestamp = item.timestamp || '';
+        // Group by timestamp truncated to minute to group reports from same batch
+        const runKey = timestamp.substring(0, 16); // YYYY-MM-DDTHH:MM
+        
+        if (!reportRuns[runKey]) {
+          reportRuns[runKey] = [];
+        }
+        reportRuns[runKey].push(item);
+      });
+      
+      // Get the most recent run
+      const sortedRunKeys = Object.keys(reportRuns).sort((a, b) => b.localeCompare(a));
+      const mostRecentRunKey = sortedRunKeys[0];
+      const mostRecentItems = reportRuns[mostRecentRunKey] || [];
+      
+      logger.info(`Found ${Object.keys(reportRuns).length} report runs, using most recent from ${mostRecentRunKey}`);
+      
+      // Group by section and model for the most recent run
+      const reportsBySection: Record<string, any> = {};
+      
+      mostRecentItems.forEach(item => {
         const rid_section_model = item.rid_section_model || '';
         const parts = rid_section_model.split('#');
         
@@ -136,13 +157,27 @@ export async function handle_GET_delphi_reports(req: Request, res: Response) {
         }
       });
 
+      // Get info about all runs for potential UI dropdown
+      const allRuns = sortedRunKeys.map(runKey => {
+        const runItems = reportRuns[runKey];
+        const sampleItem = runItems[0];
+        return {
+          timestamp: runKey,
+          model: sampleItem.rid_section_model?.split('#')[2] || 'unknown',
+          sectionCount: runItems.length,
+          isCurrent: runKey === mostRecentRunKey
+        };
+      });
+
       // Return the results
       return res.json({
         status: "success",
         message: "Reports retrieved successfully",
         report_id: report_id,
         conversation_id: conversation_id,
-        reports: reportsBySection
+        reports: reportsBySection,
+        current_run: mostRecentRunKey,
+        available_runs: allRuns
       });
     } catch (err: any) {
       logger.error(`Error querying DynamoDB: ${err.message}`);
