@@ -424,10 +424,17 @@ class BatchReportGenerator:
                                     if 'S' in comment:
                                         sample_comments.append(comment['S'])
                     
+                    # Get topic_key - this is required for stable mapping
+                    topic_key = topic_item.get('topic_key')
+                    if not topic_key:
+                        logger.error(f"Missing topic_key for cluster {cluster_id} in conversation {self.conversation_id}")
+                        raise ValueError(f"topic_key is required but missing for cluster {cluster_id}")
+                    
                     # Create topic entry
                     topic = {
                         "cluster_id": cluster_id,
                         "name": topic_name,
+                        "topic_key": topic_key,
                         "citations": topic_comments.get(cluster_id, []),
                         "sample_comments": sample_comments
                     }
@@ -561,8 +568,11 @@ class BatchReportGenerator:
         for topic in topics:
             topic_name = topic['name']
             topic_cluster_id = topic['cluster_id']
-            topic_key = topic_name.lower().replace(' ', '_')
-            section_name = f"topic_{topic_key}"
+            topic_key = topic['topic_key']  # Use the stable topic_key from DynamoDB
+            section_name = topic_key  # Use topic_key directly as section name
+            
+            # Log the mapping for clarity
+            logger.info(f"Topic mapping - cluster_id: {topic_cluster_id}, topic_name: {topic_name}, topic_key: {topic_key}, section_name: {section_name}")
             
             # Create filter for this topic
             filter_args = {
@@ -838,12 +848,11 @@ class BatchReportGenerator:
                 for i, request in enumerate(batch_requests):
                     # Extract metadata for custom_id
                     metadata = request.get('metadata', {})
-                    topic_name = metadata.get('topic_name', 'Unknown Topic')
-                    cluster_id = metadata.get('cluster_id', i)
-                    section_name = metadata.get('section_name', f"topic_{topic_name.lower().replace(' ', '_')}")
+                    section_name = metadata.get('section_name', 'unknown_section')
 
                     # Create a valid custom_id (only allow a-zA-Z0-9_-)
-                    custom_id = f"{self.conversation_id}_{cluster_id}_{section_name}"
+                    # Since section_name now contains layer and cluster info (e.g., layer0_0), we don't need cluster_id
+                    custom_id = f"{self.conversation_id}_{section_name}"
                     safe_custom_id = re.sub(r'[^a-zA-Z0-9_-]', '_', custom_id)
 
                     # Validate custom_id length (max 64 chars for Anthropic API)
