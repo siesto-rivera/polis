@@ -23,9 +23,10 @@ import ConsensusNarrative from "./lists/consensusNarrative.jsx";
 import RawDataExport from "./RawDataExport.jsx";
 import TopicNarrative from "./lists/topicNarrative.jsx";
 import CommentsReport from "./commentsReport/CommentsReport.jsx";
+import TopicReport from "./topicReport/TopicReport.jsx";
 
-const pathname = window.location.pathname; // "/report/2arcefpshi" or "/commentsReport/2arcefpshi"
-const route_type = pathname.split("/")[1]; // "report", "narrativeReport", or "commentsReport"
+const pathname = window.location.pathname; // "/report/2arcefpshi" or "/commentsReport/2arcefpshi" or "/topicReport/2arcefpshi"
+const route_type = pathname.split("/")[1]; // "report", "narrativeReport", "commentsReport", or "topicReport"
 const report_id = pathname.split("/")[2];
 
 // Debug the route
@@ -675,7 +676,18 @@ const App = (props) => {
     route_type,
     shouldShowCommentsReport: route_type === "commentsReport",
     shouldShowNarrativeReport: route_type === "narrativeReport",
+    shouldShowTopicReport: route_type === "topicReport",
   });
+
+  // Directly render TopicReport if the URL starts with /topicReport
+  if (route_type === "topicReport") {
+    console.log("RENDERING: TopicReport");
+    return (
+      <TopicReport
+        report_id={report_id}
+      />
+    );
+  }
 
   // Directly render CommentsReport if the URL starts with /commentsReport
   if (route_type === "commentsReport") {
