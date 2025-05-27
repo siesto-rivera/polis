@@ -96,18 +96,18 @@ class GroupDataProcessor:
                         
                     # Log the structure of the data to help debug
                     top_level_keys = list(data.keys()) if isinstance(data, dict) else "not a dict"
-                    logger.info(f"Successfully retrieved math data for conversation {zid} with keys: {top_level_keys}")
+                    logger.debug(f"Successfully retrieved math data for conversation {zid} with keys: {top_level_keys}")
                     
                     # Examine the structure deeper to find group assignments
                     if isinstance(data, dict) and 'consensus' in data:
                         consensus_keys = list(data['consensus'].keys()) if isinstance(data['consensus'], dict) else "not a dict"
-                        logger.info(f"Math data consensus section has keys: {consensus_keys}")
+                        logger.debug(f"Math data consensus section has keys: {consensus_keys}")
                     
                     if isinstance(data, dict) and 'group-clusters' in data:
                         group_clusters = data['group-clusters']
-                        logger.info(f"Found group-clusters with type: {type(group_clusters)}")
+                        logger.debug(f"Found group-clusters with type: {type(group_clusters)}")
                         if isinstance(group_clusters, list) and len(group_clusters) > 0:
-                            logger.info(f"First group-cluster has {len(group_clusters[0])} items")
+                            logger.debug(f"First group-cluster has {len(group_clusters[0])} items")
                     
                     if isinstance(data, dict) and 'group-stats' in data:
                         group_stats = data['group-stats']
@@ -234,13 +234,13 @@ class GroupDataProcessor:
                 if isinstance(group_clusters, list) and len(group_clusters) > 0:
                     try:
                         # Group clusters may contain membership info
-                        logger.info(f"Group-clusters list has {len(group_clusters)} items")
+                        logger.debug(f"Group-clusters list has {len(group_clusters)} items")
                         
                         # The data might be in various formats depending on the algorithm used
                         # Let's log some debug info to see the structure
                         if len(group_clusters) > 0:
                             first_cluster = group_clusters[0]
-                            logger.info(f"First cluster type: {type(first_cluster)}")
+                            logger.debug(f"First cluster type: {type(first_cluster)}")
                             
                             # Check if it's a list of lists (direct group memberships)
                             if isinstance(first_cluster, list) and len(first_cluster) > 0:
@@ -260,7 +260,7 @@ class GroupDataProcessor:
                             
                             # Check if it's a list of dictionaries (more complex structure)
                             elif isinstance(first_cluster, dict):
-                                logger.info(f"First cluster keys: {list(first_cluster.keys()) if first_cluster else 'empty'}")
+                                logger.debug(f"First cluster keys: {list(first_cluster.keys()) if first_cluster else 'empty'}")
                                 
                                 # Try to extract members if available
                                 temp_assignments = {}
@@ -275,7 +275,7 @@ class GroupDataProcessor:
                                 
                                 if temp_assignments:
                                     group_assignments = temp_assignments
-                                    logger.info(f"Extracted {len(group_assignments)} group assignments from group-clusters dictionaries")
+                                    logger.debug(f"Extracted {len(group_assignments)} group assignments from group-clusters dictionaries")
                             
                     except Exception as e:
                         logger.error(f"Error extracting group assignments from group-clusters: {e}")
@@ -308,7 +308,7 @@ class GroupDataProcessor:
             if not group_assignments:
                 logger.warning("No group assignments found in math data, generating synthetic groups based on voting patterns")
                     
-            logger.info(f"Found {len(group_assignments)} group assignments in math data")
+            logger.debug(f"Found {len(group_assignments)} group assignments in math data")
             
             # Get all votes
             votes = self.postgres_client.get_votes_by_conversation(zid)
@@ -452,7 +452,7 @@ class GroupDataProcessor:
                 # Include group count
                 data['num_groups'] = len([g for g in groups_data.keys() if g != -1])
             
-            logger.info(f"Processed vote data for {len(vote_data)} comments with group information")
+            logger.debug(f"Processed vote data for {len(vote_data)} comments with group information")
             
             return {
                 'vote_data': vote_data,
@@ -674,7 +674,7 @@ class GroupDataProcessor:
                     
                     comment_data.append(record)
             
-            logger.info(f"Prepared export data for {len(comment_data)} comments with group information")
+            logger.debug(f"Prepared export data for {len(comment_data)} comments with group information")
             
             return {
                 'comments': comment_data,
