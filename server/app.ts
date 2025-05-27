@@ -1589,6 +1589,13 @@ helpersInitialized.then(
         return fetchIndexForReportPage(req, res, next);
       }
     );
+    // Topic Report route for individual topic reports with dropdown
+    app.get(
+      /^\/topicReport\/r?[0-9][0-9A-Za-z]+(\/.*)?/,
+      function (req, res, next) {
+        return fetchIndexForReportPage(req, res, next);
+      }
+    );
 
     app.get(/^\/thirdPartyCookieTestPt1\.html$/, fetchThirdPartyCookieTestPt1);
     app.get(/^\/thirdPartyCookieTestPt2\.html$/, fetchThirdPartyCookieTestPt2);

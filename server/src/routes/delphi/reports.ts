@@ -11,8 +11,10 @@ import Config from "../../config";
 export async function handle_GET_delphi_reports(req: Request, res: Response) {
   logger.info("Delphi Reports API request received");
   
-  // Get report_id from request
+  // Get parameters from request
   const report_id = req.query.report_id as string;
+  const section = req.query.section as string;
+  const topic_key = req.query.topic_key as string;
   
   if (!report_id) {
     return res.json({ 
@@ -169,13 +171,44 @@ export async function handle_GET_delphi_reports(req: Request, res: Response) {
         };
       });
 
+      // Filter results if section and/or topic_key provided
+      let filteredReports = reportsBySection;
+      
+      if (section && topic_key) {
+        // Return specific topic report
+        if (reportsBySection[section] && reportsBySection[section][topic_key]) {
+          return res.json({
+            status: "success",
+            message: "Topic report retrieved successfully",
+            report_id: report_id,
+            conversation_id: conversation_id,
+            section: section,
+            topic_key: topic_key,
+            data: reportsBySection[section][topic_key]
+          });
+        } else {
+          return res.json({
+            status: "error",
+            message: "Topic report not found",
+            report_id: report_id,
+            section: section,
+            topic_key: topic_key
+          });
+        }
+      } else if (section) {
+        // Return all topics for a section
+        filteredReports = {
+          [section]: reportsBySection[section] || {}
+        };
+      }
+
       // Return the results
       return res.json({
         status: "success",
         message: "Reports retrieved successfully",
         report_id: report_id,
         conversation_id: conversation_id,
-        reports: reportsBySection,
+        reports: filteredReports,
         current_run: mostRecentRunKey,
         available_runs: allRuns
       });
