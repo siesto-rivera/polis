@@ -1596,6 +1596,13 @@ helpersInitialized.then(
         return fetchIndexForReportPage(req, res, next);
       }
     );
+    // Export Report route for data export interface
+    app.get(
+      /^\/exportReport\/r?[0-9][0-9A-Za-z]+(\/.*)?/,
+      function (req, res, next) {
+        return fetchIndexForReportPage(req, res, next);
+      }
+    );
 
     app.get(/^\/thirdPartyCookieTestPt1\.html$/, fetchThirdPartyCookieTestPt1);
     app.get(/^\/thirdPartyCookieTestPt2\.html$/, fetchThirdPartyCookieTestPt2);
