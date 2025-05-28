@@ -24,9 +24,10 @@ import RawDataExport from "./RawDataExport.jsx";
 import TopicNarrative from "./lists/topicNarrative.jsx";
 import CommentsReport from "./commentsReport/CommentsReport.jsx";
 import TopicReport from "./topicReport/TopicReport.jsx";
+import ExportReport from "./exportReport/ExportReport.jsx";
 
-const pathname = window.location.pathname; // "/report/2arcefpshi" or "/commentsReport/2arcefpshi" or "/topicReport/2arcefpshi"
-const route_type = pathname.split("/")[1]; // "report", "narrativeReport", "commentsReport", or "topicReport"
+const pathname = window.location.pathname; // "/report/2arcefpshi" or "/commentsReport/2arcefpshi" or "/topicReport/2arcefpshi" or "/exportReport/2arcefpshi"
+const route_type = pathname.split("/")[1]; // "report", "narrativeReport", "commentsReport", "topicReport", or "exportReport"
 const report_id = pathname.split("/")[2];
 
 // Debug the route
@@ -677,7 +678,19 @@ const App = (props) => {
     shouldShowCommentsReport: route_type === "commentsReport",
     shouldShowNarrativeReport: route_type === "narrativeReport",
     shouldShowTopicReport: route_type === "topicReport",
+    shouldShowExportReport: route_type === "exportReport",
   });
+
+  // Directly render ExportReport if the URL starts with /exportReport
+  if (route_type === "exportReport") {
+    console.log("RENDERING: ExportReport");
+    return (
+      <ExportReport
+        report_id={report_id}
+        conversation={conversation}
+      />
+    );
+  }
 
   // Directly render TopicReport if the URL starts with /topicReport
   if (route_type === "topicReport") {
@@ -685,6 +698,12 @@ const App = (props) => {
     return (
       <TopicReport
         report_id={report_id}
+        math={math}
+        comments={comments}
+        conversation={conversation}
+        ptptCount={ptptCount}
+        formatTid={formatTid}
+        voteColors={voteColors}
       />
     );
   }
