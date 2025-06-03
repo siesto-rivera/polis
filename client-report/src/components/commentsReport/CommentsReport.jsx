@@ -435,11 +435,13 @@ const CommentsReport = ({ math, comments, conversation, ptptCount, formatTid, vo
                 Array.isArray(visualizationJobs[0].visualizations) &&
                 visualizationJobs[0].visualizations.length > 0 ? (
                   <div className="visualizations-grid">
-                    {/* Only show Layer 0 visualizations */}
+                    {/* Show all layer visualizations */}
                     {visualizationJobs[0].visualizations
-                      .filter((vis) => vis && vis.type === "interactive" && vis.layerId === 0)
+                      .filter((vis) => vis && vis.type === "interactive")
+                      .sort((a, b) => a.layerId - b.layerId) // Sort by layer ID
                       .map((vis) => (
                         <div key={vis.key} className="visualization-card">
+                          <h4>Layer {vis.layerId} Interactive Visualization</h4>
                           <div className="iframe-container">
                             <iframe
                               src={vis.url}
@@ -456,12 +458,12 @@ const CommentsReport = ({ math, comments, conversation, ptptCount, formatTid, vo
                       .filter(
                         (vis) =>
                           vis &&
-                          (vis.type === "static_png" || vis.type === "presentation_png") &&
-                          vis.layerId === 0
+                          (vis.type === "static_png" || vis.type === "presentation_png")
                       )
+                      .sort((a, b) => a.layerId - b.layerId) // Sort by layer ID
                       .map((vis) => (
                         <div key={vis.key} className="visualization-card">
-                          <h4>Static Visualization</h4>
+                          <h4>Layer {vis.layerId} Static Visualization</h4>
                           <div className="img-container">
                             <img
                               src={vis.url}
