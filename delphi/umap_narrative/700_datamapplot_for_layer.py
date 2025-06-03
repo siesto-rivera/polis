@@ -42,16 +42,16 @@ def s3_upload_file(local_file_path, s3_key):
     bucket_name = os.environ.get('AWS_S3_BUCKET_NAME')
     region = os.environ.get('AWS_REGION')
     
-    logger.info(f"S3 Configuration:")
-    logger.info(f"  Endpoint: {endpoint_url}")
-    logger.info(f"  Access Key: {'***' + access_key[-4:] if access_key else 'None'}")
-    logger.info(f"  Secret Key: {'***' if secret_key else 'None'}")
-    logger.info(f"  Bucket: {bucket_name}")
-    logger.info(f"  Region: {region}")
+    logger.info(f"S3 Client Configuration for Upload:")
+    logger.info(f"  Endpoint URL: {endpoint_url if endpoint_url else 'Default AWS S3'}")
+    logger.info(f"  Bucket Name: {bucket_name}")
+    logger.info(f"  Region: {region if region else 'Default (likely us-east-1 or from AWS config)'}")
+    logger.info(f"  Access Key ID: {'********' + access_key[-4:] if access_key else 'Not explicitly set (will use environment/role)'}")
+    # Secret key is intentionally not logged, even obfuscated, beyond the initial check
     
     # Debug current environment
-    logger.info(f"Current AWS_ACCESS_KEY_ID in env: {os.environ.get('AWS_ACCESS_KEY_ID', 'Not set')[:10]}..." if os.environ.get('AWS_ACCESS_KEY_ID') else "AWS_ACCESS_KEY_ID not set")
-    logger.info(f"Will use access_key: {access_key[:10]}..." if access_key else "No access key")
+    # logger.info(f"Current AWS_ACCESS_KEY_ID in env: {os.environ.get('AWS_ACCESS_KEY_ID', 'Not set')[:10]}..." if os.environ.get('AWS_ACCESS_KEY_ID') else "AWS_ACCESS_KEY_ID not set")
+    # logger.info(f"Will use access_key: {access_key[:10]}..." if access_key else "No access key")
 
     if endpoint_url == "":
         endpoint_url = None
@@ -128,7 +128,7 @@ def s3_upload_file(local_file_path, s3_key):
                 raise
         
         # Upload file
-        logger.info(f"Uploading {local_file_path} to s3://{bucket_name}/{s3_key}")
+        logger.info(f"Attempting to upload {local_file_path} to s3://{bucket_name}/{s3_key}")
         
         # For HTML files, set content type correctly
         extra_args = {
@@ -151,15 +151,18 @@ def s3_upload_file(local_file_path, s3_key):
                 ExtraArgs=extra_args
             )
             # Verify the upload by checking if the object exists
+            logger.info(f"Verifying upload for s3://{bucket_name}/{s3_key}...")
             head_response = s3_client.head_object(Bucket=bucket_name, Key=s3_key)
-            logger.info(f"Upload verified - object exists at {s3_key}")
-            logger.info(f"Object size: {head_response.get('ContentLength', 'unknown')} bytes")
+            logger.info(f"Upload verified: Object exists at s3://{bucket_name}/{s3_key}")
+            logger.info(f"  Object ETag: {head_response.get('ETag')}")
+            logger.info(f"  Object Size: {head_response.get('ContentLength', 'unknown')} bytes")
+            logger.info(f"  Last Modified: {head_response.get('LastModified')}")
             
-            # Double-check by listing objects
-            list_response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=s3_key)
-            logger.info(f"List objects response: {list_response.get('KeyCount', 0)} objects found")
+            # Double-check by listing objects - this might be overkill if head_object is reliable
+            # list_response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=s3_key)
+            # logger.debug(f"List objects verification: {list_response.get('KeyCount', 0)} objects found matching prefix.")
         except Exception as upload_error:
-            logger.error(f"Upload failed: {upload_error}")
+            logger.error(f"Upload failed for s3://{bucket_name}/{s3_key}: {upload_error}")
             raise
 
         if endpoint_url:
@@ -186,7 +189,7 @@ def s3_upload_file(local_file_path, s3_key):
             # Custom S3 endpoint
             url = f"{bucket_name}/{s3_key}"
         
-        logger.info(f"File uploaded successfully to {url}")
+        logger.info(f"File uploaded successfully. Accessible at: {url}")
         return url
         
     except Exception as e:

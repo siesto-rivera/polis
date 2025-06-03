@@ -129,17 +129,55 @@ def main():
         output_dir = f"/app/polis_data/{zid}/python_output/comments_enhanced_multilayer"
         os.makedirs(output_dir, exist_ok=True)
 
-        # Generate layer 0 visualization
-        datamap_command = [
-            "python", "/app/umap_narrative/700_datamapplot_for_layer.py",
-            f"--conversation_id={zid}",
-            "--layer=0",
-            f"--output_dir={output_dir}"
-        ]
-        if verbose_arg:
-            datamap_command.append(verbose_arg)
+        # Generate visualizations for all available layers
+        # First, determine available layers from DynamoDB
+        try:
+            import boto3
+            from boto3.dynamodb.conditions import Key
+            
+            endpoint_url = os.environ.get('DYNAMODB_ENDPOINT', 'http://dynamodb:8000')
+            dynamodb = boto3.resource('dynamodb', endpoint_url=endpoint_url, region_name='us-east-1')
+            table = dynamodb.Table('Delphi_CommentHierarchicalClusterAssignments')
+            
+            response = table.query(
+                KeyConditionExpression=Key('conversation_id').eq(str(zid)),
+                Limit=10  # Just need a few records to determine layers
+            )
+            
+            # Extract available layers from field names
+            available_layers = set()
+            for item in response['Items']:
+                for key in item.keys():
+                    if key.startswith('layer') and key.endswith('_cluster_id'):
+                        layer_num = int(key.replace('layer', '').replace('_cluster_id', ''))
+                        if item[key] is not None:
+                            available_layers.add(layer_num)
+            
+            available_layers = sorted(available_layers)
+            print(f"{YELLOW}Found layers: {available_layers}{NC}")
+            
+        except Exception as e:
+            print(f"{RED}Warning: Could not determine layers from DynamoDB: {e}{NC}")
+            print(f"{YELLOW}Falling back to layer 0 only{NC}")
+            available_layers = [0]
         
-        subprocess.run(datamap_command) # Not checking exit code here, same as bash
+        # Generate visualization for each available layer
+        for layer_id in available_layers:
+            print(f"{YELLOW}Generating visualization for layer {layer_id}...{NC}")
+            datamap_command = [
+                "python", "/app/umap_narrative/700_datamapplot_for_layer.py",
+                f"--conversation_id={zid}",
+                f"--layer={layer_id}",
+                f"--output_dir={output_dir}"
+            ]
+            if verbose_arg:
+                datamap_command.append(verbose_arg)
+            
+            result = subprocess.run(datamap_command)
+            if result.returncode == 0:
+                print(f"{GREEN}Layer {layer_id} visualization completed{NC}")
+            else:
+                print(f"{RED}Warning: Layer {layer_id} visualization failed{NC}")
 
         print(f"{GREEN}UMAP Narrative pipeline completed successfully!{NC}")
         print(f"Results stored in DynamoDB and visualizations for conversation {zid}")
