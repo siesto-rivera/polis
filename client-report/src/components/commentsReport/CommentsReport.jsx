@@ -286,7 +286,15 @@ const CommentsReport = ({ math, comments, conversation, ptptCount, formatTid, vo
     // Topic sections will have names in format: layer0_0, layer0_1, etc.
     const topicSections = Object.keys(narrativeReports)
       .filter((key) => key.match(/^layer\d+_\d+$/))
-      .sort();
+      .sort((a, b) => {
+        // Parse layer and topic numbers for proper numeric sorting
+        const [layerA, topicA] = a.match(/layer(\d+)_(\d+)/).slice(1).map(Number);
+        const [layerB, topicB] = b.match(/layer(\d+)_(\d+)/).slice(1).map(Number);
+        
+        // Sort by layer first, then by topic number
+        if (layerA !== layerB) return layerA - layerB;
+        return topicA - topicB;
+      });
 
     // Combine ordered sections with topic sections
     const orderedSections = [...sectionOrder, ...topicSections];
