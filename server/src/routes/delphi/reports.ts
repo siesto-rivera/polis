@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import logger from "../../utils/logger";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { getZidFromReport } from "../../utils/parameter";
 import Config from "../../config";
 
@@ -77,22 +77,79 @@ export async function handle_GET_delphi_reports(req: Request, res: Response) {
     // Table name for LLM topic names
     const tableName = "Delphi_NarrativeReports";
 
-    // Query parameters to get reports for the conversation
-    // Note: Reports are stored with report_id as the prefix, not conversation_id
-    const params = {
+    // BUGFIX: DynamoDB Local has issues with Scan operations missing items
+    // Solution: Do a discovery scan first to find all existing sections, then query each one
+    
+    logger.info(`Discovering existing sections for report_id: ${report_id}`);
+    
+    // First, do a full table scan to discover what sections actually exist
+    // We'll filter client-side to work around DynamoDB Local scan bugs
+    const discoveryParams = {
       TableName: tableName,
-      FilterExpression: "begins_with(rid_section_model, :prefix)",
-      ExpressionAttributeValues: {
-        ":prefix": `${report_id}#`
-      }
+      ConsistentRead: true
     };
     
-    // Log that we're executing the query
-    logger.info(`Executing DynamoDB scan: ${JSON.stringify(params)}`);
-
-    // Scan DynamoDB
+    const allTableItems: any[] = [];
+    let lastEvaluatedKey;
+    
     try {
-      const data = await docClient.send(new ScanCommand(params));
+      // Scan entire table to discover sections (with pagination)
+      do {
+        const scanParams = lastEvaluatedKey 
+          ? { ...discoveryParams, ExclusiveStartKey: lastEvaluatedKey }
+          : discoveryParams;
+          
+        const scanResult = await docClient.send(new ScanCommand(scanParams));
+        
+        if (scanResult.Items) {
+          // Filter for our report_id client-side
+          const relevantItems = scanResult.Items.filter(item => 
+            item.rid_section_model && item.rid_section_model.startsWith(`${report_id}#`)
+          );
+          allTableItems.push(...relevantItems);
+        }
+        
+        lastEvaluatedKey = scanResult.LastEvaluatedKey;
+      } while (lastEvaluatedKey);
+      
+      logger.info(`Discovery scan found ${allTableItems.length} total items for report_id: ${report_id}`);
+      
+      // Extract unique section-model combinations from discovered items
+      const sectionModelCombos = new Set<string>();
+      allTableItems.forEach(item => {
+        if (item.rid_section_model) {
+          sectionModelCombos.add(item.rid_section_model);
+        }
+      });
+      
+      logger.info(`Found ${sectionModelCombos.size} unique section-model combinations`);
+      
+      // Now query each discovered combination to get all versions (timestamps)
+      const allItems: any[] = [];
+      
+      for (const rid_section_model of sectionModelCombos) {
+        const queryParams = {
+          TableName: tableName,
+          KeyConditionExpression: "rid_section_model = :key",
+          ExpressionAttributeValues: {
+            ":key": rid_section_model
+          },
+          ConsistentRead: true
+        };
+        
+        try {
+          const queryResult = await docClient.send(new QueryCommand(queryParams));
+          if (queryResult.Items && queryResult.Items.length > 0) {
+            allItems.push(...queryResult.Items);
+          }
+        } catch (queryError: any) {
+          logger.warn(`Failed to query ${rid_section_model}: ${queryError.message}`);
+        }
+      }
+      
+      logger.info(`Total reports retrieved via targeted queries: ${allItems.length}`);
+      
+      const data = { Items: allItems };
 
       // Early return if no items found
       if (!data.Items || data.Items.length === 0) {
