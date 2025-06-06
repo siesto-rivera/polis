@@ -13,6 +13,7 @@ const dynamoDBConfig: any = {
 // Debug logging
 logger.info(`Config.dynamoDbEndpoint value: ${Config.dynamoDbEndpoint}`);
 logger.info(
+  // eslint-disable-next-line no-restricted-properties
   `process.env.DYNAMODB_ENDPOINT value: ${process.env.DYNAMODB_ENDPOINT}`
 );
 
