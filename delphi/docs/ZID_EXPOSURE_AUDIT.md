@@ -264,17 +264,17 @@ return getComments(report.conversation_id);    // ✅ OK - Internal use
 return getConversation(report.conversation_id);// ✅ OK - Internal use
 ```
 
-#### 2. **Display Usage** ⚠️ (Cosmetic ZID exposure)
+#### 2. **Display Usage** ✅ (Uses zinvites - SAFE)
 **File**: `/client-report/src/components/framework/heading.jsx:32`
 **File**: `/client-report/src/components/RawDataExport.jsx:15`
 ```javascript
-// Heading component shows ZID in URL
+// Heading component shows zinvite in URL
 href={`${urlPrefix + conversation.conversation_id}`}
 
-// File download names include ZID
+// File download names include zinvite
 `${timestamp}-${conversation.conversation_id}-${file}.csv`
 ```
-**Impact**: These are cosmetic/display uses, not dependencies on delphi API responses
+**Impact**: These use `conversation.conversation_id` from `/api/v3/reports` which contains **zinvites** (like `4anfsauat2`), not ZIDs. **NO ZID EXPOSURE**.
 
 #### 3. **No Delphi Dependencies Found** ✅
 - No consumption of `conversation_id` from delphi API responses
