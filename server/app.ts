@@ -1596,6 +1596,7 @@ helpersInitialized.then(
         return fetchIndexForReportPage(req, res, next);
       }
     );
+    app.get(/^\/topicsVizReport\/r?[0-9][0-9A-Za-z]+(\/.*)?/, fetchIndexForReportPage);
     // Export Report route for data export interface
     app.get(
       /^\/exportReport\/r?[0-9][0-9A-Za-z]+(\/.*)?/,

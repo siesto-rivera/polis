@@ -25,9 +25,10 @@ import TopicNarrative from "./lists/topicNarrative.jsx";
 import CommentsReport from "./commentsReport/CommentsReport.jsx";
 import TopicReport from "./topicReport/TopicReport.jsx";
 import ExportReport from "./exportReport/ExportReport.jsx";
+import TopicsVizReport from "./topicsVizReport/TopicsVizReport.jsx";
 
-const pathname = window.location.pathname; // "/report/2arcefpshi" or "/commentsReport/2arcefpshi" or "/topicReport/2arcefpshi" or "/exportReport/2arcefpshi"
-const route_type = pathname.split("/")[1]; // "report", "narrativeReport", "commentsReport", "topicReport", or "exportReport"
+const pathname = window.location.pathname; // "/report/2arcefpshi" or "/commentsReport/2arcefpshi" or "/topicReport/2arcefpshi" or "/topicsVizReport/2arcefpshi" or "/exportReport/2arcefpshi"
+const route_type = pathname.split("/")[1]; // "report", "narrativeReport", "commentsReport", "topicReport", "topicsVizReport", or "exportReport"
 const report_id = pathname.split("/")[2];
 
 // Debug the route
@@ -754,6 +755,16 @@ const App = (props) => {
         ptptCount={ptptCount}
         formatTid={formatTid}
         voteColors={voteColors}
+      />
+    );
+  }
+
+  // Directly render TopicsVizReport if the URL starts with /topicsVizReport
+  if (route_type === "topicsVizReport") {
+    console.log("RENDERING: TopicsVizReport");
+    return (
+      <TopicsVizReport
+        report_id={report_id}
       />
     );
   }
