@@ -71,10 +71,10 @@ export async function handle_POST_delphi_batch_reports(
 
     // No need to configure DynamoDB client here, it's done at module level
 
-    // Generate job_id
+    // Generate job_id using report_id to avoid exposing ZID
     const timestamp = Math.floor(Date.now() / 1000);
     const randomSuffix = uuidv4().substring(0, 8);
-    const job_id = `batch_report_${conversation_id}_${timestamp}_${randomSuffix}`;
+    const job_id = `batch_report_${report_id}_${timestamp}_${randomSuffix}`;
 
     // Build job configuration for narrative batch
     const jobConfig = {
