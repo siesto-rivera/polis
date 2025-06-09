@@ -970,7 +970,7 @@ const CommentsReport = ({ math, comments, conversation, ptptCount, formatTid, vo
               return (
                 <div className="topic-preview">
                   <h5>Topic Identified - Narrative Pending</h5>
-                  <p>This topic has been identified and named by the AI system, but the detailed narrative report has not yet been generated.</p>
+                  <p>This topic has been identified and named by Polis, but the detailed narrative report has not yet been generated.</p>
                   
                   {selectedSection.topicMetadata && (
                     <div className="topic-metadata-display">
