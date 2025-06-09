@@ -24,7 +24,6 @@ const TopicReport = ({ report_id, math, comments, conversation, ptptCount, forma
         section: topicKey  // The topic key IS the section (e.g., "layer0_8")
       })
       .then((response) => {
-        console.log("Topic report response:", response);
         
         if (response && response.status === "success" && response.reports) {
           // The response contains reports object with the section as key
@@ -274,18 +273,9 @@ const TopicReport = ({ report_id, math, comments, conversation, ptptCount, forma
       `}</style>
       
       {/* Run Information Header */}
-      {runInfo && (
-        <div className="run-info-header">
-          <h3>Narrative Summaries</h3>
-          <div className="run-meta">
-            <span>Model: {runInfo.model_name}</span>
-            <span className="run-date">
-              Generated: {runInfo.created_date}
-            </span>
-            <span>{runInfo.item_count} topics total</span>
-          </div>
-        </div>
-      )}
+      <div className="run-info-header">
+        <h3>Narrative Summaries</h3>
+      </div>
       
       <TopicSelector 
         sections={sections}

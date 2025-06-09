@@ -21,8 +21,7 @@ const TopicDataProvider = ({ report_id, children }) => {
       net.polisGet("/api/v3/delphi/reports", { report_id })
     ])
     .then(([topicsResponse, narrativeResponse]) => {
-      console.log("Topics response:", topicsResponse);
-      console.log("Narrative response:", narrativeResponse);
+      console.log("TopicDataProvider: Data loaded successfully");
 
       // Set topic data if available
       if (topicsResponse && topicsResponse.status === "success") {

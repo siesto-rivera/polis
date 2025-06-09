@@ -1,7 +1,7 @@
 import React from 'react';
 
 const TopicSectionsBuilder = ({ topicData, narrativeData, children }) => {
-  console.log("Building sections with:", { topicData: !!topicData, narrativeData: !!narrativeData });
+  console.log("TopicSectionsBuilder: Processing data");
 
   // Extract the latest run from topic data
   const getLatestRun = () => {
@@ -38,21 +38,16 @@ const TopicSectionsBuilder = ({ topicData, narrativeData, children }) => {
         // Check which format exists in the data
         if (narrativeData.reports[longFormatKey]) {
           sectionKey = longFormatKey;
-          console.log(`Global section ${key}: found long format - ${sectionKey}`);
         } else if (narrativeData.reports[shortFormatKey]) {
           sectionKey = shortFormatKey;
-          console.log(`Global section ${key}: found short format - ${sectionKey}`);
         } else if (narrativeData.reports[key]) {
           sectionKey = key;
-          console.log(`Global section ${key}: found bare format - ${sectionKey}`);
         } else {
           // Default to short format if no data found
           sectionKey = shortFormatKey;
-          console.log(`Global section ${key}: no data found, using default - ${sectionKey}`);
         }
       } else {
         sectionKey = shortFormatKey;
-        console.log(`Global section ${key}: no reports data, using fallback - ${sectionKey}`);
       }
 
       return {
@@ -90,7 +85,6 @@ const TopicSectionsBuilder = ({ topicData, narrativeData, children }) => {
             sectionKey = topic.topic_key || `layer${layer}_${clusterId}`;
           }
 
-          console.log(`Topic ${topicKey}: ${sectionKey}`);
           
           allTopics.push({
             key: sectionKey,
@@ -126,7 +120,7 @@ const TopicSectionsBuilder = ({ topicData, narrativeData, children }) => {
     item_count: latestRun.item_count
   };
 
-  console.log("Final sections:", allSections.length);
+  console.log(`TopicSectionsBuilder: Built ${allSections.length} sections (${globalSections.length} global, ${layerTopics.length} topics)`);
   
   // Find the cross-group consensus section for default selection
   const defaultSection = allSections.find(section => 
