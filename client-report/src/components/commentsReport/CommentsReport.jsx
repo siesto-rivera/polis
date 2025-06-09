@@ -344,19 +344,30 @@ const CommentsReport = ({ math, comments, conversation, ptptCount, formatTid, vo
         ];
         
         globalSectionTypes.forEach(({ key, title }) => {
-          // Global sections use the full job_id, not job_uuid
-          // Need to get the job_id from the narrative run info
+          // Check what keys actually exist in the narrative reports (same logic as TopicSectionsBuilder)
+          const longFormatKey = narrativeRunInfo?.current_job_id ? `${narrativeRunInfo.current_job_id}_global_${key}` : null;
+          const shortFormatKey = `global_${key}`;
+          
           let sectionKey;
-          if (narrativeRunInfo && narrativeRunInfo.current_job_id) {
-            sectionKey = `${narrativeRunInfo.current_job_id}_global_${key}`;
-          } else {
-            // Fallback: try to find job_id by looking at existing narrative keys
-            const existingGlobalKey = Object.keys(narrativeReports).find(k => k.includes(`_global_${key}`));
-            if (existingGlobalKey) {
-              sectionKey = existingGlobalKey;
+          if (narrativeReports && Object.keys(narrativeReports).length > 0) {
+            // Check which format exists in the data
+            if (longFormatKey && narrativeReports[longFormatKey]) {
+              sectionKey = longFormatKey;
+              console.log(`CommentsReport global section ${key}: found long format - ${sectionKey}`);
+            } else if (narrativeReports[shortFormatKey]) {
+              sectionKey = shortFormatKey;
+              console.log(`CommentsReport global section ${key}: found short format - ${sectionKey}`);
+            } else if (narrativeReports[key]) {
+              sectionKey = key;
+              console.log(`CommentsReport global section ${key}: found bare format - ${sectionKey}`);
             } else {
-              sectionKey = `unknown_global_${key}`;
+              // Default to short format if no data found
+              sectionKey = shortFormatKey;
+              console.log(`CommentsReport global section ${key}: no data found, using default - ${sectionKey}`);
             }
+          } else {
+            sectionKey = shortFormatKey;
+            console.log(`CommentsReport global section ${key}: no reports data, using fallback - ${sectionKey}`);
           }
           
           // Check if narrative report exists

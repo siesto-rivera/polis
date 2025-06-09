@@ -987,12 +987,24 @@ class BatchReportGenerator:
                     "uncertainty": "uncertainty.xml"
                 }
                 
-                # Extract the base name from global section (e.g., "global_groups" -> "groups")
-                base_name = topic_name.replace("global_", "")
+                # Extract the base name from the section_name (works with both old and new formats)
+                # Old format: "global_groups" -> "groups"
+                # New format: "batch_report_xxx_global_groups" -> "groups"
+                if section_name.endswith("_groups"):
+                    base_name = "groups"
+                elif section_name.endswith("_group_informed_consensus"):
+                    base_name = "group_informed_consensus"
+                elif section_name.endswith("_uncertainty"):
+                    base_name = "uncertainty"
+                else:
+                    # Fallback: try the old logic for backwards compatibility
+                    base_name = topic_name.replace("global_", "")
+                    logger.warning(f"Could not determine base name from section_name '{section_name}', using fallback: '{base_name}'")
+                
                 template_filename = template_mapping.get(base_name, "topics.xml")
                 template_path = self.prompt_base_path / f"subtaskPrompts/{template_filename}"
                 
-                logger.info(f"Using template {template_filename} for global section {topic_name}")
+                logger.info(f"Using template {template_filename} for global section {section_name} (base_name: {base_name})")
             else:
                 # Use topics template for layer-specific topics
                 template_path = self.prompt_base_path / "subtaskPrompts/topics.xml"

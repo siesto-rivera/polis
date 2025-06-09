@@ -1,163 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import net from "../../util/net";
 import CommentList from "../lists/commentList.jsx";
+import TopicDataProvider from "./TopicDataProvider.jsx";
+import TopicSectionsBuilder from "./TopicSectionsBuilder.jsx";
+import TopicSelector from "./TopicSelector.jsx";
 
 const TopicReport = ({ report_id, math, comments, conversation, ptptCount, formatTid, voteColors }) => {
-  const [topics, setTopics] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState("");
   const [topicContent, setTopicContent] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
-  const [runInfo, setRunInfo] = useState(null);
-
-  useEffect(() => {
-    if (!report_id) return;
-
-    // Fetch topics from Delphi
-    setLoading(true);
-    net
-      .polisGet("/api/v3/delphi", {
-        report_id: report_id,
-      })
-      .then((response) => {
-        console.log("Delphi topics response:", response);
-
-        if (response && response.status === "success") {
-          if (response.runs && Object.keys(response.runs).length > 0) {
-            // Extract topics from the most recent run
-            const latestRun = Object.values(response.runs).reduce((latest, run) => {
-              return !latest || new Date(run.created_at) > new Date(latest.created_at) ? run : latest;
-            }, null);
-
-            console.log("Latest run structure:", latestRun);
-            console.log("Topics by layer keys:", Object.keys(latestRun.topics_by_layer || {}));
-            console.log("Topics by layer type check:", typeof latestRun.topics_by_layer);
-            console.log("Topics by layer direct:", latestRun.topics_by_layer);
-            
-            // Store run info for display
-            setRunInfo({
-              model_name: latestRun.model_name,
-              created_date: latestRun.created_date,
-              item_count: latestRun.item_count
-            });
-            
-            // Get job UUID for section key construction
-            const jobUuid = latestRun.job_uuid;
-            
-            // Check different possible structures for topics
-            let topicsData = null;
-            
-            // Try different paths to find topics
-            if (latestRun.topics_by_layer) {
-              // Topics are organized by layer, then by cluster id
-              const allTopics = [];
-              console.log("Processing topics_by_layer:", latestRun.topics_by_layer);
-              
-              // Handle both string and numeric keys
-              const layers = Object.keys(latestRun.topics_by_layer);
-              console.log("Layer keys found:", layers);
-              
-              layers.forEach(layer => {
-                const clusters = latestRun.topics_by_layer[layer];
-                console.log(`Processing layer ${layer}:`, clusters);
-                
-                if (clusters && typeof clusters === 'object') {
-                  Object.entries(clusters).forEach(([clusterId, topic]) => {
-                    // Create the topic key in format layer_cluster (e.g., "0_1")
-                    const topicKey = `${layer}_${clusterId}`;
-                    
-                    // Extract section key from topic_key, converting # to _
-                    let sectionKey;
-                    if (topic.topic_key && topic.topic_key.includes('#')) {
-                      // Versioned format: convert uuid#layer#cluster -> uuid_layer_cluster
-                      sectionKey = topic.topic_key.replace(/#/g, '_');
-                    } else if (jobUuid) {
-                      // Fallback: construct from jobUuid
-                      sectionKey = `${jobUuid}_${layer}_${clusterId}`;
-                    } else {
-                      // Legacy format
-                      sectionKey = topic.topic_key || `layer${layer}_${clusterId}`;
-                    }
-                    console.log(`Topic ${topicKey}:`, topic); // Debug log to see structure
-                    console.log(`Section key: ${sectionKey}`); // Debug the section key
-                    allTopics.push({
-                      key: sectionKey, // Use the job UUID based section key
-                      displayKey: topicKey, // For display purposes
-                      name: topic.topic_name || topicKey, // Access the topic_name property
-                      sortKey: parseInt(layer) * 1000 + parseInt(clusterId) // Sort by layer first, then cluster
-                    });
-                  });
-                } else {
-                  console.log(`No valid clusters found for layer ${layer}`);
-                }
-              });
-              
-              // Add global sections to the topics list
-              const globalSections = [
-                {
-                  key: "global_groups",
-                  name: "Divisive Comments (Global)",
-                  sortKey: -300, // Sort before layer topics
-                  isGlobal: true
-                },
-                {
-                  key: "global_group_informed_consensus", 
-                  name: "Cross-Group Consensus (Global)",
-                  sortKey: -200,
-                  isGlobal: true
-                },
-                {
-                  key: "global_uncertainty",
-                  name: "High Uncertainty Comments (Global)", 
-                  sortKey: -100,
-                  isGlobal: true
-                }
-              ];
-              
-              // Combine global sections with layer topics
-              topicsData = [...globalSections, ...allTopics];
-            } else if (latestRun.topics && latestRun.topics.topics) {
-              // Original structure
-              topicsData = Object.entries(latestRun.topics.topics)
-                .map(([key, topic]) => ({
-                  key,
-                  name: topic.name || key,
-                  sortKey: parseInt(key.split('_')[1]) || 0
-                }));
-            } else if (latestRun.topics) {
-              // Maybe topics is directly an object
-              topicsData = Object.entries(latestRun.topics)
-                .map(([key, topic]) => ({
-                  key,
-                  name: topic.name || topic.topic || key,
-                  sortKey: parseInt(key.split('_')[1]) || 0
-                }));
-            }
-            
-            if (topicsData && topicsData.length > 0) {
-              // Sort topics by their numeric part
-              const sortedTopics = topicsData.sort((a, b) => a.sortKey - b.sortKey);
-              console.log("Found topics:", sortedTopics);
-              setTopics(sortedTopics);
-            } else {
-              console.log("No topics found in the expected structure");
-              console.log("Latest run object:", latestRun);
-              console.log("Latest run keys:", Object.keys(latestRun || {}));
-            }
-          } else {
-            console.log("No runs found in response");
-            console.log("Response structure:", response);
-          }
-        } else {
-          console.log("Response not successful or missing:", response);
-        }
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching topics:", error);
-        setLoading(false);
-      });
-  }, [report_id]);
 
   const handleTopicChange = (event) => {
     const topicKey = event.target.value;
@@ -300,12 +151,12 @@ const TopicReport = ({ report_id, math, comments, conversation, ptptCount, forma
     );
   };
 
-  if (loading) {
-    return <div className="loading">Loading topics...</div>;
-  }
-
   return (
-    <div className="topic-report-container">
+    <TopicDataProvider report_id={report_id}>
+      {({ topicData, narrativeData }) => (
+        <TopicSectionsBuilder topicData={topicData} narrativeData={narrativeData}>
+          {({ sections, runInfo, error }) => (
+            <div className="topic-report-container">
       <style>{`
         .topic-report-container {
           padding: 20px;
@@ -412,7 +263,7 @@ const TopicReport = ({ report_id, math, comments, conversation, ptptCount, forma
       {/* Run Information Header */}
       {runInfo && (
         <div className="run-info-header">
-          <h3>Topic Analysis Report</h3>
+          <h3>Narrative Summaries</h3>
           <div className="run-meta">
             <span>Model: {runInfo.model_name}</span>
             <span className="run-date">
@@ -423,53 +274,23 @@ const TopicReport = ({ report_id, math, comments, conversation, ptptCount, forma
         </div>
       )}
       
-      <div className="topic-selector">
-        <select 
-          value={selectedTopic} 
-          onChange={handleTopicChange}
-          disabled={contentLoading}
-        >
-          <option value="">Select a report section...</option>
-          
-          {/* Global sections */}
-          {topics.filter(topic => topic.isGlobal).length > 0 && (
-            <optgroup label="Global Analysis">
-              {topics.filter(topic => topic.isGlobal).map(topic => (
-                <option key={topic.key} value={topic.key}>
-                  {topic.name}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          
-          {/* Layer topics grouped by layer */}
-          {Object.entries(
-            topics
-              .filter(topic => !topic.isGlobal)
-              .reduce((groups, topic) => {
-                const layer = topic.displayKey ? topic.displayKey.split('_')[0] : '0';
-                if (!groups[layer]) groups[layer] = [];
-                groups[layer].push(topic);
-                return groups;
-              }, {})
-          ).map(([layer, layerTopics]) => (
-            <optgroup key={layer} label={`Layer ${layer} Topics`}>
-              {layerTopics.map(topic => (
-                <option key={topic.key} value={topic.key}>
-                  {topic.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </div>
+      <TopicSelector 
+        sections={sections}
+        selectedTopic={selectedTopic}
+        onTopicChange={handleTopicChange}
+        loading={contentLoading}
+      />
 
       {contentLoading && (
         <div className="loading">Loading topic report...</div>
       )}
 
       {!contentLoading && renderContent()}
-    </div>
+            </div>
+          )}
+        </TopicSectionsBuilder>
+      )}
+    </TopicDataProvider>
   );
 };
 
