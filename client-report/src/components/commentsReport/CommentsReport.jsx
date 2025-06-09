@@ -344,8 +344,20 @@ const CommentsReport = ({ math, comments, conversation, ptptCount, formatTid, vo
         ];
         
         globalSectionTypes.forEach(({ key, title }) => {
-          // Only versioned format - construct section key using job UUID
-          const sectionKey = `${jobUuid}_global_${key}`;
+          // Global sections use the full job_id, not job_uuid
+          // Need to get the job_id from the narrative run info
+          let sectionKey;
+          if (narrativeRunInfo && narrativeRunInfo.current_job_id) {
+            sectionKey = `${narrativeRunInfo.current_job_id}_global_${key}`;
+          } else {
+            // Fallback: try to find job_id by looking at existing narrative keys
+            const existingGlobalKey = Object.keys(narrativeReports).find(k => k.includes(`_global_${key}`));
+            if (existingGlobalKey) {
+              sectionKey = existingGlobalKey;
+            } else {
+              sectionKey = `unknown_global_${key}`;
+            }
+          }
           
           // Check if narrative report exists
           const hasNarrative = !!narrativeReports[sectionKey];
