@@ -121,7 +121,6 @@ class JobProcessor:
         current_version = job.get('version', 1)
         now = datetime.now(timezone.utc)
         new_expiry_iso = (now + timedelta(minutes=15)).isoformat()
-
         # This single conditional update can claim a PENDING job or an expired job
         # It ensures that only one worker can acquire the lock.
         condition_expr = "(#s = :pending OR (attribute_exists(lock_expires_at) AND lock_expires_at < :now) OR attribute_not_exists(lock_expires_at)) AND #v = :current_version"
