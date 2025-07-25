@@ -23,7 +23,9 @@
 
     <!-- REPLACE_THIS_WITH_FB_META_TAGS -->
 
+    <% if (process.env.NODE_ENV === 'production') { %>
     <link rel="stylesheet" type="text/css" href="/css/polis.css"> <!-- proxy all CSS through server for respond.js -->
+    <% } %>
 
     <script>
       window.userObject = {};
@@ -54,7 +56,7 @@
     </style>
 
     <script> // Fire off this ajax first. it's slower than the other CDN delivered things.
-      (function() {
+      (function() {        
         function parseQueryParams(queryString) {
           const params = new URLSearchParams(queryString);
           return Object.fromEntries(params);
@@ -81,20 +83,119 @@
           return params.ui_lang;
         }
 
+        function getOidcToken() {
+          function _getOidcTokenFromStorage(storage) {
+            if (!storage) return null;
+
+            for (var i = 0; i < storage.length; i++) {
+              var key = storage.key(i);
+              if (
+                key &&
+                key.indexOf("<%= oidcCacheKeyPrefix %>") === 0 &&
+                key.indexOf("<%= oidcCacheKeyIdTokenSuffix %>") !== key.length - "<%= oidcCacheKeyIdTokenSuffix %>".length
+              ) {
+                try {
+                  var value = storage.getItem(key);
+                  if (value) {
+                    var parsed = JSON.parse(value);
+                    // Check for expiry and access_token
+                    if (
+                      parsed &&
+                      parsed.body &&
+                      parsed.body.access_token &&
+                      parsed.expiresAt &&
+                      parsed.expiresAt > Math.floor(Date.now() / 1000)
+                    ) {
+                      return parsed.body.access_token;
+                    }
+                  }
+                } catch (e) {
+                  // Not valid JSON or other error, continue
+                }
+              }
+            }
+            return null;
+          }
+
+          var token = _getOidcTokenFromStorage(window.localStorage);
+          if (!token) {
+            token = _getOidcTokenFromStorage(window.sessionStorage);
+          }
+          return token;
+        }
+
+        function getConversationIdFromPath() {
+          var pathname = document.location.pathname;
+          var match =
+            pathname.match(/^\/([0-9][0-9A-Za-z]+)/) ||
+            pathname.match(/^\/conversation\/([0-9][0-9A-Za-z]+)/) ||
+            pathname.match(/^\/m\/([0-9][0-9A-Za-z]+)/) ||
+            pathname.match(/^\/demo\/([0-9][0-9A-Za-z]+)/);
+          if (match) {
+            return match[match.length - 1];
+          }
+          return null;
+        }
+
         function ajaxGet(url, success, fail) {
           var xmlhttp;
           xmlhttp = new XMLHttpRequest();
           xmlhttp.onreadystatechange = function() {
             if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
               if(xmlhttp.status == 200){
-                success(JSON.parse(xmlhttp.responseText));
+                try {
+                  var parsed = JSON.parse(xmlhttp.responseText);
+                  success(parsed);
+                } catch (e) {
+                  console.error("[Index] Error parsing JSON response:", e);
+                  fail(xmlhttp.status, "JSON parse error: " + e.message);
+                }
               } else {
-                fail(xmlhttp.status, xmlhttp.responseText);
+                console.error("[Index] AJAX request failed with status:", xmlhttp.status, "response:", xmlhttp.responseText);
+                
+                // Try to parse error response as JSON first, fallback to text
+                var errorResponse = xmlhttp.responseText;
+                try {
+                  var parsedError = JSON.parse(xmlhttp.responseText);
+                  // If it's a JSON error response, extract the error message
+                  if (parsedError && (parsedError.error || parsedError.message)) {
+                    errorResponse = parsedError.error || parsedError.message;
+                  }
+                } catch (e) {
+                  // Keep original text response if JSON parsing fails
+                  console.warn("[Index] Error response is not JSON, using as text");
+                }
+                
+                fail(xmlhttp.status, errorResponse);
               }
             }
           }
 
           xmlhttp.open("GET", url, true);
+          
+          // Add JWT token to request if available
+          try {
+            var token = null;
+            var conversationId = getConversationIdFromPath();
+            if (conversationId) {
+              var tokenKey = "participant_token_" + conversationId;
+              if (window.localStorage) {
+                token = window.localStorage.getItem(tokenKey);
+              }
+              if (!token && window.sessionStorage) {
+                token = window.sessionStorage.getItem(tokenKey);
+              }
+            }
+            if (!token) {
+              token = getOidcToken();
+            }
+            if (token) {
+              xmlhttp.setRequestHeader('Authorization', 'Bearer ' + token);
+            }
+          } catch (e) {
+            console.error("[Index] Error adding JWT token to request:", e);
+          }
+          
           xmlhttp.send();
         }
 
@@ -122,11 +223,53 @@
             {src:"famous", dst:"firstFamous", cb:"firstFamousListener"},
             {src:"acceptLanguage", dst:"acceptLanguage", cb:"acceptLanguageListener"},
           ];
+          
+          // Handle JWT token if present in response
+          if (response && response.auth && response.auth.token) {
+            // Store the token for later use
+            try {
+              var token = response.auth.token;
+              var parts = token.split('.');
+              if (parts.length === 3) {
+                var payload = JSON.parse(atob(parts[1]));
+                if (payload.conversation_id) {
+                  var tokenKey = "participant_token_" + payload.conversation_id;
+                   if (window.localStorage) {
+                    window.localStorage.setItem(tokenKey, token);
+                  } else if (window.sessionStorage) {
+                    window.sessionStorage.setItem(tokenKey, token);
+                  }
+                } else {
+                  console.warn("[Index] No conversation_id in JWT payload, not storing token.");
+                }
+              }
+            } catch (e) {
+              console.error("[Index] Failed to store JWT token:", e);
+            }
+          }
+          
           for (var i = 0; i < things.length; i++) {
             var r = things[i], src = r.src, dst = r.dst, cb = r.cb;
 
             if (response) {
-              p[dst] = r.JSON ? JSON.parse(response[src]) : response[src];
+              // Handle JSON parsing more safely
+              if (r.JSON) {
+                try {
+                  // If response[src] is already an object, use it directly
+                  if (typeof response[src] === 'object') {
+                    p[dst] = response[src];
+                  } else if (typeof response[src] === 'string') {
+                    p[dst] = JSON.parse(response[src]);
+                  } else {
+                    p[dst] = response[src];
+                  }
+                } catch (e) {
+                  console.error("[Index] Error parsing JSON for", src, ":", e);
+                  p[dst] = response[src]; // Use raw value as fallback
+                }
+              } else {
+                p[dst] = response[src];
+              }
             }
 
             if (r.fn) {
@@ -146,6 +289,7 @@
         }
 
         function onPreloadFail(statusCode, failResponse) {
+          console.error("[Index] onPreloadFail called with status:", statusCode, "response:", failResponse);
           var cbs = [
             "firstCommentListener",
             "firstConvListener",
@@ -162,6 +306,7 @@
             }
           }
           if (statusCode === 403 && failResponse.match(/^polis_err_domain/)) {
+            console.warn("[Index] Domain error detected, showing bad domain message");
             function updateDomainMessage() {
               var el = document.getElementById("badDomainMessage");
               if (el) {
@@ -175,12 +320,8 @@
         }
 
         var path = document.location.pathname;
-        var shouldPreload =
-          path.match(/^([0-9][0-9A-Za-z]+)/) ||
-          path.match(/^ot\/([0-9][0-9A-Za-z]+)/) ||
-          path.match(/^demo\/([0-9][0-9A-Za-z]+)/) ||
-          path.match(/^share\/([0-9][0-9A-Za-z]+)$/) ||
-          path.match(/^m\/([0-9][0-9A-Za-z]+)\/?(.*)$/);
+        var conversation_id = getConversationIdFromPath();
+        var shouldPreload = !!conversation_id;
 
         window.xsThresh = 600; // nexus 7
 
@@ -189,15 +330,16 @@
         };
 
         var qp = [];
-        if (p.conversation && p.conversation.conversation_id) {
-          qp.push("conversation_id=" + p.conversation.conversation_id);
+        if (conversation_id) {
+          qp.push("conversation_id=" + conversation_id);
         }
-        qp.push("pid=mypid");
+        qp.push("pid=-1");
 
         var xid = getXid();
         if (typeof xid !== "undefined") {
           window.preload.xid = xid;
           qp.push("xid=" + encodeURIComponent(xid));
+          console.log("[Index] Added xid to query params:", xid);
         }
         var x_profile_image_url = get_x_profile_image_url();
         if (typeof x_profile_image_url !== "undefined") {
@@ -224,10 +366,10 @@
 
         var qp = qp.join("&");
         qp = qp.length > 1 ? ("?" + qp) : "";
+        
+        var finalUrl = "/api/v3/participationInit" + qp;
 
-        ajaxGet("/api/v3/participationInit" + qp,
-          onPreloadOk,
-          onPreloadFail);
+        ajaxGet(finalUrl, onPreloadOk, onPreloadFail);
 
       }());
     </script>

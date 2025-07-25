@@ -2,94 +2,8 @@
 
 var _ = require("lodash");
 
-var store = (function() {
-  // Using cookies because IE can have crazy security settings that make localStorage off-limits.
-  // We may want
-
-  //http://stackoverflow.com/questions/19189785/is-there-a-good-cookie-library-for-javascript
-  function getCookie(sName) {
-    sName = sName.toLowerCase();
-    var oCrumbles = document.cookie.split(";");
-    for (var i = 0; i < oCrumbles.length; i++) {
-      var oPair = oCrumbles[i].split("=");
-      var sKey = oPair[0].trim().toLowerCase();
-      var sValue = oPair.length > 1 ? oPair[1] : "";
-      if (sKey === sName) {
-        var val = decodeURIComponent(sValue);
-        if (val === "null") {
-          val = null;
-        }
-        return val;
-      }
-    }
-    return null;
-  }
-
-  // function setCookie(sName,sValue)
-  // {
-  //     if (sValue === void 0) {
-  //         return;
-  //     }
-  //     var oDate = new Date();
-  //     oDate.setYear(oDate.getFullYear()+1);
-  //     var sCookie = encodeURIComponent(sName) + "=" + encodeURIComponent(sValue) + ";expires=" + oDate.toGMTString() + ";path=/";
-  //     document.cookie = sCookie;
-  // }
-
-  // function clearCookie(sName)
-  // {
-  //     setCookie(sName,null);
-  // }
-  // We might want to use localStorage for browsers that don't throw exceptions when you try to use their localStorage implementation.
-  // return {
-  //     set: localStorage.setItem,
-  //     get: localStorage.getItem,
-  //     clear: localStorage.clear
-  // };
-  return {
-    // clear: clearCookie,
-    // set: setCookie,
-    get: function(key) {
-      var cookieVal = getCookie(key);
-      if (cookieVal === null) {
-        // Beta Migration
-        // Should be OK to remove this block (and simply call getCookie) sometime early 2014
-        try {
-          // Initially we used localStorage, but switched to cookies because of IE10 localStorage exceptions for certain security configurations.
-          // This is here for now so existing user sessions will keep working.
-          // previously, localStorage keys were prefixed with "p_", removing now to minimize extra cookie traffic.
-          var lsVal = localStorage.getItem("p_" + key);
-          if (lsVal !== null) {
-            setCookie(key, lsVal);
-          }
-          return lsVal;
-        } catch (e) {
-          // probably IE with localStorage disabled, nothing to migrate here anyway.
-        }
-      }
-      return cookieVal;
-    }
-
-  };
-}());
-
-// function clear(k) {
-//     store.clear(k);
-// }
-
-function makeAccessor(k) {
-  return {
-    // clear: function() {
-    //     return clear(k);
-    // },
-    // set: function(v, temporary) {
-    //     return store.set(k, v);
-    // },
-    get: function() {
-      return store.get(k);
-    }
-  };
-}
+const oidcCacheKeyPrefix = process.env.OIDC_CACHE_KEY_PREFIX;
+const oidcCacheKeyIdTokenSuffix = process.env.OIDC_CACHE_KEY_ID_TOKEN_SUFFIX;
 
 function toNumberWithFalsyAsZero(val) {
   if (_.isUndefined(val)) {
@@ -99,18 +13,250 @@ function toNumberWithFalsyAsZero(val) {
   }
 }
 
-
 function getUidFromUserObject() {
-  return window.preload && window.preload.firstUser && window.preload.firstUser.uid;
+  var uid = window.preload && window.preload.firstUser && window.preload.firstUser.uid;
+  return uid;
+}
+
+// New helper function to get conversation ID from URL
+function _getConversationIdFromUrl() {
+  if (window.Polis && window.Polis.conversation_id) {
+    return window.Polis.conversation_id;
+  }
+  var pathname = window.location.pathname;
+  // Based on router regexes, conversation ID is usually at the start of the path.
+  var match =
+    pathname.match(/^\/([0-9][0-9A-Za-z]+)/) ||
+    pathname.match(/^\/conversation\/([0-9][0-9A-Za-z]+)/) ||
+    pathname.match(/^\/m\/([0-9][0-9A-Za-z]+)/) ||
+    pathname.match(/^\/demo\/([0-9][0-9A-Za-z]+)/);
+  if (match) {
+    // The conversation_id is in the last captured group.
+    return match[match.length - 1];
+  }
+  return null;
+}
+
+// New helper to get conversation ID from a token
+function _getConversationIdFromDecodedJwt(token) {
+  if (!token) return null;
+  try {
+    var parts = token.split(".");
+    if (parts.length !== 3) {
+      return null;
+    }
+    var payload = JSON.parse(atob(parts[1]));
+    return payload.conversation_id || null;
+  } catch (e) {
+    console.error("[PolisStorage] Error decoding JWT for conversation_id:", e);
+    return null;
+  }
+}
+
+function _getOidcTokenFromStorage(storage) {
+  if (!storage) return null;
+
+  for (let i = 0; i < storage.length; i++) {
+    const key = storage.key(i);
+    // The access token is in a key that does NOT end with @@user@@
+    if (key && key.startsWith(oidcCacheKeyPrefix) && !key.endsWith(oidcCacheKeyIdTokenSuffix)) {
+      try {
+        const value = storage.getItem(key);
+        if (value) {
+          const parsed = JSON.parse(value);
+          // Check for expiry and access_token
+          if (
+            parsed &&
+            parsed.body &&
+            parsed.body.access_token &&
+            parsed.expiresAt &&
+            parsed.expiresAt > Math.floor(Date.now() / 1000)
+          ) {
+            return parsed.body.access_token;
+          }
+        }
+      } catch (e) {
+        // Not valid JSON or other error, continue
+        console.warn("[PolisStorage] Error parsing OIDC storage key " + key, e);
+      }
+    }
+  }
+  return null;
+}
+
+function getOidcToken() {
+  let token = _getOidcTokenFromStorage(window.localStorage);
+  if (!token) {
+    token = _getOidcTokenFromStorage(window.sessionStorage);
+  }
+  return token;
 }
 
 function userCreated() {
-  return toNumberWithFalsyAsZero(window.preload && window.preload.firstUser && window.preload.firstUser.created) || Date.now();
+  var created =
+    toNumberWithFalsyAsZero(window.preload && window.preload.firstUser && window.preload.firstUser.created) ||
+    Date.now();
+  return created;
+}
+
+// JWT token management functions
+function getJwtToken() {
+  try {
+    var conversationId = _getConversationIdFromUrl();
+    var token = null;
+    var tokenKey = null;
+
+    if (conversationId) {
+      tokenKey = "participant_token_" + conversationId;
+      token = window.localStorage
+        ? window.localStorage.getItem(tokenKey)
+        : window.sessionStorage
+          ? window.sessionStorage.getItem(tokenKey)
+          : null;
+    }
+
+    // If no participant token, check for auth token (OIDC users)
+    if (!token) {
+      token = getOidcToken();
+    }
+
+    if (!token) {
+      return null;
+    }
+
+    // Check if token is expired
+    if (isJwtTokenExpired(token)) {
+      console.warn("[PolisStorage] JWT token is expired, clearing for key: ", tokenKey);
+      // clear just this token
+      if (tokenKey) {
+        if (window.localStorage) {
+          window.localStorage.removeItem(tokenKey);
+        }
+        if (window.sessionStorage) {
+          window.sessionStorage.removeItem(tokenKey);
+        }
+      }
+      return null;
+    }
+
+    return token;
+  } catch (e) {
+    console.error("[PolisStorage] Error getting JWT token:", e);
+    return null;
+  }
+}
+
+function setJwtToken(token) {
+  try {
+    if (!token) {
+      console.warn("[PolisStorage] Attempted to set null/empty token");
+      return;
+    }
+
+    var conversationId = _getConversationIdFromDecodedJwt(token);
+    if (!conversationId) {
+      console.error("[PolisStorage] No conversation_id in JWT, cannot store participant token securely.");
+      return;
+    }
+
+    var tokenKey = "participant_token_" + conversationId;
+
+    // Store as participant_token_{conversationId}
+    if (window.localStorage) {
+      window.localStorage.setItem(tokenKey, token);
+    } else if (window.sessionStorage) {
+      window.sessionStorage.setItem(tokenKey, token);
+    } else {
+      console.warn("[PolisStorage] No storage available for JWT token");
+    }
+  } catch (e) {
+    console.error("[PolisStorage] Error storing JWT token:", e);
+  }
+}
+
+function clearJwtToken() {
+  var conversationId = _getConversationIdFromUrl();
+  if (!conversationId) {
+    console.warn(
+      "[PolisStorage] clearJwtToken() called without a conversation_id in the URL. No participant token will be cleared."
+    );
+    return;
+  }
+
+  try {
+    var tokenKey = "participant_token_" + conversationId;
+    if (window.localStorage) {
+      window.localStorage.removeItem(tokenKey);
+    }
+    if (window.sessionStorage) {
+      window.sessionStorage.removeItem(tokenKey);
+    }
+  } catch (e) {
+    console.error("[PolisStorage] Error clearing JWT token:", e);
+  }
+}
+
+function isJwtTokenExpired(token) {
+  try {
+    // JWT structure: header.payload.signature
+    var parts = token.split(".");
+    if (parts.length !== 3) {
+      console.warn("[PolisStorage] Invalid JWT format (parts.length =", parts.length, ")");
+      return true; // Invalid JWT
+    }
+
+    // Decode the payload (base64)
+    var payload = JSON.parse(atob(parts[1]));
+
+    // Check expiration
+    if (payload.exp) {
+      var currentTime = Math.floor(Date.now() / 1000);
+      var expired = currentTime >= payload.exp;
+      return expired;
+    }
+    return false; // No expiration, assume valid
+  } catch (e) {
+    console.error("[PolisStorage] Error checking JWT expiration:", e);
+    return true; // Assume expired on error
+  }
+}
+
+// Extract user info from JWT token
+function getUidFromJwt() {
+  var token = getJwtToken();
+  if (!token) {
+    return null;
+  }
+
+  try {
+    var parts = token.split(".");
+    if (parts.length !== 3) {
+      console.warn("[PolisStorage] Invalid JWT format for UID extraction");
+      return null;
+    }
+
+    var payload = JSON.parse(atob(parts[1]));
+    var uid = payload.uid || null;
+    return uid;
+  } catch (e) {
+    console.error("[PolisStorage] Error extracting uid from JWT:", e);
+    return null;
+  }
+}
+
+// This is the function that will be used to get the user's UID
+// It will first check the JWT token, then the preload data, and return the first non-null value
+function finalUid() {
+  var jwtUid = getUidFromJwt();
+  var preloadUid = getUidFromUserObject();
+  var finalUid = jwtUid || preloadUid;
+  return finalUid;
 }
 
 module.exports = {
-  hasEmail: makeAccessor("e").get,
-  uidFromCookie: makeAccessor("uid2").get,
-  uid: getUidFromUserObject,
-  userCreated: userCreated
+  uid: finalUid,
+  userCreated: userCreated,
+  setJwtToken: setJwtToken,
+  getJwtToken: getJwtToken,
+  clearJwtToken: clearJwtToken
 };

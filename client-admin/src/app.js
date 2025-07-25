@@ -1,26 +1,23 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-/** @jsx jsx */
 
-import React from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import PropTypes from 'prop-types'
-import { connect } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { populateUserStore } from './actions'
+import { isAuthReady } from './util/net'
 
-import _ from 'lodash'
+import { Routes, Route, Navigate } from 'react-router'
 
-import { Switch, Route, Link, Redirect } from 'react-router-dom'
-import { Flex, Box, jsx } from 'theme-ui'
+import { useAuth } from 'react-oidc-context'
+import OidcConnector from './components/oidc-connector'
+import Spinner from './components/framework/spinner'
 
 /* landers */
 import Home from './components/landers/home'
 import TOS from './components/landers/tos'
 import Privacy from './components/landers/privacy'
-import PasswordReset from './components/landers/password-reset'
-import PasswordResetInit from './components/landers/password-reset-init'
-import PasswordResetInitDone from './components/landers/password-reset-init-done'
 import SignIn from './components/landers/signin'
 import SignOut from './components/landers/signout'
-import CreateUser from './components/landers/createuser'
 
 // /conversation-admin
 import ConversationAdminContainer from './components/conversation-admin/index'
@@ -29,234 +26,128 @@ import Conversations from './components/conversations-and-account/conversations'
 import Account from './components/conversations-and-account/account'
 import Integrate from './components/conversations-and-account/integrate'
 
-import InteriorHeader from './components/interior-header'
+import MainLayout from './components/main-layout'
 
-const PrivateRoute = ({ component: Component, isLoading, authed, ...rest }) => {
-  if (isLoading) {
-    return null
-  }
-  return (
-    <Route
-      {...rest}
-      render={(props) =>
-        authed === true ? (
-          <Component {...props} />
-        ) : (
-          <Redirect
-            to={{ pathname: '/signin', state: { from: props.location } }}
-          />
-        )
-      }
-    />
-  )
-}
+const AUTH_LOADING_TIMEOUT = 3000
 
-PrivateRoute.propTypes = {
-  component: PropTypes.element,
-  isLoading: PropTypes.bool,
-  location: PropTypes.object,
-  authed: PropTypes.bool
-}
+const ProtectedRoute = ({ isAuthed, isLoading }) => {
+  const [loadingTimeout, setLoadingTimeout] = React.useState(false)
 
-@connect((state) => {
-  return state.user
-})
-class App extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      sidebarOpen: false
-      // sidebarDocked: true,
+  React.useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        setLoadingTimeout(true)
+      }, AUTH_LOADING_TIMEOUT)
+
+      return () => clearTimeout(timer)
+    } else {
+      setLoadingTimeout(false)
     }
-  }
+  }, [isLoading])
 
-  loadUserData() {
-    this.props.dispatch(populateUserStore())
-  }
-
-  componentWillMount() {
-    this.loadUserData()
-    const mql = window.matchMedia(`(min-width: 800px)`)
-    mql.addListener(this.mediaQueryChanged.bind(this))
-    this.setState({ mql: mql, docked: mql.matches })
-  }
-
-  isAuthed() {
-    let authed = false
-
-    if (!_.isUndefined(this.props.isLoggedIn) && this.props.isLoggedIn) {
-      authed = true
-    }
-
-    if (
-      (this.props.error && this.props.status === 401) ||
-      this.props.status === 403
-    ) {
-      authed = false
-    }
-
-    return authed
-  }
-
-  isLoading() {
-    const { isLoggedIn } = this.props
-
-    return _.isUndefined(
-      isLoggedIn
-    ) /* if isLoggedIn is undefined, the app is loading */
-  }
-
-  componentDidMount() {
-    this.mediaQueryChanged()
-  }
-
-  componentWillUnmount() {
-    this.state.mql.removeListener(this.mediaQueryChanged.bind(this))
-  }
-
-  mediaQueryChanged() {
-    this.setState({ sidebarDocked: this.state.mql.matches })
-  }
-
-  onSetSidebarOpen(open) {
-    this.setState({ sidebarOpen: open })
-  }
-
-  handleMenuButtonClick() {
-    this.setState({ sidebarOpen: !this.state.sidebarOpen })
-  }
-
-  render() {
-    const { location } = this.props
+  if (isLoading && !loadingTimeout) {
     return (
-      <>
-        <Switch>
-          <Redirect from="/:url*(/+)" to={location.pathname.slice(0, -1)} />
-          <Route exact path="/home" component={Home} />
-          <Route
-            exact
-            path="/signin"
-            render={() => <SignIn {...this.props} authed={this.isAuthed()} />}
-          />
-          <Route
-            exact
-            path="/signin/*"
-            render={() => <SignIn {...this.props} authed={this.isAuthed()} />}
-          />
-          <Route
-            exact
-            path="/signin/**/*"
-            render={() => <SignIn {...this.props} authed={this.isAuthed()} />}
-          />
-          <Route exact path="/signout" component={SignOut} />
-          <Route exact path="/signout/*" component={SignOut} />
-          <Route exact path="/signout/**/*" component={SignOut} />
-          <Route exact path="/createuser" component={CreateUser} />
-          <Route exact path="/createuser/*" component={CreateUser} />
-          <Route exact path="/createuser/**/*" component={CreateUser} />
-
-          <Route exact path="/pwreset" component={PasswordReset} />
-          <Route path="/pwreset/*" component={PasswordReset} />
-          <Route exact path="/pwresetinit" component={PasswordResetInit} />
-          <Route
-            exact
-            path="/pwresetinit/done"
-            component={PasswordResetInitDone}
-          />
-          <Route exact path="/tos" component={TOS} />
-          <Route exact path="/privacy" component={Privacy} />
-
-          <InteriorHeader>
-            <Route
-              render={(routeProps) => {
-                if (routeProps.location.pathname.split('/')[1] === 'm') {
-                  return null
-                }
-                return (
-                  <Flex>
-                    <Box sx={{ mr: [5], p: [4], flex: '0 0 auto' }}>
-                      <Box sx={{ mb: [3] }}>
-                        <Link sx={{ variant: 'links.nav' }} to={`/`}>
-                          Conversations
-                        </Link>
-                      </Box>
-                      <Box sx={{ mb: [3] }}>
-                        <Link sx={{ variant: 'links.nav' }} to={`/integrate`}>
-                          Integrate
-                        </Link>
-                      </Box>
-                      <Box sx={{ mb: [3] }}>
-                        <Link sx={{ variant: 'links.nav' }} to={`/account`}>
-                          Account
-                        </Link>
-                      </Box>
-                    </Box>
-                    <Box
-                      sx={{
-                        p: [4],
-                        flex: '0 0 auto',
-                        maxWidth: '35em',
-                        mx: [4]
-                      }}>
-                      <PrivateRoute
-                        isLoading={this.isLoading()}
-                        authed={this.isAuthed()}
-                        exact
-                        path="/"
-                        component={Conversations}
-                      />
-                      <PrivateRoute
-                        isLoading={this.isLoading()}
-                        authed={this.isAuthed()}
-                        exact
-                        path="/conversations"
-                        component={Conversations}
-                      />
-                      <PrivateRoute
-                        isLoading={this.isLoading()}
-                        authed={this.isAuthed()}
-                        exact
-                        path="/account"
-                        component={Account}
-                      />
-                      <PrivateRoute
-                        isLoading={this.isLoading()}
-                        authed={this.isAuthed()}
-                        exact
-                        path="/integrate"
-                        component={Integrate}
-                      />
-                    </Box>
-                  </Flex>
-                )
-              }}
-            />
-
-            <PrivateRoute
-              isLoading={this.isLoading()}
-              path="/m/:conversation_id"
-              authed={this.isAuthed()}
-              component={ConversationAdminContainer}
-            />
-          </InteriorHeader>
-        </Switch>
-      </>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '200px'
+        }}>
+        <Spinner />
+      </div>
     )
   }
+
+  return isAuthed ? <MainLayout /> : <Navigate to="/signin" replace />
 }
 
-App.propTypes = {
-  dispatch: PropTypes.func,
-  isLoggedIn: PropTypes.bool,
-  location: PropTypes.shape({
-    pathname: PropTypes.string
-  }),
-  user: PropTypes.shape({
-    uid: PropTypes.string,
-    email: PropTypes.string,
-    created: PropTypes.number,
-    hname: PropTypes.string
+ProtectedRoute.propTypes = {
+  isAuthed: PropTypes.bool.isRequired,
+  isLoading: PropTypes.bool.isRequired
+}
+
+const App = () => {
+  const dispatch = useDispatch()
+  const { isAuthenticated, isLoading, error } = useAuth()
+
+  const [sidebarState, setSidebarState] = useState(() => {
+    const mql = window.matchMedia(`(min-width: 800px)`)
+    return {
+      sidebarOpen: false,
+      mql: mql,
+      docked: mql.matches
+    }
   })
+
+  const loadUserData = useCallback(() => {
+    dispatch(populateUserStore())
+  }, [dispatch])
+
+  const isAuthed = useCallback(() => {
+    return isAuthenticated && !error
+  }, [isAuthenticated, error])
+
+  const loadUserDataIfNeeded = useCallback(() => {
+    const authSystemReady = isAuthReady()
+
+    if (!isLoading && isAuthenticated && authSystemReady) {
+      loadUserData()
+    }
+  }, [isLoading, isAuthenticated, loadUserData])
+
+  const mediaQueryChanged = useCallback(() => {
+    setSidebarState((prev) => ({ ...prev, sidebarDocked: prev.mql.matches }))
+  }, [])
+
+  useEffect(() => {
+    // Set up media query listener
+    const { mql } = sidebarState
+    mql.addListener(mediaQueryChanged)
+
+    return () => {
+      mql.removeListener(mediaQueryChanged)
+    }
+  }, [sidebarState.mql, mediaQueryChanged])
+
+  useEffect(() => {
+    // Listen for auth ready event
+    const handleAuthReady = () => {
+      loadUserDataIfNeeded()
+    }
+
+    window.addEventListener('polisAuthReady', handleAuthReady)
+
+    // Initial load
+    loadUserDataIfNeeded()
+
+    return () => {
+      window.removeEventListener('polisAuthReady', handleAuthReady)
+    }
+  }, [loadUserDataIfNeeded])
+
+  return (
+    <>
+      <OidcConnector />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/home" element={<Home />} />
+        <Route path="/signin" element={<SignIn authed={isAuthed()} />} />
+        <Route path="/signout" element={<SignOut />} />
+        <Route path="/tos" element={<TOS />} />
+        <Route path="/privacy" element={<Privacy />} />
+
+        {/* Protected routes */}
+        <Route element={<ProtectedRoute isAuthed={isAuthed()} isLoading={isLoading} />}>
+          <Route path="/" element={<Conversations />} />
+          <Route path="/conversations" element={<Conversations />} />
+          <Route path="/integrate" element={<Integrate />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/m/:conversation_id/*" element={<ConversationAdminContainer />} />
+        </Route>
+      </Routes>
+    </>
+  )
 }
 
 export default App

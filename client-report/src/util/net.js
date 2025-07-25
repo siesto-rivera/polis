@@ -4,7 +4,7 @@ import URLs from "./url";
 
 const urlPrefix = URLs.urlPrefix;
 
-function polisAjax(api, data, type) {
+function polisAjax(api, data, type, token) {
     if (typeof api !== "string") {
         throw "api param should be a string";
     }
@@ -20,6 +20,7 @@ function polisAjax(api, data, type) {
         headers: {
             "Content-Type": "application/json; charset=utf-8",
             "Cache-Control": "max-age=0",
+            ...(token && {"Authorization": `Bearer ${token}`})
         },
         credentials: "include", // This sends cookies with the request
     };
@@ -33,7 +34,12 @@ function polisAjax(api, data, type) {
     }
 
     return fetch(url, options)
-        .then(response => {
+        .then(async response => {
+            // Handle 304 Not Modified - return empty array for consistency
+            if (response.status === 304) {
+                return []; // Return empty array for 304 responses
+            }
+            
             if (!response.ok) {
                 // Handle error responses (e.g., 403)
                 console.error("Error:", response.status, response.statusText);
@@ -42,7 +48,31 @@ function polisAjax(api, data, type) {
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
+            
+            // Check if there's actually a body to parse
+            const contentLength = response.headers.get('content-length');
+            
+            // If no content or content-length is 0, return empty array
+            if (contentLength === '0' || !response.body) {
+                return [];
+            }
+            
+            // Try to parse JSON, but handle empty responses gracefully
+            try {
+                const text = await response.text();
+                
+                if (!text || text.trim() === '') {
+                    return [];
+                }
+                
+                const data = JSON.parse(text);
+                return data;
+            } catch (jsonError) {
+                console.error('JSON parse error:', jsonError);
+                console.error('Failed to parse response as JSON');
+                // For non-JSON responses, return empty array to avoid breaking the app
+                return [];
+            }
         })
         .catch(error => {
             console.error("Fetch error:", error);
@@ -51,12 +81,12 @@ function polisAjax(api, data, type) {
         });
 }
 
-function polisPost(api, data) {
-    return polisAjax(api, data, "POST");
+function polisPost(api, data, token) {
+    return polisAjax(api, data, "POST", token);
 }
 
-function polisGet(api, data) {
-    return polisAjax(api, data, "GET");
+function polisGet(api, data, token) {
+    return polisAjax(api, data, "GET", token);
 }
 
 const PolisNet = {
@@ -66,4 +96,3 @@ const PolisNet = {
 };
 
 export default PolisNet;
-

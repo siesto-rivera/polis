@@ -22,14 +22,17 @@ export TAG = $(call parse_env_value,TAG)
 export GIT_HASH = $(shell git rev-parse --short HEAD)
 POSTGRES_DOCKER_RAW = $(shell echo $(call parse_env_value,POSTGRES_DOCKER) | tr '[:upper:]' '[:lower:]')
 export POSTGRES_DOCKER = $(call parse_env_bool,$(POSTGRES_DOCKER_RAW))
+LOCAL_SERVICES_DOCKER_RAW = $(shell echo $(call parse_env_value,LOCAL_SERVICES_DOCKER) | tr '[:upper:]' '[:lower:]')
+export LOCAL_SERVICES_DOCKER = $(call parse_env_bool,$(LOCAL_SERVICES_DOCKER_RAW))
 
 # Support for detached mode
 DETACH ?= false
 DETACH_ARG = $(if $(filter true,$(DETACH)),-d,)
 
 # Default compose file args
-export COMPOSE_FILE_ARGS = -f docker-compose.yml -f docker-compose.dev.yml --profile local-services
+export COMPOSE_FILE_ARGS = -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_FILE_ARGS += $(if $(POSTGRES_DOCKER),--profile postgres,)
+COMPOSE_FILE_ARGS += $(if $(LOCAL_SERVICES_DOCKER),--profile local-services,)
 
 # Set up environment-specific values
 define setup_env
@@ -37,19 +40,23 @@ define setup_env
 	$(eval TAG = $(call parse_env_value,TAG))
 	$(eval POSTGRES_DOCKER_RAW = $(shell echo $(call parse_env_value,POSTGRES_DOCKER) | tr '[:upper:]' '[:lower:]'))
 	$(eval POSTGRES_DOCKER = $(call parse_env_bool,$(POSTGRES_DOCKER_RAW)))
+	$(eval LOCAL_SERVICES_DOCKER_RAW = $(shell echo $(call parse_env_value,LOCAL_SERVICES_DOCKER) | tr '[:upper:]' '[:lower:]'))
+	$(eval LOCAL_SERVICES_DOCKER = $(call parse_env_bool,$(LOCAL_SERVICES_DOCKER_RAW)))
 	$(eval COMPOSE_FILE_ARGS = $(2))
 	$(eval COMPOSE_FILE_ARGS += $(if $(POSTGRES_DOCKER),--profile postgres,))
+	$(eval COMPOSE_FILE_ARGS += $(if $(LOCAL_SERVICES_DOCKER),--profile local-services,))
 endef
 
 PROD:
 	$(call setup_env,prod.env,-f docker-compose.yml)
 
 TEST:
-	$(call setup_env,test.env,-f docker-compose.yml -f docker-compose.test.yml)
+	$(call setup_env,test.env,-f docker-compose.test.yml)
 
 echo_vars:
 	@echo ENV_FILE=${ENV_FILE}
 	@echo POSTGRES_DOCKER=${POSTGRES_DOCKER}
+	@echo LOCAL_SERVICES_DOCKER=${LOCAL_SERVICES_DOCKER}
 	@echo TAG=${TAG}
 
 pull: echo_vars ## Pull most recent Docker container builds (nightlies)
@@ -93,10 +100,7 @@ start-rebuild: echo_vars ## Start all Docker containers, [re]building as needed
 
 start-FULL-REBUILD: echo_vars stop rm-ALL ## Remove and restart all Docker containers, volumes, and images (including db), as with rm-ALL
 	docker compose ${COMPOSE_FILE_ARGS} --env-file ${ENV_FILE} build --no-cache
-	docker compose ${COMPOSE_FILE_ARGS} --env-file ${ENV_FILE} down
-	docker compose ${COMPOSE_FILE_ARGS} --env-file ${ENV_FILE} up ${DETACH_ARG} --build
-	docker compose ${COMPOSE_FILE_ARGS} --env-file ${ENV_FILE} down
-	docker compose ${COMPOSE_FILE_ARGS} --env-file ${ENV_FILE} up ${DETACH_ARG} --build
+	docker compose ${COMPOSE_FILE_ARGS} --env-file ${ENV_FILE} up ${DETACH_ARG}
 
 rebuild-web: echo_vars ## Rebuild and restart just the file-server container and its static assets
 	docker compose ${COMPOSE_FILE_ARGS} --env-file ${ENV_FILE} up ${DETACH_ARG} --build --force-recreate file-server
@@ -108,6 +112,19 @@ build-web-assets: ## Build and extract static web assets for cloud deployment to
 extract-web-assets: ## Extract static web assets from file-server to `build` dir
 	/bin/rm -rf build
 	docker compose ${COMPOSE_FILE_ARGS} --env-file ${ENV_FILE} cp file-server:/app/build/ build
+
+generate-jwt-keys: ## Generate JWT keys for participant authentication
+	@echo "Generating JWT keys for participant authentication..."
+	@if [ -f server/keys/jwt-private.pem ]; then \
+		echo "JWT keys already exist. Use 'make regenerate-jwt-keys' to overwrite."; \
+	else \
+		node server/scripts/generate-jwt-keys.js; \
+	fi
+
+regenerate-jwt-keys: ## Regenerate JWT keys (overwrites existing)
+	@echo "Regenerating JWT keys for participant authentication..."
+	@rm -f server/keys/jwt-private.pem server/keys/jwt-public.pem
+	@node server/scripts/generate-jwt-keys.js
 
 e2e-install: e2e/node_modules ## Install Cypress E2E testing tools
 	$(E2E_RUN) npm install
@@ -129,7 +146,7 @@ rbs: start-rebuild
 
 .PHONY: help pull start stop rm-containers rm-volumes rm-images rm-ALL hash build-no-cache start-rebuild \
 	start-recreate start-FULL-REBUILD rebuild-web e2e-install e2e-run e2e-run-all e2e-run-interactive \
-	build-web-assets extract-web-assets
+	build-web-assets extract-web-assets generate-jwt-keys regenerate-jwt-keys
 
 
 help:

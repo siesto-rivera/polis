@@ -3,7 +3,6 @@
 var $ = require("jquery");
 var _ = require("lodash");
 var Backbone = require("backbone");
-var bbFetch = require("../net/bbFetch");
 var ConversationModel = require("../models/conversation");
 var eb = require("../eventBus");
 var metric = require("../util/gaMetric");
@@ -13,21 +12,18 @@ var PolisStorage = require("../util/polisStorage");
 var preloadHelper = require("../util/preloadHelper");
 var RootView = require("../views/root");
 var Constants = require("../util/constants");
-var SettingsView = require("../views/settings.js");
-var UserModel = require("../models/user");
 var Utils = require("../util/utils");
-var hasEmail = require("../util/polisStorage").hasEmail;
 
 var match = window.location.pathname.match(/ep1_[0-9A-Za-z]+$/);
 var encodedParams = match ? match[0] : void 0;
 
 var authenticatedDfd = $.Deferred();
-authenticatedDfd.done(function() {
+authenticatedDfd.done(function () {
   // link uid to GA user_id
   // TODO update this whenever auth changes
   if (Constants.GA_TRACKING_ID) {
-    const userId = PolisStorage.uid() || PolisStorage.uidFromCookie();
-    gtag('set', 'user_properties', {'user_id': userId});
+    const userId = PolisStorage.uid();
+    gtag("set", "user_properties", { user_id: userId });
   }
 });
 
@@ -36,160 +32,116 @@ function onFirstRender() {
 }
 
 function authenticated() {
-  return PolisStorage.uid() || PolisStorage.uidFromCookie() || window.authenticatedByHeader;
+  // Check for JWT token first
+  var jwtToken = PolisStorage.getJwtToken();
+  if (jwtToken) {
+    return true;
+  }
+
+  // Fallback to other auth methods (e.g., preloaded user data)
+  var uid = PolisStorage.uid();
+
+  var isAuthenticated = uid;
+  return isAuthenticated;
 }
 
 var polisRouter = Backbone.Router.extend({
-  gotoRoute: function(route, options) {
-    // this.navigate(route, options);
+  gotoRoute: function (route) {
     window.location = route;
   },
-  initialize: function(options) {
-    this.r(/^conversation\/create(\/ep1_[0-9A-Za-z]+)?/, "createConversation");
-    this.r("user/create(/:params)", "createUser");
-    this.r(/^user\/logout(\/.+)/, "deregister");
-    this.r("welcome/:einvite", "createUserViewFromEinvite");
-    this.r("", "landingPageView");
 
+  initialize: function () {
     this.r(/^([0-9][0-9A-Za-z]+)\/?(\?.*)?$/, "participationViewWithQueryParams"); // conversation_id / query params
     this.r(/^([0-9][0-9A-Za-z]+)(\/ep1_[0-9A-Za-z]+)?$/, "participationView"); // conversation_id / encodedStringifiedJson
     this.r(/^ot\/([0-9][0-9A-Za-z]+)\/(.*)/, "participationViewWithSuzinvite"); // ot/conversation_id/suzinvite
     this.r(/^demo\/([0-9][0-9A-Za-z]+)/, "demoConversation");
 
-    this.r(/^settings(\/ep1_[0-9A-Za-z]+)?/, "settings");
-
-    //this.r(/^summary\/([0-9][0-9A-Za-z]+)$/, "summaryView");  // summary/conversation_id
-
-    this.on("route", function(route, params) {
-      // if (needsFooter(route)) {
-      //   $('[data-view-name="root"]').addClass("wrap");
-      //   var footer = $("#footer").detach();
-      //   $(document.body).append(footer);
-      //   $("#footer").show();
-      // } else {
-      // $("#footer").hide();
-      // $('[data-view-name="root"]').removeClass("wrap");
-      // }
-    });
-    eb.once(eb.firstRender, function() {
+    eb.once(eb.firstRender, function () {
       onFirstRender();
     });
 
-
-    if (authenticated()) {
+    var authStatus = authenticated();
+    if (authStatus) {
       authenticatedDfd.resolve();
+    } else {
+      console.warn("[Router] User not authenticated during initialization");
     }
-
   }, // end initialize
+
   r(pattern, methodNameToCall) {
     this.route(pattern, (...args) => {
       metric.routeEvent(methodNameToCall, args);
       this[methodNameToCall].apply(this, args);
     });
   },
-  bail: function() {
+
+  bail: function () {
     this.gotoRoute("/", {
       trigger: true
     });
   },
 
-  landingPageView: function() {
-    console.log('landingPageView');
-    if (!authenticated()) {
-      console.log('!authenticated');
-      this.gotoRoute("/user/create", {
-        trigger: true
-      });
-      // RootView.getInstance().setView(new LandingPageView());
-      // RootView.getInstance().setView(new CreateUserFormView({
-      //   model : new Backbone.Model({
-      //     // zinvite: zinvite,
-      //     create: true
-      //   })
-      // }));
-    } else {
-      // this.inbox();
-      this.gotoRoute("/inbox", {
-        trigger: true
-      });
-    }
-  },
-
-  settings: function(encodedStringifiedJson) {
-    var promise = $.Deferred().resolve();
-    if (!authenticated()) {
-      promise = this.doLogin(false);
-    } else if (!hasEmail()  && !window.authenticatedByHeader) {
-      promise = this.doLogin(true);
-    }
-    promise.then(function() {
-      var userModel = new UserModel();
-      bbFetch(userModel).then(function() {
-          var v = new SettingsView({
-            model: userModel,
-          });
-          RootView.getInstance().setView(v);
-        });
-    });
-  },
-
-  deregister: function(dest) {
-    window.deregister(dest);
-  },
-  doLaunchConversation2: function(conversation_id, args) {
-
+  doLaunchConversation2: function (conversation_id, args) {
     // Since nextComment is pretty slow, fire off the request way early (this actually happens on the js on index.html now) and pass the promise into the participation view so it's (probably) ready when the page loads.
     var firstCommentPromise = preloadHelper.firstCommentPromise;
 
-    this.getConversationModel(conversation_id).then(function(model) {
-
-      if (!_.isUndefined(args.vis_type)) {
-        // allow turning on the vis from the URL.
-        if (model.get("is_mod")) {
-          model.set("vis_type", Number(args.vis_type));
+    this.getConversationModel(conversation_id).then(
+      function (model) {
+        if (!_.isUndefined(args.vis_type)) {
+          // allow turning on the vis from the URL.
+          if (model.get("is_mod")) {
+            model.set("vis_type", Number(args.vis_type));
+          }
         }
+
+        var participationView = new ParticipationView({
+          wipCommentFormText: args.wipCommentFormText,
+          model: model,
+          finishedTutorial: window.userObject && window.userObject.finishedTutorial,
+          firstCommentPromise: firstCommentPromise
+        });
+        RootView.getInstance().setView(participationView);
+      },
+      function (e) {
+        console.error("[Router] Error loading conversation model:", e);
       }
-      var participationView = new ParticipationView({
-        wipCommentFormText: args.wipCommentFormText,
-        model: model,
-        finishedTutorial: userObject.finishedTutorial,
-        firstCommentPromise: firstCommentPromise
-      });
-      RootView.getInstance().setView(participationView);
-    }, function(e) {
-      console.error("error3 loading conversation model");
-    });
+    );
   },
 
-  doLaunchConversation: function(args) {
+  doLaunchConversation: function (args) {
     var ptptModel = args.ptptModel;
     var conversation_id = ptptModel.get("conversation_id");
 
     // Since nextComment is pretty slow, fire off the request way early and pass the promise into the participation view so it's (probably) ready when the page loads.
-    var firstCommentPromise = $.get("/api/v3/nextComment?not_voted_by_pid=mypid&limit=1&conversation_id=" + conversation_id);
+    var firstCommentPromise = $.get(
+      "/api/v3/nextComment?not_voted_by_pid=-1&limit=1&conversation_id=" + conversation_id
+    );
 
-    this.getConversationModel(conversation_id).then(function(model) {
-
-      if (!_.isUndefined(args.vis_type)) {
-        // allow turning on the vis from the URL.
-        if (model.get("is_mod")) {
-          model.set("vis_type", Number(args.vis_type));
+    this.getConversationModel(conversation_id).then(
+      function (model) {
+        if (!_.isUndefined(args.vis_type)) {
+          // allow turning on the vis from the URL.
+          if (model.get("is_mod")) {
+            model.set("vis_type", Number(args.vis_type));
+          }
         }
+
+        var participationView = new ParticipationView({
+          wipCommentFormText: args.wipCommentFormText,
+          model: model,
+          ptptModel: ptptModel,
+          finishedTutorial: window.userObject && window.userObject.finishedTutorial,
+          firstCommentPromise: firstCommentPromise
+        });
+        RootView.getInstance().setView(participationView);
+      },
+      function (e) {
+        console.error("[Router] Error loading conversation model in doLaunchConversation:", e);
       }
-      var participationView = new ParticipationView({
-        wipCommentFormText: args.wipCommentFormText,
-        model: model,
-        ptptModel: ptptModel,
-        finishedTutorial: userObject.finishedTutorial,
-        firstCommentPromise: firstCommentPromise
-      });
-      RootView.getInstance().setView(participationView);
-    }, function(e) {
-      console.error("error3 loading conversation model");
-    });
+    );
   },
 
-  demoConversation: function(conversation_id) {
+  demoConversation: function (conversation_id) {
     var ptpt = new ParticipantModel({
       conversation_id: conversation_id,
       pid: -123 // DEMO_MODE
@@ -201,89 +153,64 @@ var polisRouter = Backbone.Router.extend({
       ptptModel: ptpt
     });
   },
-  participationViewWithSuzinvite: function(conversation_id, suzinvite) {
+
+  participationViewWithSuzinvite: function (conversation_id, suzinvite) {
     window.suzinvite = suzinvite;
     return this.participationView(conversation_id, null, suzinvite);
   },
-  tryCookieThing: function() {
-    function browserCompatibleWithRedirectTrick() {
-      var ua = navigator.userAgent;
-      if (ua.match(/Firefox/)) {
-        // if (ua.match(/Android/)) {
-        //   return false;
-        // }
-        // return true;
-        return false;
-      } else if (ua.match(/Trident/)) { // IE8+
-        return false;
-      } else if (ua.match(/Chrome/)) {
-        return false;
-      } else if (ua.match(/Safari/)) { // would include Chrome, but we handled Chrome above
-        // Turning this off since not working any longer
-        //return true;
-        return false;
-      } else {
-        return false;
-      }
-    }
 
-    // if our script is running on a page in which we're embedded, postmessage
-    if (top.postMessage && browserCompatibleWithRedirectTrick()) {
-      top.postMessage("cookieRedirect", "*");
-    }
-
-    // don't need this view, since we have the auth header, which lets us set up a temporary session.
-
-    // // give the polisHost script enough time to navigate away (if it's listening) before showing the cookiesDisabledView
-    // setTimeout(function() {
-    //   // TODO emit GA event here
-    //   var view = new CookiesDisabledView();
-    //   RootView.getInstance().setView(view);
-    // }, 500);
-  },
-  participationView: function(conversation_id, encodedStringifiedJson, suzinvite) {
-    if (!Utils.cookiesEnabled()) {
-      this.tryCookieThing();
-    }
+  participationView: function (conversation_id, encodedStringifiedJson) {
     var params = {};
     if (encodedStringifiedJson) {
       encodedStringifiedJson = encodedStringifiedJson.slice(1);
-      params = Utils.decodeParams(encodedStringifiedJson);
+      try {
+        params = Utils.decodeParams(encodedStringifiedJson);
+      } catch (e) {
+        console.error("[Router] Error decoding params:", e);
+      }
     }
     this.doLaunchConversation2(conversation_id, params);
   },
-  participationViewWithQueryParams: function(conversation_id, queryParamString) {
-    if (!Utils.cookiesEnabled()) {
-      this.tryCookieThing();
+
+  participationViewWithQueryParams: function (conversation_id, queryParamString) {
+    var params = {};
+    try {
+      params = Utils.parseQueryParams(queryParamString);
+    } catch (e) {
+      console.error("[Router] Error parsing query params:", e);
     }
-    var params = Utils.parseQueryParams(queryParamString);
     this.doLaunchConversation2(conversation_id, params);
   },
-  getConversationModel: function(conversation_id, suzinvite) {
+
+  getConversationModel: function (conversation_id, suzinvite) {
     var model;
     if (window.preloadData && window.preloadData.conversation && !suzinvite) {
-      model = new ConversationModel(preloadData);
+      model = new ConversationModel(window.preloadData);
       return Promise.resolve(model);
     }
     // no preloadData copy of the conversation model, so make an ajax request for it.
-    return preloadHelper.firstConvPromise.then(function(conv) {
-      model = new ConversationModel(conv);
-      if (suzinvite) {
-        model.set("suzinvite", suzinvite);
-      }
-      return model;
-    });
+    return preloadHelper.firstConvPromise
+      .then(function (conv) {
+        model = new ConversationModel(conv);
+        if (suzinvite) {
+          model.set("suzinvite", suzinvite);
+        }
+        return model;
+      })
+      .fail(function (error) {
+        console.error("[Router] Error in firstConvPromise:", error);
+        throw error;
+      });
   },
 
-  redirect: function(path, ignoreEncodedParams) {
-    console.log('redirecting to', path);
-    var ep = (encodedParams ? ("/" + encodedParams) : "");
+  redirect: function (path, ignoreEncodedParams) {
+    var ep = encodedParams ? "/" + encodedParams : "";
     if (ignoreEncodedParams) {
       ep = "";
     }
-    document.location = document.location.protocol + "//" + document.location.host + path + ep;
+    var finalUrl = document.location.protocol + "//" + document.location.host + path + ep;
+    document.location = finalUrl;
   }
-
 });
 
 module.exports = polisRouter;
