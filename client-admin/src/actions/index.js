@@ -1,6 +1,5 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import $ from 'jquery'
 import PolisNet from '../util/net'
 
 /* ======= Types ======= */
@@ -42,8 +41,7 @@ export const COMMENTS_FETCH_ERROR = 'COMMENTS_FETCH_ERROR'
 
 export const REQUEST_UNMODERATED_COMMENTS = 'REQUEST_UNMODERATED_COMMENTS'
 export const RECEIVE_UNMODERATED_COMMENTS = 'RECEIVE_UNMODERATED_COMMENTS'
-export const UNMODERATED_COMMENTS_FETCH_ERROR =
-  'UNMODERATED_COMMENTS_FETCH_ERROR'
+export const UNMODERATED_COMMENTS_FETCH_ERROR = 'UNMODERATED_COMMENTS_FETCH_ERROR'
 
 export const REQUEST_ACCEPTED_COMMENTS = 'REQUEST_ACCEPTED_COMMENTS'
 export const RECEIVE_ACCEPTED_COMMENTS = 'RECEIVE_ACCEPTED_COMMENTS'
@@ -71,13 +69,11 @@ export const PARTICIPANTS_FETCH_ERROR = 'PARTICIPANTS_FETCH_ERROR'
 
 export const REQUEST_DEFAULT_PARTICIPANTS = 'REQUEST_DEFAULT_PARTICIPANTS'
 export const RECEIVE_DEFAULT_PARTICIPANTS = 'RECEIVE_DEFAULT_PARTICIPANTS'
-export const DEFAULT_PARTICIPANTS_FETCH_ERROR =
-  'DEFAULT_PARTICIPANTS_FETCH_ERROR'
+export const DEFAULT_PARTICIPANTS_FETCH_ERROR = 'DEFAULT_PARTICIPANTS_FETCH_ERROR'
 
 export const REQUEST_FEATURED_PARTICIPANTS = 'REQUEST_FEATURED_PARTICIPANTS'
 export const RECEIVE_FEATURED_PARTICIPANTS = 'RECEIVE_FEATURED_PARTICIPANTS'
-export const FEATURED_PARTICIPANTS_FETCH_ERROR =
-  'FEATURED_PARTICIPANTS_FETCH_ERROR'
+export const FEATURED_PARTICIPANTS_FETCH_ERROR = 'FEATURED_PARTICIPANTS_FETCH_ERROR'
 
 export const REQUEST_HIDDEN_PARTICIPANTS = 'REQUEST_HIDDEN_PARTICIPANTS'
 export const RECEIVE_HIDDEN_PARTICIPANTS = 'RECEIVE_HIDDEN_PARTICIPANTS'
@@ -111,25 +107,7 @@ export const DATA_EXPORT_STARTED = 'DATA_EXPORT_STARTED'
 export const DATA_EXPORT_SUCCESS = 'DATA_EXPORT_SUCCESS'
 export const DATA_EXPORT_ERROR = 'DATA_EXPORT_ERROR'
 
-export const CREATEUSER_INITIATED = 'CREATEUSER_INITIATED'
-// export const CREATEUSER_SUCCESSFUL = "CREATEUSER_SUCCESSFUL";
-export const CREATEUSER_ERROR = 'CREATEUSER_ERROR'
-
-export const SIGNIN_INITIATED = 'SIGNIN_INITIATED'
-// export const SIGNIN_SUCCESSFUL = "SIGNIN_SUCCESSFUL";
-export const SIGNIN_ERROR = 'SIGNIN_ERROR'
-
-export const SIGNOUT_INITIATED = 'SIGNOUT_INITIATED'
-export const SIGNOUT_SUCCESSFUL = 'SIGNOUT_SUCCESSFUL'
-export const SIGNOUT_ERROR = 'SIGNOUT_ERROR'
-
-export const PWRESET_INIT_INITIATED = 'PWRESET_INIT_INITIATED'
-export const PWRESET_INIT_SUCCESS = 'PWRESET_INIT_SUCCESS'
-export const PWRESET_INIT_ERROR = 'PWRESET_INIT_ERROR'
-
-export const PWRESET_INITIATED = 'PWRESET_INITIATED'
-export const PWRESET_SUCCESS = 'PWRESET_SUCCESS'
-export const PWRESET_ERROR = 'PWRESET_ERROR'
+// Legacy auth types removed - Auth/OIDC handles authentication
 
 export const SUBMIT_CONTRIB = 'SUBMIT_CONTRIB'
 export const SUBMIT_CONTRIB_SUCCESS = 'SUBMIT_CONTRIB_SUCCESS'
@@ -176,7 +154,7 @@ const userFetchError = (err) => {
 }
 
 const fetchUser = () => {
-  return PolisNet.polisGet('/api/v3/users', { errIfNoAuth: true })
+  return PolisNet.polisGet('/api/v3/users')
 }
 
 export const populateUserStore = () => {
@@ -185,210 +163,6 @@ export const populateUserStore = () => {
     return fetchUser().then(
       (res) => dispatch(receiveUser(res)),
       (err) => dispatch(userFetchError(err))
-    )
-  }
-}
-
-/* signin */
-
-const signinInitiated = () => {
-  return {
-    type: SIGNIN_INITIATED
-  }
-}
-
-// SIGNIN_SUCCESSFUL Not needed since redirecting to clear password from memory
-
-const signinError = (err) => {
-  return {
-    type: SIGNIN_ERROR,
-    data: err
-  }
-}
-
-const signinPost = (attrs) => {
-  return PolisNet.polisPost('/api/v3/auth/login', attrs)
-}
-
-export const doSignin = (attrs) => {
-  return (dispatch) => {
-    dispatch(signinInitiated())
-    return signinPost(attrs).then(
-      () => {
-        setTimeout(() => {
-          // Force page to load so we can be sure the password is cleared from memory
-          // delay a bit so the cookie has time to set
-          dispatch({ type: 'signin completed successfully' })
-          window.location = '/'
-        }, 3000)
-      },
-      (err) => dispatch(signinError(err))
-    )
-  }
-}
-
-/* createUser */
-
-const createUserInitiated = () => {
-  return {
-    type: CREATEUSER_INITIATED
-  }
-}
-
-// SIGNIN_SUCCESSFUL Not needed since redirecting to clear password from memory
-
-const createUserError = (err) => {
-  return {
-    type: CREATEUSER_ERROR,
-    data: err
-  }
-}
-
-const createUserPost = (attrs) => {
-  return PolisNet.polisPost('/api/v3/auth/new', attrs)
-}
-
-export const doCreateUser = (attrs, dest) => {
-  return (dispatch) => {
-    dispatch(createUserInitiated())
-    return createUserPost(attrs).then(
-      () => {
-        setTimeout(() => {
-          // Force page to load so we can be sure the password is cleared from memory
-          // delay a bit so the cookie has time to set
-          window.location = dest || ''
-        }, 3000)
-      },
-      (err) => dispatch(createUserError(err))
-    )
-  }
-}
-
-/* passwordResetInit */
-
-const passwordResetInitInitiated = () => {
-  return {
-    type: PWRESET_INIT_INITIATED
-  }
-}
-
-const passwordResetInitSuccess = () => {
-  return {
-    type: PWRESET_INIT_SUCCESS
-  }
-}
-
-const passwordResetInitError = (err) => {
-  return {
-    type: PWRESET_INIT_ERROR,
-    data: err
-  }
-}
-
-const passwordResetInitPost = (attrs) => {
-  return PolisNet.polisPost('/api/v3/auth/pwresettoken', attrs)
-}
-
-export const doPasswordResetInit = (attrs) => {
-  return (dispatch) => {
-    dispatch(passwordResetInitInitiated())
-    return passwordResetInitPost(attrs).then(
-      () => {
-        setTimeout(() => {
-          // Force page to load so we can be sure the password is cleared from memory
-          // delay a bit so the cookie has time to set
-          window.location = '/pwresetinit/done'
-        }, 3000)
-
-        return dispatch(passwordResetInitSuccess())
-      },
-      (err) => dispatch(passwordResetInitError(err))
-    )
-  }
-}
-
-/* passwordReset */
-
-const passwordResetInitiated = () => {
-  return {
-    type: PWRESET_INITIATED
-  }
-}
-
-const passwordResetSuccess = () => {
-  return {
-    type: PWRESET_SUCCESS
-  }
-}
-
-const passwordResetError = (err) => {
-  return {
-    type: PWRESET_ERROR,
-    data: err
-  }
-}
-
-const passwordResetPost = (attrs) => {
-  return PolisNet.polisPost('/api/v3/auth/password', attrs)
-}
-
-export const doPasswordReset = (attrs) => {
-  return (dispatch) => {
-    dispatch(passwordResetInitiated())
-    return passwordResetPost(attrs).then(
-      () => {
-        setTimeout(() => {
-          // Force page to load so we can be sure the password is cleared from memory
-          // delay a bit so the cookie has time to set
-          window.location = '/'
-        }, 3000)
-
-        return dispatch(passwordResetSuccess())
-      },
-      (err) => dispatch(passwordResetError(err))
-    )
-  }
-}
-
-/* signout */
-
-const signoutInitiated = () => {
-  return {
-    type: SIGNOUT_INITIATED
-  }
-}
-
-// SIGNOUT_SUCCESSFUL Not needed since redirecting to clear old user"s state from memory
-
-const signoutError = (err) => {
-  return {
-    type: SIGNOUT_ERROR,
-    data: err
-  }
-}
-
-const signoutPost = (dest) => {
-  // relying on server to clear cookies
-  return $.ajax({
-    type: 'POST',
-    url: '/api/v3/auth/deregister',
-    data: {},
-    dataType: 'text' // server returns an empty response, so can"t parse as JSON
-  })
-}
-
-export const doSignout = (dest) => {
-  return (dispatch) => {
-    dispatch(signoutInitiated())
-    return signoutPost().then(
-      (res) => {
-        setTimeout(() => {
-          // Force page to load so we can be sure the old user"s state is cleared from memory
-          // delay a bit so the cookies have time to clear too.
-          window.location = dest || '/home'
-        }, 1000)
-      },
-      (err) => dispatch(signoutError(err))
     )
   }
 }
@@ -416,7 +190,9 @@ const conversationsError = (err) => {
 }
 
 const fetchConversations = () => {
-  return $.get('/api/v3/conversations?include_all_conversations_i_am_in=true')
+  return PolisNet.polisGet('/api/v3/conversations', {
+    include_all_conversations_i_am_in: true
+  })
 }
 
 export const populateConversationsStore = () => {
@@ -461,7 +237,9 @@ export const resetMetadataStore = () => {
 }
 
 const fetchZidMetadata = (conversation_id) => {
-  return $.get('/api/v3/conversations?conversation_id=' + conversation_id)
+  return PolisNet.polisGet('/api/v3/conversations', {
+    conversation_id: conversation_id
+  })
 }
 
 export const populateZidMetadataStore = (conversation_id) => {
@@ -482,10 +260,7 @@ export const populateZidMetadataStore = (conversation_id) => {
     }
 
     // don"t fetch again if we already have data loaded for that conversation.
-    if (
-      hasConversationId &&
-      state.zid_metadata.zid_metadata.conversation_id === conversation_id
-    ) {
+    if (hasConversationId && state.zid_metadata.zid_metadata.conversation_id === conversation_id) {
       return
     }
 
@@ -522,15 +297,9 @@ const updateZidMetadataError = (err) => {
 const updateZidMetadata = (zm, field, value) => {
   const data = {}
   data[field] = value
-  return $.ajax({
-    url: '/api/v3/conversations',
-    method: 'PUT',
-    contentType: 'application/json; charset=utf-8',
-    headers: { 'Cache-Control': 'max-age=0' },
-    xhrFields: { withCredentials: true },
-    dataType: 'json',
-    data: JSON.stringify(Object.assign({}, zm, data))
-  })
+  const bodyData = Object.assign({}, zm, data)
+
+  return PolisNet.polisPut('/api/v3/conversations', bodyData)
 }
 
 export const handleZidMetadataUpdate = (zm, field, value) => {
@@ -538,7 +307,7 @@ export const handleZidMetadataUpdate = (zm, field, value) => {
     dispatch(updateZidMetadataStarted())
     return updateZidMetadata(zm, field, value)
       .then((res) => dispatch(updateZidMetadataSuccess(res)))
-      .fail((err) => dispatch(updateZidMetadataError(err)))
+      .catch((err) => dispatch(updateZidMetadataError(err)))
   }
 }
 
@@ -566,7 +335,6 @@ const submitSeedCommentStart = () => {
 }
 
 const submitSeedCommentPostSuccess = () => {
-  console.log('seed comment post success')
   return {
     type: SUBMIT_SEED_COMMENT_SUCCESS
   }
@@ -664,7 +432,7 @@ const postCreateConversation = () => {
   })
 }
 
-export const handleCreateConversationSubmit = (routeTo) => {
+export const handleCreateConversationSubmit = (history) => {
   return (dispatch) => {
     dispatch(createConversationStart())
     return postCreateConversation()
@@ -676,7 +444,13 @@ export const handleCreateConversationSubmit = (routeTo) => {
         (err) => dispatch(createConversationPostError(err))
       )
       .then((res) => {
-        window.location = '/m/' + res.conversation_id
+        if (history && history.push) {
+          // Use React Router navigation to avoid full page reload
+          history.push('/m/' + res.conversation_id)
+        } else {
+          // Fallback to window.location if history is not available
+          window.location = '/m/' + res.conversation_id
+        }
       })
   }
 }
@@ -704,14 +478,11 @@ const commentsFetchError = (err) => {
 }
 
 const fetchAllComments = (conversation_id) => {
-  // let includeSocial = "include_social=true&";
-  const includeSocial = ''
-  return $.get(
-    '/api/v3/comments?moderation=true&include_voting_patterns=false&' +
-      includeSocial +
-      'conversation_id=' +
-      conversation_id
-  )
+  return PolisNet.polisGet('/api/v3/comments', {
+    moderation: true,
+    include_voting_patterns: false,
+    conversation_id: conversation_id
+  })
 }
 
 export const populateCommentsStore = (conversation_id) => {
@@ -747,12 +518,10 @@ const mathFetchError = (err) => {
 }
 
 const fetchMath = (conversation_id, math_tick) => {
-  return $.get(
-    '/api/v3/math/pca2?&math_tick=' +
-      math_tick +
-      '&conversation_id=' +
-      conversation_id
-  )
+  return PolisNet.polisGet('/api/v3/math/pca2', {
+    math_tick: math_tick,
+    conversation_id: conversation_id
+  })
 }
 
 export const populateMathStore = (conversation_id) => {
@@ -789,13 +558,15 @@ const unmoderatedCommentsFetchError = (err) => {
 }
 
 const fetchUnmoderatedComments = (conversation_id) => {
-  // let includeSocial = "include_social=true&";
-  const includeSocial = ''
-  return $.get(
-    '/api/v3/comments?moderation=true&include_voting_patterns=false&' +
-      includeSocial +
-      'mod=0&conversation_id=' +
-      conversation_id
+  const url = `/api/v3/comments?moderation=true&include_voting_patterns=false&mod=0&conversation_id=${conversation_id}`
+
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    }).then((r) => r.json())
   )
 }
 
@@ -832,13 +603,15 @@ const acceptedCommentsFetchError = (err) => {
 }
 
 const fetchAcceptedComments = (conversation_id) => {
-  // let includeSocial = "include_social=true&";
-  const includeSocial = ''
-  return $.get(
-    '/api/v3/comments?moderation=true&include_voting_patterns=false&mod=1&' +
-      includeSocial +
-      'conversation_id=' +
-      conversation_id
+  const url = `/api/v3/comments?moderation=true&include_voting_patterns=false&mod=1&conversation_id=${conversation_id}`
+
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    }).then((r) => r.json())
   )
 }
 
@@ -875,13 +648,15 @@ const rejectedCommentsFetchError = (err) => {
 }
 
 const fetchRejectedComments = (conversation_id) => {
-  // let includeSocial = "include_social=true&";
-  const includeSocial = ''
-  return $.get(
-    '/api/v3/comments?moderation=true&include_voting_patterns=false&' +
-      includeSocial +
-      'mod=-1&conversation_id=' +
-      conversation_id
+  const url = `/api/v3/comments?moderation=true&include_voting_patterns=false&mod=-1&conversation_id=${conversation_id}`
+
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    }).then((r) => r.json())
   )
 }
 
@@ -899,11 +674,11 @@ export const populateRejectedCommentsStore = (conversation_id) => {
 
 export const populateAllCommentStores = (conversation_id) => {
   return (dispatch) => {
-    return $.when(
+    return Promise.all([
       dispatch(populateUnmoderatedCommentsStore(conversation_id)),
       dispatch(populateAcceptedCommentsStore(conversation_id)),
       dispatch(populateRejectedCommentsStore(conversation_id))
-    )
+    ])
   }
 }
 
@@ -934,11 +709,16 @@ const acceptCommentError = (err) => {
 }
 
 const putCommentAccepted = (comment) => {
-  return $.ajax({
-    method: 'PUT',
-    url: '/api/v3/comments',
-    data: Object.assign(comment, { mod: 1 })
-  })
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch('/api/v3/comments', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify(Object.assign(comment, { mod: 1 }))
+    }).then((r) => r.json())
+  )
 }
 
 export const changeCommentStatusToAccepted = (comment) => {
@@ -979,11 +759,16 @@ const rejectCommentError = (err) => {
 }
 
 const putCommentRejected = (comment) => {
-  return $.ajax({
-    method: 'PUT',
-    url: '/api/v3/comments',
-    data: Object.assign(comment, { mod: -1 })
-  })
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch('/api/v3/comments', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify(Object.assign(comment, { mod: -1 }))
+    }).then((r) => r.json())
+  )
 }
 
 export const changeCommentStatusToRejected = (comment) => {
@@ -1023,11 +808,16 @@ const commentIsMetaChangeError = (err) => {
 }
 
 const putCommentCommentIsMetaChange = (comment, is_meta) => {
-  return $.ajax({
-    method: 'PUT',
-    url: '/api/v3/comments',
-    data: Object.assign(comment, { is_meta: is_meta })
-  })
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch('/api/v3/comments', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify(Object.assign(comment, { is_meta: is_meta }))
+    }).then((r) => r.json())
+  )
 }
 
 export const changeCommentCommentIsMeta = (comment, is_meta) => {
@@ -1066,7 +856,16 @@ const participantsFetchError = (err) => {
 }
 
 const fetchParticipants = (conversation_id) => {
-  return $.get('/api/v3/ptptois?conversation_id=' + conversation_id)
+  const url = `/api/v3/ptptois?conversation_id=${conversation_id}`
+
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    }).then((r) => r.json())
+  )
 }
 
 export const populateParticipantsStore = (conversation_id) => {
@@ -1102,7 +901,16 @@ const defaultParticipantFetchError = (err) => {
 }
 
 const fetchDefaultParticipants = (conversation_id) => {
-  return $.get('/api/v3/ptptois?mod=0&conversation_id=' + conversation_id)
+  const url = `/api/v3/ptptois?mod=0&conversation_id=${conversation_id}`
+
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    }).then((r) => r.json())
+  )
 }
 
 export const populateDefaultParticipantStore = (conversation_id) => {
@@ -1138,7 +946,16 @@ const featuredParticipantFetchError = (err) => {
 }
 
 const fetchFeaturedParticipants = (conversation_id) => {
-  return $.get('/api/v3/ptptois?mod=1&conversation_id=' + conversation_id)
+  const url = `/api/v3/ptptois?mod=1&conversation_id=${conversation_id}`
+
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    }).then((r) => r.json())
+  )
 }
 
 export const populateFeaturedParticipantStore = (conversation_id) => {
@@ -1174,7 +991,16 @@ const hiddenParticipantFetchError = (err) => {
 }
 
 const fetchHiddenParticipants = (conversation_id) => {
-  return $.get('/api/v3/ptptois?mod=-1&conversation_id=' + conversation_id)
+  const url = `/api/v3/ptptois?mod=-1&conversation_id=${conversation_id}`
+
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    }).then((r) => r.json())
+  )
 }
 
 export const populateHiddenParticipantStore = (conversation_id) => {
@@ -1191,11 +1017,11 @@ export const populateHiddenParticipantStore = (conversation_id) => {
 
 export const populateAllParticipantStores = (conversation_id) => {
   return (dispatch) => {
-    return $.when(
+    return Promise.all([
       dispatch(populateDefaultParticipantStore(conversation_id)),
       dispatch(populateFeaturedParticipantStore(conversation_id)),
       dispatch(populateHiddenParticipantStore(conversation_id))
-    )
+    ])
   }
 }
 
@@ -1223,11 +1049,16 @@ const featureParticipantError = (err) => {
 }
 
 const putFeatureParticipant = (participant) => {
-  return $.ajax({
-    method: 'PUT',
-    url: '/api/v3/ptptois',
-    data: Object.assign(participant, { mod: 1 })
-  })
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch('/api/v3/ptptois', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify(Object.assign(participant, { mod: 1 }))
+    }).then((r) => r.json())
+  )
 }
 
 export const changeParticipantStatusToFeatured = (participant) => {
@@ -1263,11 +1094,16 @@ const hideParticipantError = (err) => {
 }
 
 const putHideParticipant = (participant) => {
-  return $.ajax({
-    method: 'PUT',
-    url: '/api/v3/ptptois',
-    data: Object.assign(participant, { mod: -1 })
-  })
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch('/api/v3/ptptois', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify(Object.assign(participant, { mod: -1 }))
+    }).then((r) => r.json())
+  )
 }
 
 export const changeParticipantStatusToHidden = (participant) => {
@@ -1307,11 +1143,16 @@ const unmoderateParticipantError = (err) => {
 }
 
 const putUnmoderateParticipant = (participant) => {
-  return $.ajax({
-    method: 'PUT',
-    url: '/api/v3/ptptois',
-    data: Object.assign(participant, { mod: 0 })
-  })
+  return PolisNet.getAccessTokenSilentlySPA().then((token) =>
+    fetch('/api/v3/ptptois', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify(Object.assign(participant, { mod: 0 }))
+    }).then((r) => r.json())
+  )
 }
 
 export const changeParticipantStatusToUnmoderated = (participant) => {
@@ -1347,11 +1188,12 @@ const conversationStatsFetchError = (err) => {
 }
 
 const fetchConversationStats = (conversation_id, until) => {
-  return $.get(
-    '/api/v3/conversationStats?conversation_id=' +
-      conversation_id +
-      (until ? '&until=' + until : '')
-  )
+  let url = `/api/v3/conversationStats?conversation_id=${conversation_id}`
+  if (until) {
+    url += `&until=${until}`
+  }
+
+  return PolisNet.polisGet(url)
 }
 
 export const populateConversationStatsStore = (conversation_id, until) => {
@@ -1384,36 +1226,18 @@ const dataExportError = () => {
   }
 }
 
-const dataExportGet = (
-  conversation_id,
-  format,
-  unixTimestamp,
-  untilEnabled
-) => {
-  //       url += ("&unixTimestamp=" + ((ctx.date/1000) << 0));
-
-  /* https://pol.is/api/v3/dataExport?conversation_id=2arcefpshi&format=csv&unixTimestamp=1447362000 */
+const dataExportGet = (conversation_id, format, unixTimestamp, untilEnabled) => {
   let url = `/api/v3/dataExport?conversation_id=${conversation_id}&format=${format}`
   if (untilEnabled) {
     url += `&unixTimestamp=${unixTimestamp}`
   }
-  return $.get(url)
+  return PolisNet.polisGet(url)
 }
 
-export const startDataExport = (
-  conversation_id,
-  format,
-  unixTimestamp,
-  untilEnabled
-) => {
+export const startDataExport = (conversation_id, format, unixTimestamp, untilEnabled) => {
   return (dispatch) => {
     dispatch(dataExportStarted())
-    return dataExportGet(
-      conversation_id,
-      format,
-      unixTimestamp,
-      untilEnabled
-    ).then(
+    return dataExportGet(conversation_id, format, unixTimestamp, untilEnabled).then(
       (res) => dispatch(dataExportSuccess(res)),
       (err) => dispatch(dataExportError(err))
     )

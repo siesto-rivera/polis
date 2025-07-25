@@ -6,29 +6,9 @@ var Constants = require("./constants");
 // Mapping of routing information to GA analytic tags.
 // Each key maps to an object that contains category and action to match gtag parameters.
 const methodToEventMap = {
-  createConversation: {
-    category: "Owner",
-    action: "createConversation"
-  },
-  createUser: {
-    category: "SignUp",
-    action: "createUser"
-  },
-  createUserViewFromEinvite: {
-    category: "SignUp",
-    action: "createUserViewFromEinvite"
-  },
   demoConversation: {
     category: "Demo",
     action: "demoConversation"
-  },
-  inbox: {
-    category: "Inbox",
-    action: "inbox"
-  },
-  landingPageView: {
-    category: "Landing",
-    action: "landingPageView"
   },
   participationView: {
     category: "Participation",
@@ -37,10 +17,6 @@ const methodToEventMap = {
   participationViewWithSuzinvite: {
     category: "Participation",
     action: "participationViewWithSuzinvite"
-  },
-  settings: {
-    category: "Account",
-    action: "settings"
   }
 };
 
@@ -50,12 +26,12 @@ function routeEvent(routerMethod, methodArgs) {
   }
 
   const event = methodToEventMap[routerMethod];
-  
+
   // check for demo
   if (window.location.href.match(/\/2demo/)) {
-    gtag('event', routerMethod, {
-      'event_category': 'Demo'
-    })
+    gtag("event", routerMethod, {
+      event_category: "Demo"
+    });
     return;
   }
 
@@ -63,14 +39,14 @@ function routeEvent(routerMethod, methodArgs) {
   const param = methodArgs ? methodArgs[0] : null;
 
   if (event) {
-    gtag('event', event.action, {
-      'event_category': event.category,
-      'event_param': param
+    gtag("event", event.action, {
+      event_category: event.category,
+      event_param: param
     });
   } else {
-    gtag('event', routerMethod, {
-      'event_category': 'Uncategorized',
-      'event_param': param
+    gtag("event", routerMethod, {
+      event_category: "Uncategorized",
+      event_param: param
     });
   }
 }

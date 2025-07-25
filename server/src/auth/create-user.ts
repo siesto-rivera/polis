@@ -1,224 +1,390 @@
 import _ from "underscore";
-
-import pg from "../db/pg-query";
-import fail from "../utils/fail";
+import { generateTokenP } from "./generate-token";
 import Config from "../config";
-import cookies from "../utils/cookies";
-import User from "../user";
-import Session from "../session";
-import Utils from "../utils/common";
-import Password from "./password";
-import emailSenders from "../email/senders";
+import logger from "../utils/logger";
+import pg from "../db/pg-query";
 
-const COOKIES = cookies.COOKIES;
-
-const sendTextEmail = emailSenders.sendTextEmail;
-function createUser(req: any, res: any) {
-  let hname = req.p.hname;
-  let password = req.p.password;
-  let password2 = req.p.password2; // for verification
-  let email = req.p.email;
-  let oinvite = req.p.oinvite;
-  let zinvite = req.p.zinvite;
-  let organization = req.p.organization;
-  let gatekeeperTosPrivacy = req.p.gatekeeperTosPrivacy;
-
-  let site_id = void 0;
-  if (req.p.encodedParams) {
-    let decodedParams = decodeParams(req.p.encodedParams);
-    if (decodedParams.site_id) {
-      // NOTE: we could have just allowed site_id to be passed as a normal param, but then we'd need to think about securing that with some other token sooner.
-      // I think we can get by with this obscure scheme for a bit.
-      // TODO_SECURITY add the extra token associated with the site_id owner.
-      site_id = decodedParams.site_id;
-    }
-  }
-
-  if (password2 && password !== password2) {
-    fail(res, 400, "Passwords do not match.");
-    return;
-  }
-  if (!gatekeeperTosPrivacy) {
-    fail(res, 400, "polis_err_reg_need_tos");
-    return;
-  }
-  if (!email) {
-    fail(res, 400, "polis_err_reg_need_email");
-    return;
-  }
-  if (!hname) {
-    fail(res, 400, "polis_err_reg_need_name");
-    return;
-  }
-  if (!password) {
-    fail(res, 400, "polis_err_reg_password");
-    return;
-  }
-  if (password.length < 6) {
-    fail(res, 400, "polis_err_reg_password_too_short");
-    return;
-  }
-  if (!_.contains(email, "@") || email.length < 3) {
-    fail(res, 400, "polis_err_reg_bad_email");
-    return;
-  }
-
-  pg.queryP("SELECT * FROM users WHERE email = ($1)", [email]).then(
-    //   Argument of type '(rows: string | any[]) => void' is not assignable to parameter of type '(value: unknown) => void | PromiseLike<void>'.
-    // Types of parameters 'rows' and 'value' are incompatible.
-    //   Type 'unknown' is not assignable to type 'string | any[]'.
-    //     Type 'unknown' is not assignable to type 'any[]'.ts(2345)
-    // @ts-ignore
-    function (rows: string | any[]) {
-      if (rows.length > 0) {
-        fail(res, 403, "polis_err_reg_user_with_that_email_exists");
-        return;
-      }
-
-      Password.generateHashedPassword(
-        password,
-        function (err: any, hashedPassword: any) {
-          if (err) {
-            fail(res, 500, "polis_err_generating_hash", err);
-            return;
-          }
-          let query =
-            "insert into users " +
-            "(email, hname, zinvite, oinvite, is_owner" +
-            (site_id ? ", site_id" : "") +
-            ") VALUES " + // TODO use sql query builder
-            "($1, $2, $3, $4, $5" +
-            (site_id ? ", $6" : "") +
-            ") " + // TODO use sql query builder
-            "returning uid;";
-          let vals = [email, hname, zinvite || null, oinvite || null, true];
-          if (site_id) {
-            vals.push(site_id); // TODO use sql query builder
-          }
-
-          pg.query(
-            query,
-            vals,
-            function (err: any, result: { rows: { uid: any }[] }) {
-              if (err) {
-                fail(res, 500, "polis_err_reg_failed_to_add_user_record", err);
-                return;
-              }
-              let uid =
-                result && result.rows && result.rows[0] && result.rows[0].uid;
-
-              pg.query(
-                "insert into jianiuevyew (uid, pwhash) values ($1, $2);",
-                [uid, hashedPassword],
-                function (err: any, results: any) {
-                  if (err) {
-                    fail(
-                      res,
-                      500,
-                      "polis_err_reg_failed_to_add_user_record",
-                      err
-                    );
-                    return;
-                  }
-                  Session.startSession(uid, function (err: any, token: any) {
-                    if (err) {
-                      fail(
-                        res,
-                        500,
-                        "polis_err_reg_failed_to_start_session",
-                        err
-                      );
-                      return;
-                    }
-                    cookies
-                      .addCookies(req, res, token, uid)
-                      .then(function () {
-                        res.json({
-                          uid: uid,
-                          hname: hname,
-                          email: email,
-                        });
-                      })
-                      .catch(function (err: any) {
-                        fail(res, 500, "polis_err_adding_user", err);
-                      });
-                  }); // end startSession
-                }
-              ); // end insert pwhash
-            }
-          ); // end insert user
-        }
-      ); // end generateHashedPassword
-    },
-    function (err: any) {
-      fail(res, 500, "polis_err_reg_checking_existing_users", err);
-    }
-  );
-}
-
-function doSendVerification(req: any, email: any) {
-  return Password.generateTokenP(30, false).then(function (einvite: any) {
-    return pg
-      .queryP("insert into einvites (email, einvite) values ($1, $2);", [
-        email,
-        einvite,
-      ])
-      .then(function (rows: any) {
-        return sendVerificationEmail(req, email, einvite);
-      });
-  });
-}
-
-function sendVerificationEmail(req: any, email: any, einvite: any) {
-  let serverName = Config.getServerNameWithProtocol(req);
-  let body = `Welcome to pol.is!
-
-Click this link to verify your email address:
-
-${serverName}/api/v3/verify?e=${einvite}`;
-
-  return sendTextEmail(
-    Config.polisFromAddress,
-    email,
-    "Polis verification",
-    body
-  );
-}
-
-function decodeParams(encodedStringifiedJson: string | string[]) {
-  if (
-    typeof encodedStringifiedJson === "string" &&
-    !encodedStringifiedJson.match(/^\/?ep1_/)
-  ) {
-    throw new Error("wrong encoded params prefix");
-  }
-  if (encodedStringifiedJson[0] === "/") {
-    encodedStringifiedJson = encodedStringifiedJson.slice(5);
-  } else {
-    encodedStringifiedJson = encodedStringifiedJson.slice(4);
-  }
-  let stringifiedJson = Utils.hexToStr(encodedStringifiedJson as string);
-  let o = JSON.parse(stringifiedJson);
-  return o;
-}
-
-function generateAndRegisterZinvite(zid: any, generateShort: any) {
+function generateAndRegisterZinvite(zid: number, generateShort: any) {
   let len = 10;
   if (generateShort) {
     len = 6;
   }
-  return Password.generateTokenP(len, false).then(function (zinvite: any) {
+  return generateTokenP(len, false).then(function (zinvite: string) {
     return pg
       .queryP(
         "INSERT INTO zinvites (zid, zinvite, created, uuid) VALUES ($1, $2, default, gen_random_uuid());",
         [zid, zinvite]
       )
-      .then(function (rows: any) {
+      .then(function (_rows: any) {
         return zinvite;
       });
   });
 }
 
-export { createUser, doSendVerification, generateAndRegisterZinvite };
+async function createAnonUser(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    pg.query(
+      "INSERT INTO users (created) VALUES (default) RETURNING uid;",
+      [],
+      function (err: any, results: { rows: { uid: number }[] }) {
+        if (err || !results || !results.rows || !results.rows.length) {
+          logger.error("polis_err_create_empty_user", err);
+          reject(new Error("polis_err_create_empty_user"));
+          return;
+        }
+        resolve(results.rows[0].uid);
+      }
+    );
+  });
+}
 
-export default { createUser, doSendVerification, generateAndRegisterZinvite };
+/**
+ * Get or create a user ID based on OIDC subject (sub)
+ * This function handles the OIDC → local user mapping using the oidc_user_mappings table
+ * Uses database-level upsert operations to handle race conditions more robustly
+ */
+async function getOrCreateUserIDFromOidcSub(
+  oidcSub: string,
+  oidcUser: any,
+  retryCount = 0
+): Promise<number> {
+  const maxRetries = 3;
+  const retryDelay = 100 + Math.random() * 200; // 100-300ms jitter
+
+  // Extract email from either standard claims or custom namespace claims
+  const namespace = Config.authNamespace;
+  const email = oidcUser.email || oidcUser[`${namespace}email`];
+  const name =
+    oidcUser.name || oidcUser[`${namespace}name`] || oidcUser.nickname;
+
+  // Validate required fields upfront
+  if (!email) {
+    throw new Error(
+      `OIDC user missing email. Sub: ${oidcSub}, User: ${JSON.stringify(
+        oidcUser
+      )}`
+    );
+  }
+
+  const displayName = name || oidcUser.nickname || email.split("@")[0];
+  const username = oidcUser.nickname || email.split("@")[0];
+
+  // Use a single transaction to handle the entire user creation/mapping process
+  // This prevents race conditions by ensuring atomicity
+  try {
+    const result = await new Promise<number>((resolve, reject) => {
+      pg.query("BEGIN", [], (beginErr: any) => {
+        if (beginErr) {
+          logger.error("Failed to begin transaction:", beginErr);
+          return reject(beginErr);
+        }
+
+        // First, try to get existing mapping
+        pg.query(
+          "SELECT uid FROM oidc_user_mappings WHERE oidc_sub = $1",
+          [oidcSub],
+          (mappingErr: any, mappingResult: { rows: any[] }) => {
+            if (mappingErr) {
+              return pg.query("ROLLBACK", [], () => reject(mappingErr));
+            }
+
+            if (mappingResult.rows.length > 0) {
+              // Mapping exists, commit and return
+              const uid = mappingResult.rows[0].uid;
+              return pg.query("COMMIT", [], (commitErr: any) => {
+                if (commitErr) return reject(commitErr);
+                resolve(uid);
+              });
+            }
+
+            // No mapping exists, so we need to create user and/or mapping
+            // Use improved upsert approach that handles constraint violations better
+            const upsertUserQuery = `
+              INSERT INTO users (email, hname, username, is_owner, created) 
+              VALUES ($1, $2, $3, $4, now_as_millis())
+              ON CONFLICT (email) DO UPDATE SET
+                hname = EXCLUDED.hname,
+                username = EXCLUDED.username
+              RETURNING uid
+            `;
+
+            pg.query(
+              upsertUserQuery,
+              [email, displayName, username, true],
+              (userErr: any, userResult: { rows: { uid: number }[] }) => {
+                if (userErr) {
+                  return pg.query("ROLLBACK", [], () => reject(userErr));
+                }
+
+                if (!userResult.rows.length) {
+                  return pg.query("ROLLBACK", [], () =>
+                    reject(new Error("Failed to create or find user"))
+                  );
+                }
+
+                const uid = userResult.rows[0].uid;
+
+                // Check if this uid already has a mapping to a different oidc_sub
+                pg.query(
+                  "SELECT oidc_sub FROM oidc_user_mappings WHERE uid = $1",
+                  [uid],
+                  (
+                    existingMappingErr: any,
+                    existingMappingResult: { rows: any[] }
+                  ) => {
+                    if (existingMappingErr) {
+                      return pg.query("ROLLBACK", [], () =>
+                        reject(existingMappingErr)
+                      );
+                    }
+
+                    if (existingMappingResult.rows.length > 0) {
+                      const existingOidcSub =
+                        existingMappingResult.rows[0].oidc_sub;
+                      if (existingOidcSub === oidcSub) {
+                        // Same mapping already exists, just return the uid
+                        return pg.query("COMMIT", [], (commitErr: any) => {
+                          if (commitErr) return reject(commitErr);
+                          logger.info(
+                            `Mapping already exists for OIDC sub ${oidcSub}: uid ${uid}`
+                          );
+                          resolve(uid);
+                        });
+                      } else {
+                        // Different OIDC user is already mapped to this local user.
+                        // This can happen if a user changes the email on their social login,
+                        // or deletes and recreates their account. We want the new login to win.
+                        logger.warn(
+                          `Local user ${uid} (${email}) was mapped to old OIDC sub ${existingOidcSub}. Overwriting with new mapping for ${oidcSub}.`
+                        );
+
+                        // To prevent unique constraint violations on either uid or oidc_sub,
+                        // we must first remove any existing mappings that would conflict.
+                        const cleanupQuery =
+                          "DELETE FROM oidc_user_mappings WHERE oidc_sub = $1 OR uid = $2";
+
+                        pg.query(
+                          cleanupQuery,
+                          [oidcSub, uid],
+                          (deleteErr: any) => {
+                            if (deleteErr) {
+                              return pg.query("ROLLBACK", [], () =>
+                                reject(deleteErr)
+                              );
+                            }
+
+                            // Now that the coast is clear, insert the new mapping.
+                            pg.query(
+                              "INSERT INTO oidc_user_mappings (oidc_sub, uid, created) VALUES ($1, $2, now_as_millis())",
+                              [oidcSub, uid],
+                              (insertErr: any) => {
+                                if (insertErr) {
+                                  return pg.query("ROLLBACK", [], () =>
+                                    reject(insertErr)
+                                  );
+                                }
+
+                                // Success, commit.
+                                pg.query("COMMIT", [], (commitErr: any) => {
+                                  if (commitErr) return reject(commitErr);
+                                  resolve(uid);
+                                });
+                              }
+                            );
+                          }
+                        );
+                      }
+                    } else {
+                      // No existing mapping for this uid, create new one
+                      pg.query(
+                        "INSERT INTO oidc_user_mappings (oidc_sub, uid, created) VALUES ($1, $2, now_as_millis()) ON CONFLICT (oidc_sub) DO NOTHING",
+                        [oidcSub, uid],
+                        (mappingInsertErr: any) => {
+                          if (mappingInsertErr) {
+                            return pg.query("ROLLBACK", [], () =>
+                              reject(mappingInsertErr)
+                            );
+                          }
+
+                          // Commit the transaction
+                          pg.query("COMMIT", [], (commitErr: any) => {
+                            if (commitErr) return reject(commitErr);
+                            logger.info(
+                              `Successfully created/linked user for OIDC sub ${oidcSub}: uid ${uid}`
+                            );
+                            resolve(uid);
+                          });
+                        }
+                      );
+                    }
+                  }
+                );
+              }
+            );
+          }
+        );
+      });
+    });
+
+    return result;
+  } catch (error: any) {
+    logger.error(
+      `Failed to get or create user for OIDC sub ${oidcSub}:`,
+      error
+    );
+
+    // Handle specific constraint violations with retry logic
+    if (error.code === "23505") {
+      // Handle oidc_user_mappings primary key constraint violation
+      if (error.constraint === "oidc_user_mappings_pkey") {
+        if (retryCount < maxRetries) {
+          logger.warn(
+            `OIDC mapping constraint violation (attempt ${retryCount + 1}/${
+              maxRetries + 1
+            }), retrying after ${retryDelay}ms for sub: ${oidcSub}`
+          );
+
+          // Wait with jitter to reduce collision probability
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+
+          // Retry with incremented count
+          return getOrCreateUserIDFromOidcSub(
+            oidcSub,
+            oidcUser,
+            retryCount + 1
+          );
+        } else {
+          // Max retries exceeded, try to find existing mapping
+          logger.error(
+            `Max retries exceeded for OIDC sub ${oidcSub}, attempting final lookup`
+          );
+
+          try {
+            const finalResult = await new Promise<number>((resolve, reject) => {
+              pg.query_readOnly(
+                "SELECT uid FROM oidc_user_mappings WHERE oidc_sub = $1",
+                [oidcSub],
+                (err: any, results: { rows: any[] }) => {
+                  if (err) return reject(err);
+                  if (!results.rows.length) {
+                    return reject(
+                      new Error(
+                        `OIDC mapping not found after retries for sub: ${oidcSub}`
+                      )
+                    );
+                  }
+                  logger.info(
+                    `Found existing mapping after retries for OIDC sub ${oidcSub}: uid ${results.rows[0].uid}`
+                  );
+                  resolve(results.rows[0].uid);
+                }
+              );
+            });
+            return finalResult;
+          } catch (lookupError) {
+            logger.error(
+              `Final lookup failed for OIDC sub ${oidcSub}:`,
+              lookupError
+            );
+            throw new Error(
+              `Unable to create or find user mapping for OIDC sub: ${oidcSub}. This may be due to high concurrency. Please try again.`
+            );
+          }
+        }
+      }
+
+      // Handle other constraint violations (users_email_key, oidc_user_mappings_uid_key)
+      else if (
+        error.constraint === "users_email_key" ||
+        error.constraint === "oidc_user_mappings_uid_key"
+      ) {
+        logger.warn(
+          `Constraint violation detected for ${email}, attempting recovery...`
+        );
+
+        try {
+          // Try to find the existing user and handle mapping conflicts
+          const recoveryResult = await new Promise<number>(
+            (resolve, reject) => {
+              pg.query_readOnly(
+                "SELECT uid FROM users WHERE LOWER(email) = LOWER($1)",
+                [email],
+                (err: any, results: { rows: any[] }) => {
+                  if (err) return reject(err);
+                  if (!results.rows.length) {
+                    return reject(
+                      new Error(
+                        `User with email ${email} not found during recovery`
+                      )
+                    );
+                  }
+
+                  const uid = results.rows[0].uid;
+
+                  // Check if there's already a mapping for this uid
+                  pg.query_readOnly(
+                    "SELECT oidc_sub FROM oidc_user_mappings WHERE uid = $1",
+                    [uid],
+                    (
+                      mappingCheckErr: any,
+                      mappingCheckResult: { rows: any[] }
+                    ) => {
+                      if (mappingCheckErr) return reject(mappingCheckErr);
+
+                      if (mappingCheckResult.rows.length > 0) {
+                        const existingOidcSub =
+                          mappingCheckResult.rows[0].oidc_sub;
+                        if (existingOidcSub === oidcSub) {
+                          // Mapping already exists for this oidc_sub
+                          logger.info(
+                            `Recovery: mapping already exists for OIDC sub ${oidcSub}: uid ${uid}`
+                          );
+                          resolve(uid);
+                        } else {
+                          // Different mapping exists - this is expected with test data
+                          logger.warn(
+                            `Recovery: uid ${uid} already mapped to ${existingOidcSub}, not creating new mapping for ${oidcSub}`
+                          );
+                          resolve(uid);
+                        }
+                      } else {
+                        // No mapping exists, create one
+                        pg.query(
+                          "INSERT INTO oidc_user_mappings (oidc_sub, uid, created) VALUES ($1, $2, now_as_millis()) ON CONFLICT (oidc_sub) DO NOTHING",
+                          [oidcSub, uid],
+                          (mappingErr: any) => {
+                            if (mappingErr) return reject(mappingErr);
+                            logger.info(
+                              `Recovery successful: linked existing user ${uid} to OIDC sub ${oidcSub}`
+                            );
+                            resolve(uid);
+                          }
+                        );
+                      }
+                    }
+                  );
+                }
+              );
+            }
+          );
+
+          return recoveryResult;
+        } catch (recoveryError) {
+          logger.error("Recovery attempt failed:", recoveryError);
+          throw new Error(
+            `Unable to create or find user for email: ${email}. Original error: ${error.message}, Recovery error: ${recoveryError}`
+          );
+        }
+      }
+    }
+
+    // Re-throw other errors
+    throw error;
+  }
+}
+
+export {
+  createAnonUser,
+  generateAndRegisterZinvite,
+  getOrCreateUserIDFromOidcSub,
+};

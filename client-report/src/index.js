@@ -2,13 +2,41 @@
 
 // React Core
 import React from "react";
+import { AuthProvider } from "react-oidc-context";
+import { WebStorageStateStore } from 'oidc-client-ts';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from "./components/app.jsx";
 
 class Root extends React.Component {
   render() {
-    return (
+    const authority = process.env.AUTH_ISSUER;
+    const clientId = process.env.AUTH_CLIENT_ID;
+    const audience = process.env.AUTH_AUDIENCE;
+    const redirectUri = window.location.origin;
+
+    if (!authority || !clientId || !audience) {
+      console.error('OIDC configuration is incomplete. Please check environment variables:');
+      console.error('AUTH_ISSUER:', process.env.AUTH_ISSUER);
+      console.error('AUTH_CLIENT_ID:', clientId);
+      console.error('AUTH_AUDIENCE:', audience);
+      return <div>OIDC configuration is required</div>;
+    }
+
+    const oidcConfig = {
+      authority,
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: 'openid profile email',
+      userStore: new WebStorageStateStore({ store: window.localStorage }),
+      extraQueryParams: { audience },
+    };
+
+    return process.env.AUTH_CLIENT_ID ? (
+      <AuthProvider {...oidcConfig}>
+        <App />
+      </AuthProvider>
+    ) : (
       <div>
         <App />
       </div>

@@ -2,14 +2,14 @@
 
 var URLs = require("../util/url");
 var $ = require("jquery");
-var Backbone = require('backbone');
+var Backbone = require("backbone");
+var PolisStorage = require("../util/polisStorage");
 
 var urlPrefix = URLs.urlPrefix;
-
 var api_version = "v3";
-
 var originalAjax = Backbone.ajax;
-Backbone.ajax = function(url, options) {
+
+Backbone.ajax = function (url, options) {
   // this block is from jQuery.ajax
   // If url is an object, simulate pre-1.5 signature
   if (typeof url === "object") {
@@ -18,9 +18,19 @@ Backbone.ajax = function(url, options) {
   }
 
   var base_url = urlPrefix + "api/" + api_version + "/";
-
-  //var base_url = "http://localhost:5000/" + api_version;
   url = base_url + url;
+
+  // Get JWT token if available
+  var jwtToken = PolisStorage.getJwtToken();
+
+  var headers = {
+    "Cache-Control": "max-age=0"
+  };
+
+  // Add JWT token to Authorization header if available
+  if (jwtToken) {
+    headers["Authorization"] = "Bearer " + jwtToken;
+  }
 
   var request = {
     //data
@@ -30,17 +40,13 @@ Backbone.ajax = function(url, options) {
     data: options.data,
 
     //authentication
-    headers: {
-      "Cache-Control": "max-age=0"
-        //"Cache-Control": "no-cache"
-        //"X-Parse-Application-Id": application_id,
-        //"X-Parse-REST-API-Key": rest_api_key
-    },
+    headers: headers,
     // crossDomain: true,
     xhrFields: {
       withCredentials: true
     }
   };
 
-  return originalAjax(url, $.extend(true, options, request));
+  var result = originalAjax(url, $.extend(true, options, request));
+  return result;
 };

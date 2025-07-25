@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-properties */
-import fs from "fs";
+import fs from "node:fs";
 import isTrue from "boolean";
 
 const devHostname: string = process.env.API_DEV_HOSTNAME || "localhost:5000";
@@ -70,6 +70,9 @@ export default {
   akismetAntispamApiKey: process.env.AKISMET_ANTISPAM_API_KEY || null,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || null,
   applicationName: process.env.APPLICATION_NAME || null,
+  authAudience: process.env.AUTH_AUDIENCE || null,
+  authIssuer: process.env.AUTH_ISSUER || null,
+  authNamespace: process.env.AUTH_NAMESPACE || null,
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || ("local" as string),
   awsRegion: process.env.AWS_REGION || ("local" as string),
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ("local" as string),
@@ -86,6 +89,7 @@ export default {
   googleApiKey: process.env.GOOGLE_API_KEY || null,
   googleJigsawPerspectiveApiKey:
     process.env.GOOGLE_JIGSAW_PERSPECTIVE_API_KEY || null,
+  jwksUri: process.env.JWKS_URI || null,
   logLevel: process.env.SERVER_LOG_LEVEL as string,
   logToFile: isTrue(process.env.SERVER_LOG_TO_FILE),
   mailgunApiKey: process.env.MAILGUN_API_KEY || null,
@@ -96,8 +100,11 @@ export default {
   ),
   mathEnv: process.env.MATH_ENV as string,
   nodeEnv: process.env.NODE_ENV as string,
+  isTesting: isTrue(process.env.TESTING),
   openaiApiKey: process.env.OPENAI_API_KEY || null,
   polisFromAddress: process.env.POLIS_FROM_ADDRESS as string,
+  polisJwtIssuer: process.env.POLIS_JWT_ISSUER || "https://pol.is/",
+  polisJwtAudience: process.env.POLIS_JWT_AUDIENCE || "participants",
   readOnlyDatabaseURL:
     process.env.READ_ONLY_DATABASE_URL || (process.env.DATABASE_URL as string),
   runPeriodicExportTests: isTrue(process.env.RUN_PERIODIC_EXPORT_TESTS),
@@ -125,6 +132,14 @@ export default {
   AWS_S3_ENDPOINT: process.env.AWS_S3_ENDPOINT,
   AWS_S3_PUBLIC_ENDPOINT: process.env.AWS_S3_PUBLIC_ENDPOINT,
   AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME,
+
+  // JWT configuration
+  jwtPrivateKeyPath:
+    process.env.JWT_PRIVATE_KEY_PATH || "/app/keys/jwt-private.pem",
+  jwtPublicKeyPath:
+    process.env.JWT_PUBLIC_KEY_PATH || "/app/keys/jwt-public.pem",
+  jwtPrivateKey: process.env.JWT_PRIVATE_KEY || null,
+  jwtPublicKey: process.env.JWT_PUBLIC_KEY || null,
 
   whitelistItems: [
     process.env.DOMAIN_WHITELIST_ITEM_01 || null,

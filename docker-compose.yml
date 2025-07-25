@@ -40,8 +40,6 @@ services:
         NODE_ENV: production
     labels:
       polis_tag: ${TAG:-dev}
-    depends_on:
-      - "file-server"
     networks:
       - "polis-net"
     # Scale the server container to a given number of instances.
@@ -105,7 +103,7 @@ services:
       - DATABASE_NAME=${POSTGRES_DB}
       - DATABASE_USER=${POSTGRES_USER:-christian}
       - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-polis123}
-      - DATABASE_SSL_MODE=${DATABASE_SSL_MODE}
+      - DATABASE_SSL_MODE=${DATABASE_SSL_MODE:-disable}
       - NUMBA_DISABLE_JIT=${NUMBA_DISABLE_JIT:-1}
       - INSTANCE_SIZE=${INSTANCE_SIZE:-default}
     networks:
@@ -145,6 +143,8 @@ services:
       dockerfile: nginx.Dockerfile
     labels:
       polis_tag: ${TAG:-dev}
+    environment:
+      - API_SERVER_PORT=${API_SERVER_PORT:-5000}
     depends_on:
       - "server"
     networks:
@@ -159,10 +159,15 @@ services:
       context: ./
       dockerfile: file-server/Dockerfile
       args:
+        AUTH_AUDIENCE: ${AUTH_AUDIENCE}
+        AUTH_CLIENT_ID: ${AUTH_CLIENT_ID}
+        AUTH_ISSUER: ${AUTH_ISSUER}
         EMBED_SERVICE_HOSTNAME: ${EMBED_SERVICE_HOSTNAME}
         GA_TRACKING_ID: ${GA_TRACKING_ID}
         GIT_HASH: "${GIT_HASH:-placeholder}"
         NODE_ENV: production
+        OIDC_CACHE_KEY_PREFIX: ${OIDC_CACHE_KEY_PREFIX}
+        OIDC_CACHE_KEY_ID_TOKEN_SUFFIX: ${OIDC_CACHE_KEY_ID_TOKEN_SUFFIX}
     labels:
       polis_tag: ${TAG:-dev}
     environment:

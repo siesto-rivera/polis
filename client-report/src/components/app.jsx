@@ -1,6 +1,7 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "react-oidc-context";
 
 import * as globals from "./globals.js";
 import URLs from "../util/url.js";
@@ -52,6 +53,11 @@ const computeVoteTotal = (users) => {
 };
 
 const App = (props) => {
+  const auth = useAuth();
+  
+  // Add token state to manage auth throughout the component
+  const [token, setToken] = useState(null);
+  
   const [loading, setLoading] = useState(true);
   const [consensus, setConsensus] = useState(null);
   const [math, setMath] = useState(null);
@@ -118,6 +124,26 @@ const App = (props) => {
 
   let corMatRetries;
 
+  // Effect to get auth token when authentication state changes
+  useEffect(() => {
+    const getToken = async () => {
+      if (process.env.AUTH_CLIENT_ID && auth.isAuthenticated && !auth.isLoading && auth.user) {
+        try {
+          // With react-oidc-context, the access token is available directly on the user object
+          const authToken = auth.user.access_token;
+          setToken(authToken);
+        } catch (error) {
+          console.warn("Failed to get access token:", error);
+          setToken(null);
+        }
+      } else {
+        setToken(null);
+      }
+    };
+    
+    getToken();
+  }, [auth.isAuthenticated, auth.isLoading, auth.user]);
+
   useEffect(() => {
     if (
       window.location.pathname.split("/")[1] === "narrativeReport" &&
@@ -179,12 +205,12 @@ const App = (props) => {
     }
   }, [narrative]);
 
-  const getMath = async (conversation_id) => {
+  const getMath = async (conversation_id, authToken = null) => {
     return net
       .polisGet("/api/v3/math/pca2", {
         lastVoteTimestamp: 0,
         conversation_id: conversation_id,
-      })
+      }, authToken)
       .then((data) => {
         if (!data) {
           return {};
@@ -193,28 +219,28 @@ const App = (props) => {
       });
   };
 
-  const getComments = (conversation_id, isStrictMod) => {
+  const getComments = (conversation_id, isStrictMod, authToken = null) => {
     return net.polisGet("/api/v3/comments", {
       conversation_id: conversation_id,
       report_id: report_id,
       moderation: true,
       mod_gt: -2,
       include_voting_patterns: true,
-    });
+    }, authToken);
   };
 
-  const getParticipantsOfInterest = (conversation_id) => {
+  const getParticipantsOfInterest = (conversation_id, authToken = null) => {
     return net.polisGet("/api/v3/ptptois", {
       conversation_id: conversation_id,
-    });
+    }, authToken);
   };
-  const getConversation = (conversation_id) => {
+  const getConversation = (conversation_id, authToken = null) => {
     return net.polisGet("/api/v3/conversations", {
       conversation_id: conversation_id,
-    });
+    }, authToken);
   };
 
-  const getNarrative = async (report_id) => {
+  const getNarrative = async (report_id, authToken = null) => {
     const urlPrefix = URLs.urlPrefix;
     try {
       const response = await fetch(
@@ -229,11 +255,12 @@ const App = (props) => {
           headers: {
             Accept: "application/json, text/plain, */*",
             "Content-Type": "application/json",
+            ...(authToken && {"Authorization": `Bearer ${authToken}`})
           },
         }
       );
 
-      if (!response.ok) {
+      if (!response.ok && response.status !== 304) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -278,11 +305,11 @@ const App = (props) => {
     }
   };
 
-  const getReport = (report_id) => {
+  const getReport = (report_id, authToken = null) => {
     return net
       .polisGet("/api/v3/reports", {
         report_id: report_id,
-      })
+      }, authToken)
       .then((reports) => {
         if (reports.length) {
           return reports[0];
@@ -291,18 +318,18 @@ const App = (props) => {
       });
   };
 
-  const getConversationStats = (conversation_id) => {
+  const getConversationStats = (conversation_id, authToken = null) => {
     return net.polisGet("/api/v3/conversationStats", {
       conversation_id: conversation_id,
       report_id: report_id,
-    });
+    }, authToken);
   };
 
-  const getCorrelationMatrix = (math_tick) => {
+  const getCorrelationMatrix = (math_tick, authToken = null) => {
     const attemptResponse = net.polisGet("/api/v3/math/correlationMatrix", {
       math_tick: math_tick,
       report_id: report_id,
-    });
+    }, authToken);
 
     return new Promise((resolve, reject) => {
       attemptResponse.then(
@@ -315,7 +342,7 @@ const App = (props) => {
             }
             setTimeout(
               () => {
-                getCorrelationMatrix(math_tick).then(resolve, reject);
+                getCorrelationMatrix(math_tick, authToken).then(resolve, reject);
               },
               corMatRetries < 10 ? 200 : 3000
             ); // try to get a quick response, but don't keep polling at that rate for more than 10 seconds.
@@ -337,31 +364,31 @@ const App = (props) => {
     });
   };
 
-  const getData = async () => {
-    const reportPromise = getReport(report_id);
+  const getData = async (authToken = null) => {
+    const reportPromise = getReport(report_id, authToken);
     const mathPromise = reportPromise.then((report) => {
-      return getMath(report.conversation_id);
+      return getMath(report.conversation_id, authToken);
     });
     const commentsPromise = reportPromise.then((report) => {
       return conversationPromise.then((conv) => {
-        return getComments(report.conversation_id, conv.strict_moderation);
+        return getComments(report.conversation_id, conv.strict_moderation, authToken);
       });
     });
     const participantsOfInterestPromise = reportPromise.then((report) => {
-      return getParticipantsOfInterest(report.conversation_id);
+      return getParticipantsOfInterest(report.conversation_id, authToken);
     });
     const matrixPromise = globals.enableMatrix
       ? mathPromise.then((math) => {
           const math_tick = math.math_tick;
-          return getCorrelationMatrix(math_tick);
+          return getCorrelationMatrix(math_tick, authToken);
         })
       : Promise.resolve();
     const conversationPromise = reportPromise.then((report) => {
-      return getConversation(report.conversation_id);
+      return getConversation(report.conversation_id, authToken);
     });
 
     const narrativePromise = reportPromise.then((report) => {
-      if (isNarrativeReport) getNarrative(report.report_id);
+      if (isNarrativeReport) getNarrative(report.report_id, authToken);
     });
 
     Promise.all([
@@ -561,13 +588,13 @@ const App = (props) => {
 
   useEffect(() => {
     const init = async () => {
-      await getData();
+      await getData(token);
 
       // Call to the Delphi endpoint to get LLM-generated topic names
       net
         .polisGet("/api/v3/delphi", {
           report_id: report_id,
-        })
+        }, token)
         .then((response) => {
           console.log("Delphi topics response:", response);
 
@@ -619,7 +646,7 @@ const App = (props) => {
 
       setInterval(() => {
         if (shouldPoll) {
-          getData();
+          getData(token);
         }
       }, 20 * 1000);
     };
@@ -635,7 +662,7 @@ const App = (props) => {
       resizeTimeout = setTimeout(handleResize, 500);
     });
     init();
-  }, []);
+  }, [token]);
 
   const onAutoRefreshEnabled = () => {
     setShouldPoll(true);
