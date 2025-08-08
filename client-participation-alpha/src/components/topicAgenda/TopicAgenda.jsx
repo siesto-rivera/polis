@@ -146,9 +146,14 @@ const TopicAgenda = ({ conversation, conversation_id }) => {
 
   const loadPreviousSelections = async () => {
     try {
+      const token = window.localStorage.getItem("participant_token_" + conversation.conversation_id);
       const response = await fetch(`${import.meta.env.PUBLIC_SERVICE_URL}/topicAgenda/selections?conversation_id=${conversation.conversation_id}`, {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${window.localStorage.getItem(token)}`
+        }
       });
       
       const result = await response.json();
