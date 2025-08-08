@@ -34,9 +34,11 @@ jobs:
         mkcert -cert-file localhost.pem -key-file localhost-key.pem \
           localhost 127.0.0.1 ::1 oidc-simulator host.docker.internal
         
-        # Copy mkcert root CA to the certs directory for Docker containers
+        # Copy mkcert root CA for other containers
         cp "$(mkcert -CAROOT)/rootCA.pem" ./rootCA.pem
-        chmod 644 localhost-key.pem
+        cp localhost.pem snakeoil.cert.pem
+        cp localhost-key.pem snakeoil.key.pem
+        chmod 644 localhost-key.pem snakeoil.key.pem
         
         # List generated files for debugging
         echo "Generated certificates:"
