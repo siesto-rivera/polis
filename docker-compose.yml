@@ -58,7 +58,10 @@ services:
       - DD_AGENT_HOST=datadog-agent
       - DD_TRACE_ENABLED=true
       - DD_SERVICE=server
-      - DD_ENV=prod
+      - DD_ENV=prod 
+      - DD_LOGS_INJECTION=true
+      - DD_TRACE_SAMPLE_RATE="1"
+      - DD_GIT_REPOSITORY_URL="github.com/compdemocracy/polis"
     env_file:
       - ${SERVER_ENV_FILE:-.env}
     image: 050917022930.dkr.ecr.us-east-1.amazonaws.com/polis/server:latest
@@ -99,6 +102,7 @@ services:
       - DD_TRACE_ENABLED=true
       - DD_SERVICE=math
       - DD_ENV=prod
+      - DD_LOGS_INJECTION=true
     networks:
       - "polis-net"
     restart: unless-stopped
@@ -146,6 +150,9 @@ services:
       - DD_TRACE_ENABLED=true
       - DD_SERVICE=delphi
       - DD_ENV=prod
+      - DD_LOGS_INJECTION=true
+      - DD_TRACE_SAMPLE_RATE="1" 
+      - DD_GIT_REPOSITORY_URL="github.com/compdemocracy/polis"
     networks:
       - "polis-net"
     extra_hosts:
@@ -287,6 +294,8 @@ services:
   datadog-agent:
     image: datadog/agent:7
     container_name: dd-agent
+    ports:
+      - "8126:8126/tcp"
     environment:
       - DD_API_KEY=${DD_API_KEY}
       - DD_SITE=us5.datadoghq.com
@@ -295,11 +304,25 @@ services:
       - DD_APM_NON_LOCAL_TRAFFIC=true
       - DD_PROCESS_CONFIG_PROCESS_COLLECTION_ENABLED=true
       - DD_LOGS_ENABLED=true
+      - DD_SYSTEM_PROBE_NETWORK_ENABLED=true
+      - DD_PROCESS_AGENT_ENABLED=true
     volumes:
       # These volumes are essential for the agent to monitor the host and other containers
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /proc/:/host/proc/:ro
       - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+      - /sys/kernel/debug:/sys/kernel/debug
+    cap_add:
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - SYS_PTRACE
+      - NET_ADMIN
+      - NET_BROADCAST
+      - NET_RAW
+      - IPC_LOCK
+      - CHOWN
+    security_opt:
+      - apparmor:unconfined
     profiles:
       - prod
 
