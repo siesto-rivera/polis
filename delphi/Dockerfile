@@ -94,19 +94,19 @@
   RUN chmod +x run_delphi.py setup_ollama.sh
   
   CMD ["bash", "-c", "\
-      echo 'Ensuring DynamoDB tables are set up (runs in all environments)...'; \
-      python create_dynamodb_tables.py && \
-      echo 'DynamoDB table setup script finished.'; \
-      \
-      if [ -n \"${DYNAMODB_ENDPOINT}\" ]; then \
-        echo 'DYNAMODB_ENDPOINT is set (value: \"${DYNAMODB_ENDPOINT}\"), assuming local/dev environment. Running additional local setup scripts...'; \
-        echo 'Setting up MinIO bucket...' && python setup_minio.py && \
-        echo 'Setting up Ollama model (local script)...' && ./setup_ollama.sh; \
-      else \
-        echo 'DYNAMODB_ENDPOINT is not set, assuming production-like environment. Skipping MinIO and local Ollama setup scripts.'; \
-      fi && \
-      \
-      echo 'Starting job poller...' && \
-      python scripts/job_poller.py --interval=2 && \
-      DD_APM_INSTRUMENTATION_LIBRARIES=java:1,python:3,js:5,php:1,dotnet:3,ruby:2 DD_APM_INSTRUMENTATION_ENABLED=docker DD_NO_AGENT_INSTALL=true curl -L https://install.datadoghq.com/scripts/install_script_agent7.sh \
+    echo 'Ensuring DynamoDB tables are set up (runs in all environments)...'; \
+    python create_dynamodb_tables.py && \
+    echo 'DynamoDB table setup script finished.'; \
+    \
+    if [ -n \"${DYNAMODB_ENDPOINT}\" ]; then \
+      echo 'DYNAMODB_ENDPOINT is set, assuming local/dev environment. Running additional local setup scripts...'; \
+      echo 'Setting up MinIO bucket...' && python setup_minio.py && \
+      echo 'Setting up Ollama model (local script)...' && ./setup_ollama.sh && \
+      echo 'Starting job poller without ddtrace...' && \
+      python scripts/job_poller.py --interval=2; \
+    else \
+      echo 'DYNAMODB_ENDPOINT is not set, assuming production-like environment. Skipping local setup scripts.'; \
+      echo 'Starting job poller WITH ddtrace...' && \
+      ddtrace-run python scripts/job_poller.py --interval=2; \
+    fi \
   "]
