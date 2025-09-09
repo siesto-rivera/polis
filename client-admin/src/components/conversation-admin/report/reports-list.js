@@ -64,7 +64,10 @@ const ReportsList = () => {
     const currentIsMod = zid_metadata?.zid_metadata?.is_mod
 
     // Load data if user is now a moderator and data hasn't been loaded
-    if (currentIsMod && !state.dataLoaded) {
+    if (
+      (currentIsMod && !state.dataLoaded) ||
+      JSON.parse(process.env.ADMIN_UIDS || []).indexOf(userState?.user?.uid) !== -1
+    ) {
       getData()
     }
 
