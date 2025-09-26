@@ -1,7 +1,7 @@
 version: 0.0
 os: linux
 files:
-  - source: appspec-euro.yml
+  - source: appspec.yml
     destination: /opt/polis/appspec.yml
   - source: scripts-euro/
     destination: /opt/polis/scripts/
