@@ -254,6 +254,23 @@ services:
       polis_tag: ${TAG:-dev}
     profiles:
       - local-services
+  
+  ses-local:
+    image: dasprid/aws-ses-v2-local:latest
+    container_name: polis-ses-local
+    ports:
+      - "8005:8005"
+    networks:
+      - "polis-net"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-ses-local-key}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-ses-local-secret}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_SES_V2_LOCAL_DISABLE_AUTH=true
+    labels:
+      polis_tag: ${TAG:-dev}
+    profiles:
+      - local-services
 
   # Ollama for LLM processing
   ollama:
