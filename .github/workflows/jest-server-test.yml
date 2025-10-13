@@ -65,13 +65,13 @@ jobs:
       run: |
         # Build all services except server (tests run on host)
         docker compose -f docker-compose.test.yml --env-file test.env build \
-          math postgres file-server maildev oidc-simulator dynamodb
+          math postgres file-server ses-local oidc-simulator dynamodb
 
     - name: Start services
       run: |
         # Start only required services in detached mode (exclude server)
         docker compose -f docker-compose.test.yml --env-file test.env up -d \
-          math postgres file-server maildev oidc-simulator dynamodb
+          math postgres file-server ses-local oidc-simulator dynamodb
         
         # Wait for services to be ready
         echo "Waiting for services to start..."
@@ -110,18 +110,16 @@ jobs:
       run: |
         cd server
         
-        # Set environment variables for tests
-        export NODE_EXTRA_CA_CERTS=$(pwd)/../.simulacrum/certs/rootCA.pem
-        export CI=true
-        export NODE_ENV=test
-        
-        # Override service URLs to use localhost instead of Docker service names
-        export DATABASE_URL=postgres://postgres:PdwPNS2mDN73Vfbc@localhost:5432/polis-test
-        export MAILDEV_HOST=localhost
-        export STATIC_FILES_HOST=localhost
-        export DYNAMODB_ENDPOINT=http://localhost:8000
-        
-        # Run the tests on the host machine
+        NODE_EXTRA_CA_CERTS=$(pwd)/../.simulacrum/certs/rootCA.pem \
+        CI=true \
+        NODE_ENV=test \
+        DATABASE_URL=postgres://postgres:PdwPNS2mDN73Vfbc@localhost:5432/polis-test \
+        STATIC_FILES_HOST=localhost \
+        DYNAMODB_ENDPOINT=http://localhost:8000 \
+        SES_ENDPOINT=http://localhost:8005 \
+        AWS_ACCESS_KEY_ID=ses-local-key \
+        AWS_SECRET_ACCESS_KEY=ses-local-secret \
+        AWS_REGION=us-east-1 \
         npm test -- --ci --coverage --maxWorkers=2
 
     - name: Upload test coverage
