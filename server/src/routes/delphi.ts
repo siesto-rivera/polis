@@ -238,8 +238,6 @@ const getLogs = async (
     let allEvents: FilteredLogEvent[] = [];
     let nextToken: string | undefined = undefined;
 
-    logger.info(`COMMAND TO SEND AWS FOR LOGS: ${JSON.stringify(command)}`);
-
     try {
       do {
         const command = new FilterLogEventsCommand({
