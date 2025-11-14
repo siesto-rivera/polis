@@ -61,43 +61,108 @@ jobs:
           bash -c 'until pg_isready -U $POSTGRES_USER; do sleep 5; done'
         echo "Postgres is ready."
 
-    - name: 6. Run Delphi Pytest
-      run: |
-        echo "Copying test files into container..."
-        docker compose -f docker-compose.test.yml cp delphi/tests delphi:/app/tests
-        docker compose -f docker-compose.test.yml cp delphi/real_data delphi:/app/real_data
+        - name: 6. Run Delphi Pytest
 
-        echo "Running tests..."
-        docker compose \
-          -f docker-compose.test.yml \
-          --env-file .env \
-          exec -T \
-          -e AWS_DEFAULT_REGION=us-east-1 \
-          -e AWS_REGION=us-east-1 \
-          -e AWS_ACCESS_KEY_ID=dummy \
-          -e AWS_SECRET_ACCESS_KEY=dummy \
-          delphi \
-          bash -c " \
-            echo '--- Setting up DynamoDB Tables ---'; \
-            python create_dynamodb_tables.py --region us-east-1; \
-            echo '--- Installing Pytest ---'; \
-            pip install pytest; \
-            echo '--- Running Pytest ---'; \
-            pytest /app/tests \
-          "
+          run: |
 
-    - name: 7. Show service logs on failure
-      if: failure()
-      run: |
-        echo "=== Delphi service logs ==="
-        docker compose -f docker-compose.test.yml logs delphi || true
-        echo "=== Postgres service logs ==="
-        docker compose -f docker-compose.test.yml logs postgres || true
-        echo "=== DynamoDB service logs ==="
-        docker compose -f docker-compose.test.yml logs dynamodb || true
+            echo "Copying test files into container..."
 
-    - name: 8. Clean up services
-      if: always()
-      run: |
-        echo "Cleaning up services..."
-        docker compose -f docker-compose.test.yml down -v
+            docker compose -f docker-compose.test.yml cp delphi/tests delphi:/app/tests
+
+            docker compose -f docker-compose.test.yml cp delphi/real_data delphi:/app/real_data
+
+    
+
+            echo "Running tests..."
+
+            docker compose \
+
+              -f docker-compose.test.yml \
+
+              --env-file .env \
+
+              exec -T \
+
+              -e AWS_DEFAULT_REGION=us-east-1 \
+
+              -e AWS_REGION=us-east-1 \
+
+              -e AWS_ACCESS_KEY_ID=dummy \
+
+              -e AWS_SECRET_ACCESS_KEY=dummy \
+
+              delphi \
+
+              bash -c " \
+
+                echo '--- Setting up DynamoDB Tables ---'; \
+
+                python create_dynamodb_tables.py --region us-east-1; \
+
+                echo '--- Installing Pytest & Coverage ---'; \
+
+                pip install pytest pytest-cov; \
+
+                echo '--- Running Pytest ---'; \
+
+                pytest --cov=delphi --cov-report=xml /app/tests \
+
+              "
+
+    
+
+        - name: 7. Copy coverage report from container
+
+          if: success()
+
+          run: |
+
+            echo "Copying coverage.xml from delphi container..."
+
+            docker compose -f docker-compose.test.yml cp delphi:/app/coverage.xml .
+
+    
+
+        - name: 8. Python Coverage Comment
+
+          if: success() && github.event_name == 'pull_request'
+
+          uses: py-cov-action/python-coverage-comment@v4
+
+          with:
+
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    
+
+        - name: 9. Show service logs on failure
+
+          if: failure()
+
+          run: |
+
+            echo "=== Delphi service logs ==="
+
+            docker compose -f docker-compose.test.yml logs delphi || true
+
+            echo "=== Postgres service logs ==="
+
+            docker compose -f docker-compose.test.yml logs postgres || true
+
+            echo "=== DynamoDB service logs ==="
+
+            docker compose -f docker-compose.test.yml logs dynamodb || true
+
+    
+
+        - name: 10. Clean up services
+
+          if: always()
+
+          run: |
+
+            echo "Cleaning up services..."
+
+            docker compose -f docker-compose.test.yml down -v
+
+    
