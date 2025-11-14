@@ -41,7 +41,7 @@ def run_real_data_test():
     print("==========================\n")
     
     # Import and run the real data tests
-    from tests.test_real_data import test_biodiversity_conversation, test_vw_conversation
+    from .test_real_data import test_biodiversity_conversation, test_vw_conversation
     
     try:
         print("Testing Biodiversity conversation...")
