@@ -97,7 +97,7 @@ jobs:
       uses: orgoro/coverage@v3.2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        coverageFile: delphi/.coverage
+        coverageFile: coverage.xml
 
     - name: 9. Show service logs on failure
       if: failure()
