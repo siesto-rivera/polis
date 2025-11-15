@@ -85,6 +85,7 @@ jobs:
             echo '--- Installing Pytest & Coverage ---'; \
             pip install pytest pytest-cov; \
             echo '--- Running Pytest ---'; \
+            export PYTHONPATH=\$PYTHONPATH:/app; \
             pytest --cov=polismath /app/tests \
           "
 
