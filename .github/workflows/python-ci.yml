@@ -97,8 +97,10 @@ jobs:
     - name: Create .coveragerc for Coverage Action
       if: success() # Only run this step if tests succeed
       run: |
-        echo "[run]" > .coveragerc
-        echo "source = delphi" >> .coveragerc
+        echo "[paths]" > .coveragerc
+        echo "source = " >> .coveragerc
+        echo "    /app" >> .coveragerc
+        echo "    /github/workspace/delphi" >> .coveragerc
 
     - name: 8. Python Coverage Comment
       if: success() && github.event_name == 'pull_request'
