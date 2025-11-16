@@ -63,8 +63,6 @@ jobs:
 
     - name: 6. Run Delphi Pytest
       run: |
-    - name: 6. Run Delphi Pytest and Generate Coverage Comment
-      run: |
         echo "Copying test files into container..."
         docker compose -f docker-compose.test.yml cp delphi/tests delphi:/app/tests
         docker compose -f docker-compose.test.yml cp delphi/real_data delphi:/app/real_data
@@ -80,38 +78,42 @@ jobs:
           -e AWS_SECRET_ACCESS_KEY=dummy \
           delphi \
           bash -c " \
+            set -e; \
             echo '--- Setting up DynamoDB Tables ---'; \
             python create_dynamodb_tables.py --region us-east-1; \
             echo '--- Installing Pytest & Coverage tools ---'; \
-            pip install pytest pytest-cov coverage-comment; \
+            pip install pytest pytest-cov coverage-comment-cli; \
             echo '--- Running Pytest ---'; \
             export PYTHONPATH=\$PYTHONPATH:/app; \
             pytest --cov=polismath --cov-report=xml:/app/coverage.xml /app/tests; \
             echo '--- Generating Coverage Comment Text ---'; \
-            coverage-comment --coverage-file /app/coverage.xml > /app/coverage-comment.txt \
+            coverage-comment-cli --report-file /app/coverage.xml > /app/coverage-comment.txt \
           "
 
     - name: 7. Copy coverage comment from container
-      if: success() && github.event_name == 'pull_request'
-      run: |
-        echo "Copying coverage-comment.txt file from delphi container..."
-        docker compose -f docker-compose.test.yml cp delphi:/app/coverage-comment.txt ./coverage-comment.txt
+      run: | 
+        echo "Copying .coverage file from delphi container..."
+        docker compose -f docker-compose.test.yml cp delphi:/app/.coverage .
 
-    - name: 8. Post Coverage Comment
+    - name: Create .coveragerc for Coverage Action
+      if: success() # Only run this step if tests succeed
+      run: |
+        echo "[paths]" > .coveragerc
+        echo "source =" >> .coveragerc
+        echo "    polismath" >> .coveragerc
+        echo "    delphi/polismath" >> .coveragerc
+        echo "    umap_narrative" >> .coveragerc
+        echo "    delphi/umap_narrative" >> .coveragerc
+        echo "    scripts" >> .coveragerc
+        echo "    delphi/scripts" >> .coveragerc
+        echo "    ." >> .coveragerc
+        echo "    delphi" >> .coveragerc
+
+    - name: 8. Python Coverage Comment
       if: success() && github.event_name == 'pull_request'
-      uses: actions/github-script@v6
+      uses: py-cov-action/python-coverage-comment-action@v3
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const fs = require('fs');
-          const commentBody = fs.readFileSync('coverage-comment.txt', 'utf8');
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: commentBody
-          });
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 9. Show service logs on failure
       if: failure()
