@@ -5,4 +5,4 @@
 relative_files = true
 
 # We also explicitly tell it what source folder to measure.
-source = polismath
+source = .
