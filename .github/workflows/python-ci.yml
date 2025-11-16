@@ -100,10 +100,7 @@ jobs:
         echo "[paths]" > .coveragerc
         echo "source =" >> .coveragerc
         echo "    /app" >> .coveragerc
-        echo "    delphi" >> .coveragerc
-        echo "" >> .coveragerc
-        echo "[run]" >> .coveragerc
-        echo "source = delphi" >> .coveragerc
+        echo "    ./delphi" >> .coveragerc
 
     - name: 8. Python Coverage Comment
       if: success() && github.event_name == 'pull_request'
