@@ -20,11 +20,11 @@ def db_conn():
     """Create a connection to the test PostgreSQL database."""
     try:
         conn = psycopg2.connect(
-            dbname=os.environ.get("DATABASE_NAME", "polis-test"),
-            user=os.environ.get("DATABASE_USER", "postgres"),
-            password=os.environ.get("DATABASE_PASSWORD", "postgres"),
-            host=os.environ.get("POSTGRES_HOST", "localhost"), # 'postgres' in CI
-            port=os.environ.get("DATABASE_PORT", 5432)
+            database=os.environ.get('POSTGRES_DB', 'polismath'),
+            user=os.environ.get('POSTGRES_USER', 'postgres'),
+            password=os.environ.get('POSTGRES_PASSWORD', 'postgres'),
+            host=os.environ.get('POSTGRES_HOST', 'localhost'),
+            port=os.environ.get('POSTGRES_PORT', '5432')
         )
         yield conn
         conn.close()
