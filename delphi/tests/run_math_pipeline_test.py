@@ -28,6 +28,7 @@ def db_conn():
           host=os.environ.get('POSTGRES_HOST', 'localhost'),
           port=os.environ.get('POSTGRES_PORT', '5432')
         )
+        conn.autocommit = True  # <-- ADD THIS to enable autocommit
         yield conn
         conn.close()
     except psycopg2.OperationalError as e:
@@ -87,6 +88,9 @@ def conversation_data(db_conn):
             (zid, now)
         )
 
+        # --- REMOVE FIRST COMMIT ---
+        # db_conn.commit()
+
         # 2. Insert Participants
         # p1 and p2 will agree, p3 will disagree
         participants = [
@@ -104,9 +108,8 @@ def conversation_data(db_conn):
         # Moderate out p4
         cursor.execute("UPDATE participants SET mod = '-1' WHERE zid = %s AND pid = 104", (zid,))
 
-        # --- ADDED COMMIT ---
-        # Commit participants before inserting comments to satisfy foreign key constraints
-        db_conn.commit()
+        # --- REMOVE SECOND COMMIT ---
+        # db_conn.commit()
 
         # 3. Insert Comments
         comments = [
@@ -145,7 +148,8 @@ def conversation_data(db_conn):
             votes
         )
         
-        db_conn.commit()
+        # --- REMOVE THIRD COMMIT ---
+        # db_conn.commit()
 
     yield zid # This is the value the test function will receive
 
