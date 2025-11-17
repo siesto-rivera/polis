@@ -66,14 +66,15 @@ def conversation_data(db_conn):
         # 2. Insert Participants
         # p1 and p2 will agree, p3 will disagree
         participants = [
-            (zid, 101, now),
-            (zid, 102, now),
-            (zid, 103, now),
-            (zid, 104, now), # Moderated out participant
+            # (zid, pid, created, uid)
+            (zid, 101, now, 1), # uid = 1
+            (zid, 102, now, 2), # uid = 2
+            (zid, 103, now, 3), # uid = 3
+            (zid, 104, now, 4), # Moderated out participant, uid = 4
         ]
         psycopg2.extras.execute_values(
             cursor,
-            "INSERT INTO participants (zid, pid, created) VALUES %s",
+            "INSERT INTO participants (zid, pid, created, uid) VALUES %s",
             participants
         )
         # Moderate out p4
