@@ -64,6 +64,8 @@ def conversation_data(db_conn):
         cursor.execute("DELETE FROM participants WHERE zid = %s", (zid,))
         # Clean up users we will create (uids 1, 2, 3, 4)
         cursor.execute("DELETE FROM users WHERE uid IN (1, 2, 3, 4)")
+        # Add cleanup for the conversations table
+        cursor.execute("DELETE FROM conversations WHERE zid = %s", (zid,))
         
         # 1.5. Insert Users (required for participants.uid foreign key)
         users = [
@@ -77,6 +79,12 @@ def conversation_data(db_conn):
             cursor,
             "INSERT INTO users (uid, username, created) VALUES %s",
             users
+        )
+
+        # 1.75. Insert Conversation (required for participants.zid foreign key)
+        cursor.execute(
+            "INSERT INTO conversations (zid, created, title) VALUES (%s, %s, %s)",
+            (zid, now, 'Test Conversation')
         )
 
         # 2. Insert Participants
@@ -144,6 +152,8 @@ def conversation_data(db_conn):
         cursor.execute("DELETE FROM participants WHERE zid = %s", (zid,))
         # Also clean up the users we created
         cursor.execute("DELETE FROM users WHERE uid IN (1, 2, 3, 4)")
+        # Add cleanup for the conversations table (order matters, delete from child tables first)
+        cursor.execute("DELETE FROM conversations WHERE zid = %s", (zid,))
         db_conn.commit()
 
 
