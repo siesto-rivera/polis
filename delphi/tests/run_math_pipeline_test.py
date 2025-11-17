@@ -83,8 +83,8 @@ def conversation_data(db_conn):
 
         # 1.75. Insert Conversation (required for participants.zid foreign key)
         cursor.execute(
-            "INSERT INTO conversations (zid, created, title) VALUES (%s, %s, %s)",
-            (zid, now, 'Test Conversation')
+            "INSERT INTO conversations (zid, created) VALUES (%s, %s)",
+            (zid, now)
         )
 
         # 2. Insert Participants
