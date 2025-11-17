@@ -106,15 +106,15 @@ def conversation_data(db_conn):
 
         # 3. Insert Comments
         comments = [
-            # tid, zid, pid, created, txt, is_seed
-            (1, zid, 101, now, "Comment 1: This is great", True),
-            (2, zid, 102, now, "Comment 2: I agree", False),
-            (3, zid, 103, now, "Comment 3: This is bad", False),
-            (4, zid, 101, now, "Comment 4: Moderated out", False),
+            # tid, zid, pid, created, txt, is_seed, uid
+            (1, zid, 101, now, "Comment 1: This is great", True, 1), # Added uid=1
+            (2, zid, 102, now, "Comment 2: I agree", False, 2),       # Added uid=2
+            (3, zid, 103, now, "Comment 3: This is bad", False, 3),       # Added uid=3
+            (4, zid, 101, now, "Comment 4: Moderated out", False, 1), # Added uid=1
         ]
         psycopg2.extras.execute_values(
             cursor,
-            "INSERT INTO comments (tid, zid, pid, created, txt, is_seed) VALUES %s",
+            "INSERT INTO comments (tid, zid, pid, created, txt, is_seed, uid) VALUES %s",
             comments
         )
         # Moderate out c4
