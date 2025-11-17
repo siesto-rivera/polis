@@ -62,7 +62,23 @@ def conversation_data(db_conn):
         cursor.execute("DELETE FROM votes WHERE zid = %s", (zid,))
         cursor.execute("DELETE FROM comments WHERE zid = %s", (zid,))
         cursor.execute("DELETE FROM participants WHERE zid = %s", (zid,))
+        # Clean up users we will create (uids 1, 2, 3, 4)
+        cursor.execute("DELETE FROM users WHERE uid IN (1, 2, 3, 4)")
         
+        # 1.5. Insert Users (required for participants.uid foreign key)
+        users = [
+            # (uid, username, created)
+            (1, 'testuser1', now),
+            (2, 'testuser2', now),
+            (3, 'testuser3', now),
+            (4, 'testuser4_mod', now),
+        ]
+        psycopg2.extras.execute_values(
+            cursor,
+            "INSERT INTO users (uid, username, created) VALUES %s",
+            users
+        )
+
         # 2. Insert Participants
         # p1 and p2 will agree, p3 will disagree
         participants = [
@@ -126,6 +142,8 @@ def conversation_data(db_conn):
         cursor.execute("DELETE FROM votes WHERE zid = %s", (zid,))
         cursor.execute("DELETE FROM comments WHERE zid = %s", (zid,))
         cursor.execute("DELETE FROM participants WHERE zid = %s", (zid,))
+        # Also clean up the users we created
+        cursor.execute("DELETE FROM users WHERE uid IN (1, 2, 3, 4)")
         db_conn.commit()
 
 
