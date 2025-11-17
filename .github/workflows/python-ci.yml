@@ -69,7 +69,7 @@ jobs:
         echo "Copying coverage script into container..."
         docker compose -f docker-compose.test.yml cp delphi/generate_coverage_md.py delphi:/app/generate_coverage_md.py
         echo "Copying script to be tested into container..."
-        docker compose -f docker-compose.test.yml cp delphi/polismath/run_math_pipeline.py delphi:/app/run_math_pipeline.py
+        docker compose -f docker-compose.test.yml cp delphi/run_math_pipeline.py delphi:/app/run_math_pipeline.py
 
         echo "Running tests and generating coverage report..."
         docker compose \
@@ -80,6 +80,7 @@ jobs:
           -e AWS_REGION=us-east-1 \
           -e AWS_ACCESS_KEY_ID=dummy \
           -e AWS_SECRET_ACCESS_KEY=dummy \
+          -e POSTGRES_HOST=postgres \
           delphi \
           bash -c " \
             set -e; \
