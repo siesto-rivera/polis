@@ -50,7 +50,9 @@ def parse_csv_to_dicts(filepath):
         pytest.skip(f"Mock data file not found: {filepath}. Skipping test.")
     
     data = []
-    with open(filepath, 'r') as f:
+    # FIX: Open with encoding='utf-8-sig' to handle potential BOM (Byte Order Mark)
+    # at the start of the CSV file, which can corrupt the first header name.
+    with open(filepath, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
         for row in reader:
             data.append(row)
@@ -72,10 +74,11 @@ def mock_comments_data():
             created_time = None
 
         comments_list.append({
-            # FIX: Changed 'comment_id' to 'tid' to match the CSV column
-            'tid': str(comment['tid']),
+            # FIX: Changed to 'comment-id' to match the CSV header
+            'tid': str(comment['comment-id']),
             'created': created_time,
-            'txt': comment['comment_body'],
+            # FIX: Changed to 'comment-body' to match the CSV header
+            'txt': comment['comment-body'],
             'is_seed': bool(comment.get('is_seed', 'false').lower() == 'true')
         })
     return {'comments': comments_list}
@@ -97,9 +100,10 @@ def mock_votes_data():
 
         # For Conversation.update_votes()
         votes_list_dicts.append({
-            'pid': str(vote['voter_id']),
-            # FIX: Changed 'comment_id' to 'tid' to match the CSV column
-            'tid': str(vote['tid']),
+            # FIX: Changed to 'voter-id' to match CSV header
+            'pid': str(vote['voter-id']),
+            # FIX: Changed to 'comment-id' to match CSV header
+            'tid': str(vote['comment-id']),
             'vote': float(vote['vote']),
             'created': created_time_int
         })
@@ -108,9 +112,10 @@ def mock_votes_data():
         # Format: (created, tid, pid, vote)
         votes_list_tuples.append((
             created_time_float,
-            # FIX: Changed 'comment_id' to 'tid' to match the CSV column
-            int(vote['tid']),
-            int(vote['voter_id']),
+            # FIX: Changed to 'comment-id' to match CSV header
+            int(vote['comment-id']),
+            # FIX: Changed to 'voter-id' to match CSV header
+            int(vote['voter-id']),
             float(vote['vote'])
         ))
     
