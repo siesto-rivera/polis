@@ -88,8 +88,6 @@ jobs:
             set -e; \
             echo '--- Setting up DynamoDB Tables ---'; \
             python create_dynamodb_tables.py --region us-east-1; \
-            echo '--- Installing Pytest & Coverage tools ---'; \
-            pip install pytest pytest-cov coverage; \
             echo '--- Running Pytest ---'; \
             export PYTHONPATH=\$PYTHONPATH:/app; \
             pytest --cov=polismath --cov=run_math_pipeline --cov-report=xml:/app/coverage.xml /app/tests --ignore=/app/tests/test_pakistan_conversation.py
