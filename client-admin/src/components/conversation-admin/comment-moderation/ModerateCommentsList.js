@@ -7,6 +7,7 @@ import {
 } from '../../../actions'
 import Comment from './Comment'
 import Pagination from '../Pagination'
+import strings from '../../../strings/strings'
 
 /**
  * Shared component for displaying moderated comments (unmoderated, accepted, or rejected)
@@ -64,8 +65,8 @@ const ModerateCommentsList = ({
           rejectButton={showRejectButton}
           acceptClickHandler={onCommentAccepted}
           rejectClickHandler={onCommentRejected}
-          acceptButtonText="accept"
-          rejectButtonText="reject"
+          acceptButtonText={strings('mod_accept')}
+          rejectButtonText={strings('mod_reject')}
           isMetaCheckbox
           toggleIsMetaHandler={toggleIsMetaHandler}
           comment={comment}

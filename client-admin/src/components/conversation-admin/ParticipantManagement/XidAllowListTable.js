@@ -5,6 +5,7 @@ import PolisNet from '../../../util/net'
 import Spinner from '../../framework/Spinner'
 import Pagination from '../Pagination'
 import UploadXidsModal from './UploadXidsModal'
+import strings from '../../../strings/strings'
 
 const XidAllowListTable = ({ conversationId }) => {
   const [xids, setXids] = useState([])
@@ -123,14 +124,14 @@ const XidAllowListTable = ({ conversationId }) => {
             size="small"
             onClick={() => setIsUploadModalOpen(true)}
             disabled={!conversationId}>
-            Upload XIDs
+            {strings('participants_upload_xids')}
           </Button>
           <Button
             variant="outline"
             size="small"
             onClick={handleDownloadCsv}
             disabled={downloadLoading || !conversationId}>
-            {downloadLoading ? 'Preparing…' : 'Download CSV'}
+            {downloadLoading ? strings('participants_preparing') : strings('participants_download_csv')}
           </Button>
         </Flex>
         <UploadXidsModal
@@ -140,7 +141,7 @@ const XidAllowListTable = ({ conversationId }) => {
           conversationId={conversationId}
         />
         <Text sx={{ color: 'mediumGray', mb: [3] }}>
-          No XIDs in the allow list for this conversation.
+          {strings('participants_no_allow_list')}
         </Text>
       </>
     )
@@ -154,14 +155,14 @@ const XidAllowListTable = ({ conversationId }) => {
           size="small"
           onClick={() => setIsUploadModalOpen(true)}
           disabled={!conversationId}>
-          Upload XIDs
+          {strings('participants_upload_xids')}
         </Button>
         <Button
           variant="outline"
           size="small"
           onClick={handleDownloadCsv}
           disabled={downloadLoading || !conversationId}>
-          {downloadLoading ? 'Preparing…' : 'Download CSV'}
+          {downloadLoading ? strings('participants_preparing') : strings('participants_download_csv')}
         </Button>
       </Flex>
       <UploadXidsModal
@@ -196,7 +197,7 @@ const XidAllowListTable = ({ conversationId }) => {
                 borderRight: '1px solid',
                 borderColor: 'mediumGray'
               }}>
-              PID
+              {strings('participants_col_pid')}
             </Box>
             <Box
               as="th"
@@ -207,7 +208,7 @@ const XidAllowListTable = ({ conversationId }) => {
                 fontWeight: 'bold',
                 fontSize: [1]
               }}>
-              XID
+              {strings('participants_col_xid')}
             </Box>
           </Box>
         </Box>

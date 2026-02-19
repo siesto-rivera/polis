@@ -460,6 +460,7 @@ const TopicsVizReport = ({ report_id }) => {
                         width="100%"
                         height="800"
                         frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; webgpu; webgl"
                       ></iframe>
                     </div>
                   </div>

@@ -7,6 +7,7 @@ import { useConversationData } from '../../util/conversation_data'
 import ConversationHasCommentsCheck from './ConversationHasCommentsCheck'
 import ParticipantXids from './ParticipantXids'
 import Url from '../../util/url'
+import strings from '../../strings/strings'
 
 const ShareAndEmbed = () => {
   const params = useParams()
@@ -18,7 +19,7 @@ const ShareAndEmbed = () => {
   const constructEmbeddedOnMarkup = () => {
     return (
       <p data-testid="embed-page">
-        {'Embedded on: '}
+        {strings('dist_embedded_on')}
         <a style={{ color: 'black' }} target="blank" href={conversationData.parent_url}>
           {conversationData.parent_url}
         </a>
@@ -35,7 +36,7 @@ const ShareAndEmbed = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Distribute
+        {strings('dist_heading')}
       </Heading>
       <ConversationHasCommentsCheck
         conversation_id={params.conversation_id}
@@ -47,7 +48,7 @@ const ShareAndEmbed = () => {
             display: 'block',
             mb: [2]
           }}>
-          Share
+          {strings('dist_share')}
         </Text>
         <Text
           sx={{
@@ -65,7 +66,7 @@ const ShareAndEmbed = () => {
             display: 'block',
             mb: [2]
           }}>
-          Embed
+          {strings('dist_embed')}
         </Text>
         <div>
           <pre>
@@ -82,8 +83,8 @@ const ShareAndEmbed = () => {
             maxWidth: ['100%', '100%', '35em'],
             mt: [2]
           }}>
-          This embed code can only be used to embed a single conversation.{' '}
-          <Link to="/integrate">I want to integrate pol.is on my entire site.</Link>
+          {strings('dist_embed_note')}{' '}
+          <Link to="/integrate">{strings('dist_integrate_link')}</Link>
         </Text>
         <div>{conversationData.parent_url ? constructEmbeddedOnMarkup() : ''}</div>
       </Box>

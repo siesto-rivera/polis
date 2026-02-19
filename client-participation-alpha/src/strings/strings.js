@@ -52,6 +52,8 @@ const translationModules = {
   it: () => import('./it.js'),
   // Japanese
   ja: () => import('./ja.js'),
+  // Korean
+  ko: () => import('./ko.js'),
   // Dutch
   nl: () => import('./nl.js'),
   // Pashto
@@ -119,6 +121,7 @@ const languageMap = {
   'sw': 'sw',
   'vi': 'vi',
   'bs': 'bs',
+  'ko': 'ko',
 };
 
 
@@ -159,18 +162,54 @@ function getTargetLanguageCode() {
   return null; // No suitable language found
 }
 
-let translationsStore = null;
+const translationsCache = {};
+
+/**
+ * Resolves a language code (from ui_lang param, Accept-Language header, or browser)
+ * to a translationModules key.
+ * @param {string} lang - A language code like 'ko', 'pt-BR', 'zh-CN', etc.
+ * @returns {string|null} The translationModules key, or null if not found.
+ */
+function resolveLanguageCode(lang) {
+  if (!lang) return null;
+  // Exact match in languageMap
+  if (languageMap[lang] && translationModules[languageMap[lang]]) {
+    return languageMap[lang];
+  }
+  // Partial match (e.g., 'ko' from 'ko-KR')
+  const baseLang = lang.split('-')[0];
+  if (languageMap[baseLang] && translationModules[languageMap[baseLang]]) {
+    return languageMap[baseLang];
+  }
+  // Direct translationModules key (e.g., 'ko' is both a languageMap key and module key)
+  if (translationModules[lang]) {
+    return lang;
+  }
+  return null;
+}
 
 /**
  * Asynchronously loads and returns the translation strings.
  * It fetches the English strings as a base and merges the user's preferred language on top.
- * Results are cached after the first call.
+ * Results are cached per language.
  *
+ * @param {string} [langOverride] - Optional language code to use instead of browser detection.
+ *   Pass this from SSR contexts (e.g., Astro.url.searchParams.get('ui_lang') or Accept-Language header)
+ *   where `window` is not available.
  * @returns {Promise<{[key: string]: string}>} A promise that resolves to the final strings object.
  */
-export async function getTranslations() {
-  if (translationsStore) {
-    return translationsStore;
+export async function getTranslations(langOverride) {
+  // Determine target language
+  let targetCode = null;
+  if (langOverride) {
+    targetCode = resolveLanguageCode(langOverride);
+  } else {
+    targetCode = getTargetLanguageCode();
+  }
+
+  const cacheKey = targetCode || 'en_us';
+  if (translationsCache[cacheKey]) {
+    return translationsCache[cacheKey];
   }
 
   try {
@@ -178,17 +217,14 @@ export async function getTranslations() {
     const { default: enStrings } = await translationModules.en_us();
     let finalStrings = { ...enStrings };
 
-    // 2. Determine the user's preferred language.
-    const targetCode = getTargetLanguageCode();
-
-    // 3. If a different language is found, load it and merge it over the English default.
+    // 2. If a different language is found, load it and merge it over the English default.
     if (targetCode && targetCode !== 'en_us') {
       const { default: targetStrings } = await translationModules[targetCode]();
       Object.assign(finalStrings, targetStrings); // Merges target strings, overwriting English keys.
     }
 
-    translationsStore = finalStrings;
-    return translationsStore;
+    translationsCache[cacheKey] = finalStrings;
+    return finalStrings;
   } catch (error) {
     console.error("I18n Error: Could not load translation files.", error);
     // Fallback to an empty object or handle error appropriately

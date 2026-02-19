@@ -2,6 +2,7 @@ import PropTypes from 'prop-types'
 import { Box } from 'theme-ui'
 import { Link } from 'react-router'
 import Logomark from './framework/Logomark'
+import strings from '../strings/strings'
 // import DonationBanner from './conversation-admin/DonationBanner'
 
 const InteriorHeader = ({ children }) => {
@@ -31,7 +32,7 @@ const InteriorHeader = ({ children }) => {
           }}
           to="/">
           <Logomark style={{ position: 'relative', top: 2 }} fill={'white'} />
-          <Box sx={{ fontSize: [2, 2, 2], whiteSpace: 'nowrap' }}>Polis</Box>
+          <Box sx={{ fontSize: [2, 2, 2], whiteSpace: 'nowrap' }}>{strings('nav_polis')}</Box>
         </Link>
         <Link
           id="signoutLink"
@@ -42,7 +43,7 @@ const InteriorHeader = ({ children }) => {
             flexShrink: 0
           }}
           to="/signout">
-          sign out
+          {strings('nav_sign_out')}
         </Link>
       </Box>
       {/* <DonationBanner /> */}

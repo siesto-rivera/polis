@@ -5,6 +5,7 @@ import { VictoryChart, VictoryArea } from 'victory'
 import victoryTheme from './victoryTheme'
 import theme from '../../../theme'
 import PropTypes from 'prop-types'
+import strings from '../../../strings/strings'
 
 const Voters = ({ size, firstVoteTimes }) => {
   if (firstVoteTimes.length <= 1) return null /* no area chart with 1 data point */
@@ -17,7 +18,7 @@ const Voters = ({ size, firstVoteTimes }) => {
           lineHeight: 'body',
           my: [2]
         }}>
-        Voters over time, by time of first vote
+        {strings('stats_voters_over_time')}
       </Heading>
       <Box sx={{ overflow: 'hidden', width: '100%' }}>
         <VictoryChart

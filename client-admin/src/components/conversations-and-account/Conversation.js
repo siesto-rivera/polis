@@ -1,5 +1,6 @@
 import { Text, Card } from 'theme-ui'
 import PropTypes from 'prop-types'
+import strings from '../../strings/strings'
 
 function Conversation({ c, i, goToConversation }) {
   return (
@@ -14,12 +15,12 @@ function Conversation({ c, i, goToConversation }) {
       {c.parent_url && (
         <Text as="span" data-testid="embed-page">
           {' '}
-          {`Embedded on ${c.parent_url}`}
+          {strings('convos_embedded_on', { url: c.parent_url })}
         </Text>
       )}
       <Text as="span" sx={{ ml: [2], color: 'textSecondary', fontSize: [1] }}>
         {' '}
-        {c.participant_count} participants
+        {strings('convos_participants_count', { count: c.participant_count })}
       </Text>
     </Card>
   )

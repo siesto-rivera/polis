@@ -6,6 +6,7 @@ import { useConversationData } from '../../util/conversation_data'
 import Pagination from './Pagination'
 import PolisNet from '../../util/net'
 import Spinner from '../framework/Spinner'
+import strings from '../../strings/strings'
 
 const InviteCodes = () => {
   const params = useParams()
@@ -98,15 +99,15 @@ const InviteCodes = () => {
   const getStatusText = (status) => {
     switch (status) {
       case 0:
-        return 'Unused'
+        return strings('invite_status_unused')
       case 1:
-        return 'Used'
+        return strings('invite_status_used')
       case 2:
-        return 'Revoked'
+        return strings('invite_status_revoked')
       case 3:
-        return 'Expired'
+        return strings('invite_status_expired')
       default:
-        return `Status ${status}`
+        return strings('invite_status_n', { status })
     }
   }
 
@@ -174,13 +175,12 @@ const InviteCodes = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Invite Codes
+        {strings('invite_codes_heading')}
       </Heading>
 
       {!enabled ? (
         <Text>
-          Invite Tree is not enabled. To use this feature, enable Invite Tree in the Conversation
-          Configure options.
+          {strings('invite_tree_not_enabled')}
         </Text>
       ) : (
         <>
@@ -194,53 +194,53 @@ const InviteCodes = () => {
               gap: [2]
             }}>
             <Text sx={{ display: 'block', mb: [2] }}>
-              These are the invite codes for the owner of this conversation.
+              {strings('invite_codes_desc')}
             </Text>
             <Button
               onClick={handleDownloadCsv}
               variant="outline"
               disabled={!conversationId || downloadLoading}
               sx={{ fontSize: [1] }}>
-              {downloadLoading ? 'Preparing…' : 'Download CSV'}
+              {downloadLoading ? strings('invite_preparing') : strings('invite_download_csv')}
             </Button>
           </Box>
 
           {/* Filters */}
           <Box sx={{ mb: [3], p: [3], bg: 'lightGray', borderRadius: 2 }}>
-            <Text sx={{ fontWeight: 'bold', mb: [2] }}>Filters</Text>
+            <Text sx={{ fontWeight: 'bold', mb: [2] }}>{strings('invite_filters')}</Text>
             <Box sx={{ display: 'flex', gap: [3], alignItems: 'end', flexWrap: 'wrap' }}>
               <Box>
-                <Text sx={{ display: 'block', mb: [1], fontSize: [1] }}>Wave</Text>
+                <Text sx={{ display: 'block', mb: [1], fontSize: [1] }}>{strings('invite_filter_wave')}</Text>
                 <Select
                   value={waveFilter}
                   onChange={(e) => setWaveFilter(e.target.value)}
                   sx={{ minWidth: '120px' }}>
-                  <option value="">All waves</option>
+                  <option value="">{strings('invite_all_waves')}</option>
                   {availableWaves.map((wave) => (
                     <option key={wave.id} value={wave.id}>
-                      Wave {wave.wave}
+                      {strings('invite_wave_n', { wave: wave.wave })}
                     </option>
                   ))}
                 </Select>
               </Box>
 
               <Box>
-                <Text sx={{ display: 'block', mb: [1], fontSize: [1] }}>Status</Text>
+                <Text sx={{ display: 'block', mb: [1], fontSize: [1] }}>{strings('invite_filter_status')}</Text>
                 <Select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   sx={{ minWidth: '140px' }}>
-                  <option value="">All statuses</option>
-                  <option value="0">Unused</option>
-                  <option value="1">Used</option>
-                  <option value="2">Revoked</option>
-                  <option value="3">Expired</option>
+                  <option value="">{strings('invite_all_statuses')}</option>
+                  <option value="0">{strings('invite_status_unused')}</option>
+                  <option value="1">{strings('invite_status_used')}</option>
+                  <option value="2">{strings('invite_status_revoked')}</option>
+                  <option value="3">{strings('invite_status_expired')}</option>
                 </Select>
               </Box>
 
               {(waveFilter || statusFilter !== '') && (
                 <Button variant="outline" onClick={handleClearFilters} sx={{ fontSize: [1] }}>
-                  Clear Filters
+                  {strings('invite_clear_filters')}
                 </Button>
               )}
             </Box>
@@ -253,9 +253,7 @@ const InviteCodes = () => {
           ) : invites.length > 0 ? (
             <Box>
               <Text sx={{ mb: [2], fontWeight: 'bold' }}>
-                {pagination?.total
-                  ? `Found ${pagination.total} invite code${pagination.total !== 1 ? 's' : ''}:`
-                  : `Found ${invites.length} invite code${invites.length !== 1 ? 's' : ''}:`}
+                {strings('invite_found_codes', { count: pagination?.total || invites.length })}
               </Text>
               <Box as="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -268,7 +266,7 @@ const InviteCodes = () => {
                         pb: [2],
                         pr: [3]
                       }}>
-                      Code
+                      {strings('invite_col_code')}
                     </th>
                     <th
                       sx={{
@@ -278,7 +276,7 @@ const InviteCodes = () => {
                         pb: [2],
                         pr: [3]
                       }}>
-                      Wave
+                      {strings('invite_col_wave')}
                     </th>
                     <th
                       sx={{
@@ -288,7 +286,7 @@ const InviteCodes = () => {
                         pb: [2],
                         pr: [3]
                       }}>
-                      Status
+                      {strings('invite_col_status')}
                     </th>
                     <th
                       sx={{
@@ -297,7 +295,7 @@ const InviteCodes = () => {
                         borderColor: 'mediumGray',
                         pb: [2]
                       }}>
-                      Used At
+                      {strings('invite_col_used_at')}
                     </th>
                   </tr>
                 </thead>
@@ -322,7 +320,7 @@ const InviteCodes = () => {
                           py: [2],
                           pr: [3]
                         }}>
-                        {invite.wave || 'N/A'}
+                        {invite.wave || strings('invite_na')}
                       </td>
                       <td
                         sx={{
@@ -358,7 +356,7 @@ const InviteCodes = () => {
             </Box>
           ) : (
             <Text>
-              No invite codes found. Create waves in the Invite Tree section to generate codes.
+              {strings('invite_no_codes')}
             </Text>
           )}
         </>

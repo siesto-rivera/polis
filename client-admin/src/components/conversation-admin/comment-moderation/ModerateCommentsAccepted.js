@@ -3,6 +3,7 @@
 import { useSelector } from 'react-redux'
 import PropTypes from 'prop-types'
 import ModerateCommentsList from './ModerateCommentsList'
+import strings from '../../../strings/strings'
 
 const ModerateCommentsAccepted = ({ pagination, onPageChange, loading = false }) => {
   const { accepted_comments } = useSelector((state) => state.mod_comments_accepted)
@@ -14,7 +15,7 @@ const ModerateCommentsAccepted = ({ pagination, onPageChange, loading = false })
       onPageChange={onPageChange}
       loading={loading}
       variant="accepted"
-      loadingText="Loading accepted comments..."
+      loadingText={strings('mod_loading_accepted')}
       testId="approved-comments"
     />
   )

@@ -6,6 +6,7 @@ import { useConversationData } from '../../util/conversation_data'
 import ModerateCommentsSeed from './ModerateCommentSeed'
 import Spinner from '../framework/Spinner'
 import PolisNet from '../../util/net'
+import strings from '../../strings/strings'
 
 const BYODConfig = () => {
   const conversationData = useConversationData()
@@ -64,20 +65,17 @@ const BYODConfig = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Import
+        {strings('import_heading')}
       </Heading>
       {importSuccessful ? (
         <Text sx={{ color: 'green' }}>
-          Your import was successful. You will receive an email once the job is completed.
+          {strings('import_success')}
         </Text>
       ) : (
         <>
           <Box sx={{ mb: [4] }}>
             <Text>
-              Import external conversation data (comments and votes) from external sources for
-              reporting metrics. This function requires uploading two CSV files, one containing
-              comments, and another containing votes. Comment upload must occur first. After a
-              successful import job, you will recieve an email notifying you that the data is ready.
+              {strings('import_desc')}
             </Text>
           </Box>
 
@@ -88,7 +86,7 @@ const BYODConfig = () => {
               lineHeight: 'body',
               my: [3, null, 4]
             }}>
-            Import Comments
+            {strings('import_comments_heading')}
           </Heading>
           <ModerateCommentsSeed
             params={{
@@ -106,8 +104,7 @@ const BYODConfig = () => {
                   lineHeight: 'body',
                   my: [3, null, 4]
                 }}>
-                Upload a CSV of votes. comment_id field MUST match original_id field in comments
-                csv. Size limit 50MB
+                {strings('import_votes_heading')}
               </Heading>
               <>
                 CSV Format:
@@ -120,7 +117,7 @@ const BYODConfig = () => {
                     c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33,user_gamma,0,2025-01-01T10:10:00Z,550e8400-e29b-41d4-a716-446655440000
                   </code>
                 </pre>
-                vote_value MUST follow the pattern: 1 = agree, -1 = disagree, 0 = neutral/pass
+                {strings('import_votes_note')}
                 <br />
               </>
               <Box sx={{ mt: 2, display: 'block' }}>
@@ -129,7 +126,7 @@ const BYODConfig = () => {
                   disabled={voteSubmissionLoading || !csvText}
                   onClick={handleSubmitVotesBulk}
                   data-testid="upload-csv-button">
-                  Upload Votes
+                  {strings('import_upload_votes')}
                 </Button>
                 <br />
                 {voteSubmissionError ? (

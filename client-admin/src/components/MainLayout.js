@@ -3,6 +3,7 @@
 import { Flex, Box } from 'theme-ui'
 import { Outlet, Link } from 'react-router'
 import InteriorHeader from './InteriorHeader'
+import strings from '../strings/strings'
 
 const MainLayout = () => {
   return (
@@ -32,17 +33,17 @@ const MainLayout = () => {
           }}>
           <Box sx={{ mb: [0, 0, 3] }}>
             <Link sx={{ variant: 'links.nav', whiteSpace: 'nowrap' }} to={`/`}>
-              Conversations
+              {strings('nav_conversations')}
             </Link>
           </Box>
           <Box sx={{ mb: [0, 0, 3] }}>
             <Link sx={{ variant: 'links.nav', whiteSpace: 'nowrap' }} to={`/integrate`}>
-              Integrate
+              {strings('nav_integrate')}
             </Link>
           </Box>
           <Box sx={{ mb: [0, 0, 3] }}>
             <Link sx={{ variant: 'links.nav', whiteSpace: 'nowrap' }} to={`/account`}>
-              Account
+              {strings('nav_account')}
             </Link>
           </Box>
         </Box>

@@ -41,7 +41,7 @@ services:
       - DD_ENABLED=false
 
   postgres:
-    restart: no
+    restart: "no"
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     # PostgreSQL configuration for development/testing

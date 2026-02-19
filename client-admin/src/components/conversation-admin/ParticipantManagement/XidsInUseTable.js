@@ -2,6 +2,7 @@ import { Box, Button, Flex } from 'theme-ui'
 import PropTypes from 'prop-types'
 import { useState } from 'react'
 import PolisNet from '../../../util/net'
+import strings from '../../../strings/strings'
 
 const XidsInUseTable = ({ xids = [], conversationId }) => {
   const [downloadLoading, setDownloadLoading] = useState(false)
@@ -51,7 +52,7 @@ const XidsInUseTable = ({ xids = [], conversationId }) => {
           size="small"
           onClick={handleDownloadCsv}
           disabled={downloadLoading || !conversationId}>
-          {downloadLoading ? 'Preparing…' : 'Download CSV'}
+          {downloadLoading ? strings('participants_preparing') : strings('participants_download_csv')}
         </Button>
       </Flex>
       <Box
@@ -80,7 +81,7 @@ const XidsInUseTable = ({ xids = [], conversationId }) => {
                 borderRight: '1px solid',
                 borderColor: 'mediumGray'
               }}>
-              PID
+              {strings('participants_col_pid')}
             </Box>
             <Box
               as="th"
@@ -93,7 +94,7 @@ const XidsInUseTable = ({ xids = [], conversationId }) => {
                 borderRight: '1px solid',
                 borderColor: 'mediumGray'
               }}>
-              XID
+              {strings('participants_col_xid')}
             </Box>
             <Box
               as="th"
@@ -104,7 +105,7 @@ const XidsInUseTable = ({ xids = [], conversationId }) => {
                 fontWeight: 'bold',
                 fontSize: [1]
               }}>
-              Votes
+              {strings('participants_col_votes')}
             </Box>
           </Box>
         </Box>

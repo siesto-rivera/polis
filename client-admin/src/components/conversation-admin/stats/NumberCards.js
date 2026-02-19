@@ -2,21 +2,22 @@
 
 import PropTypes from 'prop-types'
 import NumberCard from './NumberCard'
+import strings from '../../../strings/strings'
 
 const NumberCards = ({ data }) => {
   const averageVotes = (data.voteTimes.length / data.firstVoteTimes.length).toFixed(2)
   return (
     <div>
-      <NumberCard datum={data.firstVoteTimes.length} subheading="participants voted" icon="users" />
-      <NumberCard datum={data.voteTimes.length} subheading="votes were cast" icon="tags" />
+      <NumberCard datum={data.firstVoteTimes.length} subheading={strings('stats_participants_voted')} icon="users" />
+      <NumberCard datum={data.voteTimes.length} subheading={strings('stats_votes_cast')} icon="tags" />
       <NumberCard
         datum={isNaN(averageVotes) ? 0 : Number(averageVotes)}
-        subheading="votes per participant on average"
+        subheading={strings('stats_votes_per_participant')}
       />
-      <NumberCard datum={data.firstCommentTimes.length} subheading="commented" icon="users" />
+      <NumberCard datum={data.firstCommentTimes.length} subheading={strings('stats_commented')} icon="users" />
       <NumberCard
         datum={data.commentTimes.length}
-        subheading="comments submitted"
+        subheading={strings('stats_comments_submitted')}
         icon="comments"
       />
     </div>

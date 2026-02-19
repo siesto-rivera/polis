@@ -113,14 +113,13 @@ services:
       # Ollama connection
       - OLLAMA_HOST=${OLLAMA_HOST}
       - OLLAMA_MODEL=${OLLAMA_MODEL}
-      # AWS environment variables (will be provided in prod)
+      # AWS environment variables
       - AWS_REGION=${AWS_REGION:-us-east-1}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      # S3 storage for visualization files
-      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-minioadmin}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-minioadmin}
+      # S3 storage for visualization files
+      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
+      - AWS_S3_PUBLIC_ENDPOINT=${AWS_S3_PUBLIC_ENDPOINT:-}
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME:-polis-delphi}
       # API keys for LLM services
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
@@ -217,7 +216,7 @@ services:
     image: amazon/dynamodb-local:latest
     container_name: polis-dynamodb-local
     ports:
-      - "8000:8000"
+      - "8100:8000"
     networks:
       - "polis-net"
     # Persistent storage instead of in-memory
@@ -312,8 +311,8 @@ services:
   minio:
     image: minio/minio:latest
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9002:9000"
+      - "9003:9001"
     volumes:
       - minio_data:/data
     environment:

@@ -6,6 +6,7 @@ import { Heading, Box, Button } from 'theme-ui'
 import StaticLayout from './lander-layout'
 
 import { useAuth } from 'react-oidc-context'
+import strings from '../../strings/strings'
 
 const SignIn = ({ authed }) => {
   const auth = useAuth()
@@ -21,7 +22,7 @@ const SignIn = ({ authed }) => {
               state: { returnTo: window.location.pathname }
             })
           }>
-          Sign In
+          {strings('auth_sign_in')}
         </Button>
       </Box>
     )
@@ -35,7 +36,7 @@ const SignIn = ({ authed }) => {
     <StaticLayout>
       <Box>
         <Heading as="h1" sx={{ my: [4, null, 5], fontSize: [6, null, 7] }}>
-          Sign In
+          {strings('auth_sign_in')}
         </Heading>
         {drawLoginForm()}
       </Box>

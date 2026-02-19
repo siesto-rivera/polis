@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { useNavigate } from 'react-router'
 import { setOidcTokenGetter } from '../../util/net'
+import strings from '../../strings/strings'
 
 const SignOut = () => {
   const auth = useAuth()
@@ -62,13 +63,13 @@ const SignOut = () => {
   if (error) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <div>Signout error: {error}</div>
-        <div>Redirecting to home page...</div>
+        <div>{strings('auth_signout_error', { error })}</div>
+        <div>{strings('auth_redirecting')}</div>
       </div>
     )
   }
 
-  return <div>Signing out...</div>
+  return <div>{strings('auth_signing_out')}</div>
 }
 
 export default SignOut

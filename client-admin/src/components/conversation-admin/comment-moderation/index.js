@@ -10,6 +10,7 @@ import { populateAllCommentStores } from '../../../actions'
 import ModerateCommentsAccepted from './ModerateCommentsAccepted'
 import ModerateCommentsRejected from './ModerateCommentsRejected'
 import ModerateCommentsTodo from './ModerateCommentsTodo'
+import strings from '../../../strings/strings'
 
 const pollFrequency = 60000
 
@@ -70,7 +71,7 @@ const CommentModeration = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Moderate
+        {strings('mod_heading')}
       </Heading>
       <Flex sx={{ mb: [4] }}>
         <Link
@@ -80,7 +81,7 @@ const CommentModeration = () => {
             variant: url ? 'links.nav' : 'links.activeNav'
           }}
           to="../comments">
-          Unmoderated{' '}
+          {strings('mod_unmoderated')}{' '}
           {unmoderated.pagination?.total !== undefined
             ? unmoderated.pagination.total
             : Array.isArray(unmoderated.unmoderated_comments)
@@ -94,7 +95,7 @@ const CommentModeration = () => {
             variant: url === 'accepted' ? 'links.activeNav' : 'links.nav'
           }}
           to="../comments/accepted">
-          Accepted{' '}
+          {strings('mod_accepted')}{' '}
           {accepted.pagination?.total !== undefined
             ? accepted.pagination.total
             : Array.isArray(accepted.accepted_comments)
@@ -108,7 +109,7 @@ const CommentModeration = () => {
             variant: url === 'rejected' ? 'links.activeNav' : 'links.nav'
           }}
           to="../comments/rejected">
-          Rejected{' '}
+          {strings('mod_rejected')}{' '}
           {rejected.pagination?.total !== undefined
             ? rejected.pagination.total
             : Array.isArray(rejected.rejected_comments)

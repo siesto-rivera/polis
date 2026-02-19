@@ -6,6 +6,7 @@ import { Routes, Route, Link, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context'
 import React, { useEffect, useRef } from 'react'
 
+import strings from '../../../strings/strings'
 import { hasDelphiEnabled } from '../../../util/auth'
 import { useConversationData } from '../../../util/conversation_data'
 import ProximityVisualization from './ProximityVisualization'
@@ -44,7 +45,7 @@ const TopicModeration = () => {
   if (!conversationData || conversationData.loading) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <div>Loading...</div>
+        <div>{strings('topic_loading')}</div>
       </Box>
     )
   }
@@ -62,7 +63,7 @@ const TopicModeration = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Topic Moderation
+        {strings('topic_heading')}
       </Heading>
       {hasDelphiEnabled(authUser) ? (
         <Flex sx={{ mb: [4], gap: [2, 3, 4], flexWrap: 'wrap' }}>
@@ -72,7 +73,7 @@ const TopicModeration = () => {
               whiteSpace: 'nowrap'
             }}
             to={baseUrl}>
-            Topics Tree
+            {strings('topic_topics_tree')}
           </Link>
           <Link
             sx={{
@@ -80,7 +81,7 @@ const TopicModeration = () => {
               whiteSpace: 'nowrap'
             }}
             to={`${baseUrl}/proximity`}>
-            Proximity Map
+            {strings('topic_proximity_map')}
           </Link>
           <Link
             sx={{
@@ -88,16 +89,13 @@ const TopicModeration = () => {
               whiteSpace: 'nowrap'
             }}
             to={`${baseUrl}/stats`}>
-            Statistics
+            {strings('topic_statistics')}
           </Link>
         </Flex>
       ) : (
         <>
-          <h3>Topic moderation is not enabled for this conversation.</h3>
-          <p>
-            This is a Pro feature. See <a href="https://pro.pol.is/">pro.pol.is</a> for more
-            information.
-          </p>
+          <h3>{strings('topic_not_enabled')}</h3>
+          <p>{strings('topic_pro_feature')}</p>
         </>
       )}
       {hasDelphiEnabled(authUser) && (

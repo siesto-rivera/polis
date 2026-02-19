@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import PropTypes from 'prop-types'
 import { Flex, Box, Text, Button, Card, Link } from 'theme-ui'
+import strings from '../../../strings/strings'
 
 const Comment = ({
   comment,
@@ -35,7 +36,7 @@ const Comment = ({
         <Text sx={{ mb: [3], color: 'error', fontSize: 12 }}>
           {comment.active
             ? null
-            : 'Comment flagged by Polis Auto Moderator API. Comment not shown to participants. Accept to override.'}
+            : strings('mod_flag_warning')}
         </Text>
         <Text sx={{ mb: [3] }}>{comment.txt}</Text>
         <Flex
@@ -58,7 +59,7 @@ const Comment = ({
           </Box>
           <Flex sx={{ alignItems: 'center' }}>
             <Link target="_blank" sx={{ mr: [2] }} href="https://compdemocracy.org/metadata">
-              {isMetaCheckbox ? 'metadata' : null}
+              {isMetaCheckbox ? strings('mod_metadata') : null}
             </Link>
             {isMetaCheckbox ? (
               <input

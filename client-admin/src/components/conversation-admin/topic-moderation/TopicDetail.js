@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { Box, Flex, Heading, Text, Button, Checkbox, Label } from 'theme-ui'
 import { Link, useParams } from 'react-router-dom'
+import strings from '../../../strings/strings'
 
 const TopicDetail = () => {
   const [comments, setComments] = useState([])
@@ -34,7 +35,7 @@ const TopicDetail = () => {
         setError(data.message || 'Failed to load comments')
       }
     } catch (err) {
-      setError('Network error loading comments')
+      setError(strings('topic_network_error_comments'))
     } finally {
       setLoading(false)
     }
@@ -110,15 +111,15 @@ const TopicDetail = () => {
     switch (status) {
       case 'accepted':
       case 1:
-        return 'Accepted'
+        return strings('topic_status_accepted')
       case 'rejected':
       case -1:
-        return 'Rejected'
+        return strings('topic_status_rejected')
       case 'meta':
       case 0:
-        return 'Meta'
+        return strings('topic_status_meta')
       default:
-        return 'Pending'
+        return strings('topic_status_pending')
     }
   }
 
@@ -149,12 +150,12 @@ const TopicDetail = () => {
             <Box sx={{ flex: 1 }}>
               <Text sx={{ mb: 2, lineHeight: 'body' }}>{comment.comment_text}</Text>
               <Flex sx={{ gap: 3, fontSize: 0, color: 'textSecondary' }}>
-                <Text>ID: {comment.comment_id}</Text>
-                <Text>Cluster: {comment.cluster_id}</Text>
-                <Text>Layer: {comment.layer_id}</Text>
+                <Text>{strings('topic_comment_id', { id: comment.comment_id })}</Text>
+                <Text>{strings('topic_comment_cluster', { id: comment.cluster_id })}</Text>
+                <Text>{strings('topic_comment_layer', { id: comment.layer_id })}</Text>
                 {comment.umap_x !== undefined && comment.umap_y !== undefined && (
                   <Text>
-                    Position: ({comment.umap_x?.toFixed(2)}, {comment.umap_y?.toFixed(2)})
+                    {strings('topic_comment_position', { x: comment.umap_x?.toFixed(2), y: comment.umap_y?.toFixed(2) })}
                   </Text>
                 )}
               </Flex>
@@ -178,7 +179,7 @@ const TopicDetail = () => {
   if (loading) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>Loading comments...</Text>
+        <Text>{strings('topic_loading_comments')}</Text>
       </Box>
     )
   }
@@ -186,9 +187,9 @@ const TopicDetail = () => {
   if (error) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text sx={{ color: 'error' }}>Error: {error}</Text>
+        <Text sx={{ color: 'error' }}>{strings('topic_error', { error })}</Text>
         <Button sx={{ mt: 2 }} onClick={loadTopicComments}>
-          Retry
+          {strings('topic_retry')}
         </Button>
       </Box>
     )
@@ -200,14 +201,14 @@ const TopicDetail = () => {
         <Box>
           <Link to={`/m/${conversation_id}/topics`}>
             <Button variant="outline" size="small" sx={{ mr: 3 }}>
-              ← Back to Topics
+              {strings('topic_back_to_topics')}
             </Button>
           </Link>
           <Heading as="h3" sx={{ display: 'inline' }}>
-            Topic: {topicKey}
+            {strings('topic_topic_label', { key: topicKey })}
           </Heading>
         </Box>
-        <Text sx={{ color: 'textSecondary' }}>{comments.length} comments</Text>
+        <Text sx={{ color: 'textSecondary' }}>{strings('topic_comment_count', { count: comments.length })}</Text>
       </Flex>
       {comments.length > 0 && (
         <>
@@ -223,7 +224,7 @@ const TopicDetail = () => {
             <Flex sx={{ alignItems: 'center' }}>
               <Label sx={{ display: 'flex', alignItems: 'center', mr: 4 }}>
                 <Checkbox checked={selectAll} onChange={toggleSelectAll} sx={{ mr: 2 }} />
-                Select All ({selectedComments.size} selected)
+                {strings('topic_select_all', { count: selectedComments.size })}
               </Label>
             </Flex>
             <Flex sx={{ gap: 2 }}>
@@ -232,14 +233,14 @@ const TopicDetail = () => {
                 size="small"
                 onClick={() => moderateSelected('accept')}
                 disabled={selectedComments.size === 0}>
-                Accept Selected
+                {strings('topic_accept_selected')}
               </Button>
               <Button
                 variant="danger"
                 size="small"
                 onClick={() => moderateSelected('reject')}
                 disabled={selectedComments.size === 0}>
-                Reject Selected
+                {strings('topic_reject_selected')}
               </Button>
             </Flex>
           </Flex>
@@ -248,7 +249,7 @@ const TopicDetail = () => {
       )}
       {comments.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Text>No comments found for this topic.</Text>
+          <Text>{strings('topic_no_comments_for_topic')}</Text>
         </Box>
       )}
     </Box>

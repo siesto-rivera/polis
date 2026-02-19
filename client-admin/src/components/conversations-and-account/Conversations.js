@@ -12,6 +12,8 @@ import Conversation from './Conversation'
 import { useLocation, useNavigate } from 'react-router'
 import { isSuperAdmin } from '../../util/auth'
 import Pagination from '../conversation-admin/Pagination'
+import strings from '../../strings/strings'
+import { getLocale } from '../../strings/strings'
 
 const Conversations = () => {
   const dispatch = useDispatch()
@@ -177,7 +179,7 @@ const Conversations = () => {
             fontWeight: activeView === 'my' ? 'bold' : 'normal',
             textDecoration: activeView === 'my' ? 'underline' : 'none'
           }}>
-          My Conversations
+          {strings('convos_my')}
         </Text>
         <Text
           as="span"
@@ -187,7 +189,7 @@ const Conversations = () => {
             fontWeight: activeView === 'all' ? 'bold' : 'normal',
             textDecoration: activeView === 'all' ? 'underline' : 'none'
           }}>
-          All Conversations
+          {strings('convos_all')}
         </Text>
       </Box>
     )
@@ -200,7 +202,7 @@ const Conversations = () => {
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
           <input
             type="text"
-            placeholder="Owner email contains..."
+            placeholder={strings('convos_owner_email_placeholder')}
             value={filters.owner_email}
             onChange={(e) => setFilters((f) => ({ ...f, owner_email: e.target.value }))}
           />
@@ -212,14 +214,14 @@ const Conversations = () => {
                 is_active: e.target.value === '' ? '' : e.target.value === 'true'
               }))
             }>
-            <option value="">All statuses</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
+            <option value="">{strings('convos_all_statuses')}</option>
+            <option value="true">{strings('convos_active')}</option>
+            <option value="false">{strings('convos_inactive')}</option>
           </select>
           <input
             type="number"
             min="0"
-            placeholder="Min comments"
+            placeholder={strings('convos_min_comments')}
             value={filters.min_comment_count}
             onChange={(e) => setFilters((f) => ({ ...f, min_comment_count: e.target.value }))}
             style={{ width: 120 }}
@@ -227,7 +229,7 @@ const Conversations = () => {
           <input
             type="number"
             min="0"
-            placeholder="Min participants"
+            placeholder={strings('convos_min_participants')}
             value={filters.min_participant_count}
             onChange={(e) => setFilters((f) => ({ ...f, min_participant_count: e.target.value }))}
             style={{ width: 140 }}
@@ -235,7 +237,7 @@ const Conversations = () => {
           <input
             type="number"
             min="0"
-            placeholder="Updated in last N days"
+            placeholder={strings('convos_updated_days')}
             value={filters.recently_updated_days}
             onChange={(e) => setFilters((f) => ({ ...f, recently_updated_days: e.target.value }))}
             style={{ width: 200 }}
@@ -243,7 +245,7 @@ const Conversations = () => {
           <input
             type="number"
             min="0"
-            placeholder="Created in last N days"
+            placeholder={strings('convos_created_days')}
             value={filters.recently_created_days}
             onChange={(e) => setFilters((f) => ({ ...f, recently_created_days: e.target.value }))}
             style={{ width: 200 }}
@@ -251,23 +253,23 @@ const Conversations = () => {
           <select
             value={sort.sort_by}
             onChange={(e) => setSort((s) => ({ ...s, sort_by: e.target.value }))}>
-            <option value="updated">Sort: Updated</option>
-            <option value="created">Sort: Created</option>
-            <option value="participant_count">Sort: Participants</option>
-            <option value="comment_count">Sort: Comments</option>
+            <option value="updated">{strings('convos_sort_updated')}</option>
+            <option value="created">{strings('convos_sort_created')}</option>
+            <option value="participant_count">{strings('convos_sort_participants')}</option>
+            <option value="comment_count">{strings('convos_sort_comments')}</option>
           </select>
           <select
             value={sort.sort_dir}
             onChange={(e) => setSort((s) => ({ ...s, sort_dir: e.target.value }))}>
-            <option value="desc">Desc</option>
-            <option value="asc">Asc</option>
+            <option value="desc">{strings('convos_desc')}</option>
+            <option value="asc">{strings('convos_asc')}</option>
           </select>
           <Button
             onClick={() => {
               setAllConversations(null)
               loadConversationsIfNeeded()
             }}>
-            Apply
+            {strings('convos_apply')}
           </Button>
         </Box>
         {allPagination ? (
@@ -294,7 +296,7 @@ const Conversations = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        All Conversations
+        {strings('convos_heading')}
       </Heading>
       {interstitialVisible && (
         <Box
@@ -336,61 +338,57 @@ const Conversations = () => {
               }}
             />
             <Heading as="h2" sx={{ mb: 3, fontSize: 5, color: 'primary' }}>
-              Introducing Polis 2: AI-Powered Insights
+              {strings('convos_interstitial_heading')}
             </Heading>
             <Text sx={{ mb: 4, fontSize: 2, mt: 4 }}>
-              Unlock deeper understanding from your conversations with Polis 2, our advanced
-              analytics, moderation, and AI reporting suite.
+              {strings('convos_interstitial_desc')}
             </Text>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: ['1fr', '1fr 1fr'], gap: 4, mb: 4 }}>
               <Box>
                 <Heading as="h4" sx={{ mb: 2 }}>
-                  Advanced Statistical Analysis
+                  {strings('convos_interstitial_analysis')}
                 </Heading>
                 <Image src="/bg_map.png" sx={{ width: '100%', borderRadius: '4px', mb: 2 }} />
                 <Text>
-                  Go beyond opinion groups with interactive topic maps and advanced data
-                  visualizations. See how ideas connect and identify key areas of contention and
-                  consensus.
+                  {strings('convos_interstitial_analysis_desc')}
                 </Text>
               </Box>
               <Box>
                 <Heading as="h4" sx={{ mb: 2 }}>
-                  AI-Generated Reports
+                  {strings('convos_interstitial_reports')}
                 </Heading>
                 <Image
                   src="/bg_collective.png"
                   sx={{ width: '100%', borderRadius: '4px', mb: 2 }}
                 />
                 <Text>
-                  Let Polis 2 do the heavy lifting. Get AI-generated summaries, consensus
-                  statements, and detailed reports on conversation dynamics and key topics.
+                  {strings('convos_interstitial_reports_desc')}
                 </Text>
               </Box>
             </Box>
 
             <Box sx={{ bg: 'muted', p: 3, borderRadius: '4px', mb: 4 }}>
               <Heading as="h4" sx={{ mb: 2 }}>
-                Key Polis 2 Features:
+                {strings('convos_interstitial_features')}
               </Heading>
               <ul sx={{ pl: 3, m: 0 }}>
-                <li>Conversation Summaries</li>
-                <li>Automated Topic Reporting</li>
-                <li>Identification of Consensus Statements</li>
-                <li>Divisive Comment Analysis</li>
+                <li>{strings('convos_interstitial_feature_1')}</li>
+                <li>{strings('convos_interstitial_feature_2')}</li>
+                <li>{strings('convos_interstitial_feature_3')}</li>
+                <li>{strings('convos_interstitial_feature_4')}</li>
               </ul>
             </Box>
 
             <Text sx={{ mb: 4, textAlign: 'center', fontSize: 2 }}>
-              Ready to supercharge your analysis?
+              {strings('convos_interstitial_ready')}
               <br />
               <Link
                 href="https://pro.pol.is/"
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{ fontWeight: 'bold' }}>
-                Upgrade to a Pro plan to access Polis 2.
+                {strings('convos_interstitial_upgrade')}
               </Link>
             </Text>
 
@@ -404,7 +402,7 @@ const Conversations = () => {
                 sx={{
                   cursor: 'pointer'
                 }}>
-                Maybe Later
+                {strings('convos_interstitial_later')}
               </Button>
               <Button
                 onClick={() => {
@@ -418,14 +416,14 @@ const Conversations = () => {
                     bg: 'text'
                   }
                 }}>
-                Create Conversation
+                {strings('convos_interstitial_create')}
               </Button>
             </Box>
           </Box>
         </Box>
       )}
       <Box sx={{ mb: [3, null, 4] }}>
-        <Button onClick={() => setInterstitialVisible(true)}>Create new conversation</Button>
+        <Button onClick={() => setInterstitialVisible(true)}>{strings('convos_create_new')}</Button>
       </Box>
       {renderSwitcher()}
       {renderAllControls()}
@@ -433,13 +431,13 @@ const Conversations = () => {
         <Box sx={{ mb: [3] }}>
           {activeView === 'all'
             ? allLoading
-              ? 'Loading conversations...'
+              ? strings('convos_loading')
               : null
             : loading
-              ? 'Loading conversations...'
+              ? strings('convos_loading')
               : null}
         </Box>
-        {err ? <Text>{'Error loading conversations'}</Text> : null}
+        {err ? <Text>{strings('convos_error')}</Text> : null}
         {activeView === 'all' && superAdmin ? (
           <Box>
             {/* Headers for desktop table view */}
@@ -453,13 +451,13 @@ const Conversations = () => {
                 borderColor: 'lightGray',
                 fontWeight: 'bold'
               }}>
-              <Text>Topic</Text>
-              <Text sx={{ textAlign: 'right' }}>Participants</Text>
-              <Text sx={{ textAlign: 'right' }}>Comments</Text>
-              <Text sx={{ textAlign: 'right' }}>Updated</Text>
-              <Text sx={{ textAlign: 'right' }}>Created</Text>
-              <Text>Owner Email</Text>
-              <Text sx={{ textAlign: 'center' }}>Active</Text>
+              <Text>{strings('convos_col_topic')}</Text>
+              <Text sx={{ textAlign: 'right' }}>{strings('convos_col_participants')}</Text>
+              <Text sx={{ textAlign: 'right' }}>{strings('convos_col_comments')}</Text>
+              <Text sx={{ textAlign: 'right' }}>{strings('convos_col_updated')}</Text>
+              <Text sx={{ textAlign: 'right' }}>{strings('convos_col_created')}</Text>
+              <Text>{strings('convos_col_owner_email')}</Text>
+              <Text sx={{ textAlign: 'center' }}>{strings('convos_col_active')}</Text>
             </Box>
             {/* Conversation list (cards on mobile, rows on desktop) */}
             {(allConversations || []).map((c) => (
@@ -488,22 +486,22 @@ const Conversations = () => {
                   }
                 }}>
                 <Box>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>Topic: </Text>
+                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_topic')} </Text>
                   {c.topic}
                 </Box>
                 <Box sx={{ textAlign: [null, 'right'] }}>
                   <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>
-                    Participants:{' '}
+                    {strings('convos_label_participants')}{' '}
                   </Text>
                   {c.participant_count || 0}
                 </Box>
                 <Box sx={{ textAlign: [null, 'right'] }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>Comments: </Text>
+                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_comments')} </Text>
                   {c.comment_count || 0}
                 </Box>
                 <Box sx={{ textAlign: [null, 'right'] }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>Updated: </Text>
-                  {new Date(c.modified).toLocaleDateString('en-US', {
+                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_updated')} </Text>
+                  {new Date(c.modified).toLocaleDateString(getLocale(), {
                     weekday: 'short',
                     year: 'numeric',
                     month: 'short',
@@ -511,8 +509,8 @@ const Conversations = () => {
                   })}
                 </Box>
                 <Box sx={{ textAlign: [null, 'right'] }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>Created: </Text>
-                  {new Date(c.created).toLocaleDateString('en-US', {
+                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_created')} </Text>
+                  {new Date(c.created).toLocaleDateString(getLocale(), {
                     weekday: 'short',
                     year: 'numeric',
                     month: 'short',
@@ -520,11 +518,11 @@ const Conversations = () => {
                   })}
                 </Box>
                 <Box>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>Owner: </Text>
+                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_owner')} </Text>
                   {c.owner_email || ''}
                 </Box>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>Active: </Text>
+                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_active')} </Text>
                   {c.is_active ? '✅' : '❌'}
                 </Box>
               </Box>

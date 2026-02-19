@@ -1,5 +1,6 @@
 import { Box, Button, Text } from 'theme-ui'
 import PropTypes from 'prop-types'
+import strings from '../../strings/strings'
 
 const Pagination = ({ pagination, onPageChange, loading = false }) => {
   if (!pagination || pagination.total === 0) {
@@ -54,7 +55,7 @@ const Pagination = ({ pagination, onPageChange, loading = false }) => {
         borderColor: 'lightGray'
       }}>
       <Text sx={{ fontSize: [1], mb: [3, 0] }}>
-        Showing {startItem}-{endItem} of {total} items
+        {strings('pagination_showing', { start: startItem, end: endItem, total })}
       </Text>
 
       <Box
@@ -81,7 +82,7 @@ const Pagination = ({ pagination, onPageChange, loading = false }) => {
               cursor: 'not-allowed'
             }
           }}>
-          First
+          {strings('pagination_first')}
         </Button>
 
         <Button
@@ -100,11 +101,11 @@ const Pagination = ({ pagination, onPageChange, loading = false }) => {
               cursor: 'not-allowed'
             }
           }}>
-          Previous
+          {strings('pagination_previous')}
         </Button>
 
         <Text sx={{ fontSize: [1], mx: [2] }}>
-          Page {currentPage} of {totalPages}
+          {strings('pagination_page', { current: currentPage, totalPages })}
         </Text>
 
         <Button
@@ -123,7 +124,7 @@ const Pagination = ({ pagination, onPageChange, loading = false }) => {
               cursor: 'not-allowed'
             }
           }}>
-          Next
+          {strings('pagination_next')}
         </Button>
 
         <Button
@@ -142,7 +143,7 @@ const Pagination = ({ pagination, onPageChange, loading = false }) => {
               cursor: 'not-allowed'
             }
           }}>
-          Last
+          {strings('pagination_last')}
         </Button>
       </Box>
     </Box>

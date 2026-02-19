@@ -5,6 +5,7 @@ import { useParams } from 'react-router'
 import { useConversationData } from '../../util/conversation_data'
 import PolisNet from '../../util/net'
 import Spinner from '../framework/Spinner'
+import strings from '../../strings/strings'
 
 const InviteTree = () => {
   const params = useParams()
@@ -88,20 +89,18 @@ const InviteTree = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Invite Tree
+        {strings('invite_tree_heading')}
       </Heading>
 
       {!enabled ? (
         <Text>
-          Invite Tree is not enabled. To use this feature, enable Invite Tree in the Conversation
-          Configure options.
+          {strings('invite_tree_not_enabled')}
         </Text>
       ) : (
         <>
           <Box sx={{ mb: [3] }}>
             <Text sx={{ display: 'block', mb: [2] }}>
-              This conversation is invite only. Participants must enter a valid invite code to vote
-              or comment.
+              {strings('invite_tree_invite_only')}
             </Text>
           </Box>
 
@@ -112,7 +111,7 @@ const InviteTree = () => {
               lineHeight: 'body',
               my: [3, null, 3]
             }}>
-            Waves
+            {strings('invite_waves_heading')}
           </Heading>
           {loading ? (
             <Spinner />
@@ -123,14 +122,13 @@ const InviteTree = () => {
               {waves.map((w) => (
                 <li key={w.id}>
                   <Text>
-                    Wave {w.wave} (parent {w.parent_wave || 0}) — ipu {w.invites_per_user || 0},
-                    owner {w.owner_invites || 0}, size {w.size || 0}
+                    {strings('invite_wave_info', { wave: w.wave, parent: w.parent_wave || 0, ipu: w.invites_per_user || 0, owner: w.owner_invites || 0, size: w.size || 0 })}
                   </Text>
                 </li>
               ))}
             </Box>
           ) : (
-            <Text>No waves yet. Create the initial wave below.</Text>
+            <Text>{strings('invite_no_waves')}</Text>
           )}
 
           <Heading
@@ -140,12 +138,12 @@ const InviteTree = () => {
               lineHeight: 'body',
               my: [3, null, 3]
             }}>
-            Create Next Wave
+            {strings('invite_create_next_wave')}
           </Heading>
 
           <Box sx={{ mb: [3] }}>
             <Text sx={{ display: 'block', mb: [2] }}>
-              Invites per user (granted to each participant in the parent wave)
+              {strings('invite_invites_per_user')}
             </Text>
             <input
               type="number"
@@ -158,7 +156,7 @@ const InviteTree = () => {
 
           <Box sx={{ mb: [3] }}>
             <Text sx={{ display: 'block', mb: [2] }}>
-              Owner invites (additional invites for you to distribute this wave)
+              {strings('invite_owner_invites')}
             </Text>
             <input
               type="number"
@@ -171,28 +169,28 @@ const InviteTree = () => {
 
           <Box sx={{ mb: [3] }}>
             <Text sx={{ display: 'block', mb: [2] }}>
-              Parent wave (optional override). Default is latest existing wave; use 0 for root.
+              {strings('invite_parent_wave_desc')}
             </Text>
             <select
               value={parentWaveOverride}
               onChange={(e) => setParentWaveOverride(e.target.value)}>
-              <option value="">Latest (default)</option>
-              <option value="0">Root (0)</option>
+              <option value="">{strings('invite_latest_default')}</option>
+              <option value="0">{strings('invite_root')}</option>
               {waves.map((w) => (
-                <option key={w.id} value={w.wave}>{`Wave ${w.wave}`}</option>
+                <option key={w.id} value={w.wave}>{strings('invite_wave_n', { wave: w.wave })}</option>
               ))}
             </select>
           </Box>
 
           <Box sx={{ mb: [3], mt: [3] }}>
             <Button sx={{ mt: [2] }} onClick={handleCreateWave} disabled={!canCreate || creating}>
-              {creating ? 'Creating…' : 'Create Wave'}
+              {creating ? strings('invite_creating') : strings('invite_create_wave')}
             </Button>
           </Box>
 
           {createdSummary ? (
             <Text>
-              Created wave {createdSummary.wave}. Invites created: {createdSummary.invites_created}
+              {strings('invite_created_summary', { wave: createdSummary.wave, count: createdSummary.invites_created })}
             </Text>
           ) : null}
         </>

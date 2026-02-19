@@ -12,6 +12,7 @@ import Commenters from './Commenters'
 import dateSetupUtil from '../../../util/data-export-date-setup'
 import NumberCards from './NumberCards'
 import Voters from './Voters'
+import strings from '../../../strings/strings'
 
 const ConversationStats = () => {
   const dispatch = useDispatch()
@@ -100,7 +101,7 @@ const ConversationStats = () => {
 
   const loading = !conversation_stats.firstCommentTimes || !conversation_stats.firstVoteTimes
 
-  if (loading) return <Box>Loading...</Box>
+  if (loading) return <Box>{strings('stats_loading')}</Box>
 
   return (
     <div>
@@ -111,7 +112,7 @@ const ConversationStats = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Monitor
+        {strings('stats_heading')}
       </Heading>
       <NumberCards data={conversation_stats} />
       <Voters

@@ -10,6 +10,7 @@ import XidsInUseTable from './ParticipantManagement/XidsInUseTable.js'
 import XidAllowListTable from './ParticipantManagement/XidAllowListTable.js'
 import PolisNet from '../../util/net'
 import Spinner from '../framework/Spinner'
+import strings from '../../strings/strings'
 
 const ParticipantManagement = () => {
   const params = useParams()
@@ -80,9 +81,9 @@ const ParticipantManagement = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Participant Management
+        {strings('participants_heading')}
       </Heading>
-      <Text sx={{ mb: [3] }}>Manage participants for conversation {conversationId}.</Text>
+      <Text sx={{ mb: [3] }}>{strings('participants_manage', { id: conversationId })}</Text>
 
       <Flex sx={{ alignItems: 'flex-start', mb: [2] }}>
         <Box sx={{ flexShrink: 0, position: 'relative', top: -0.5 }}>
@@ -102,10 +103,10 @@ const ParticipantManagement = () => {
             wordWrap: 'break-word',
             overflowWrap: 'break-word'
           }}>
-          <Text>XID Required to Vote</Text>
+          <Text>{strings('participants_xid_required')}</Text>
           {useXidAllowList && (
             <Text sx={{ ml: [2], color: 'mediumGray', fontSize: [0] }}>
-              Required because XID Allow List is enabled.
+              {strings('participants_xid_required_note')}
             </Text>
           )}
         </Box>
@@ -128,7 +129,7 @@ const ParticipantManagement = () => {
             wordWrap: 'break-word',
             overflowWrap: 'break-word'
           }}>
-          <Text>Use XID Allow List</Text>
+          <Text>{strings('participants_use_allow_list')}</Text>
         </Box>
       </Flex>
 
@@ -138,13 +139,13 @@ const ParticipantManagement = () => {
           variant={activeTab === 'inUse' ? 'primary' : 'outline'}
           size="small"
           onClick={() => setActiveTab('inUse')}>
-          XIDs in Use
+          {strings('participants_tab_in_use')}
         </Button>
         <Button
           variant={activeTab === 'allowList' ? 'primary' : 'outline'}
           size="small"
           onClick={() => setActiveTab('allowList')}>
-          XIDs Allowed
+          {strings('participants_tab_allowed')}
         </Button>
       </Flex>
 
@@ -153,7 +154,7 @@ const ParticipantManagement = () => {
       ) : activeTab === 'inUse' && error ? (
         <Text sx={{ color: 'error', mb: [3] }}>{error}</Text>
       ) : activeTab === 'inUse' && xids.length === 0 ? (
-        <Text sx={{ color: 'mediumGray', mb: [3] }}>No XIDs found for this conversation.</Text>
+        <Text sx={{ color: 'mediumGray', mb: [3] }}>{strings('participants_no_xids')}</Text>
       ) : activeTab === 'inUse' ? (
         <>
           <XidsInUseTable xids={xids} conversationId={conversationId} />

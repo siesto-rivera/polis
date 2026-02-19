@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { Box, Flex, Heading, Text, Card } from 'theme-ui'
 import PropTypes from 'prop-types'
+import strings from '../../../strings/strings'
 
 const StatCard = ({ title, value, color = 'primary' }) => (
   <Card
@@ -44,7 +45,7 @@ const TopicStats = ({ conversation_id }) => {
           setError(data.message || 'Failed to load statistics')
         }
       } catch (err) {
-        setError('Network error loading statistics')
+        setError(strings('topic_network_error_statistics'))
       } finally {
         setLoading(false)
       }
@@ -56,7 +57,7 @@ const TopicStats = ({ conversation_id }) => {
   if (loading) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>Loading statistics...</Text>
+        <Text>{strings('topic_loading_statistics')}</Text>
       </Box>
     )
   }
@@ -64,7 +65,7 @@ const TopicStats = ({ conversation_id }) => {
   if (error) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text sx={{ color: 'error' }}>Error: {error}</Text>
+        <Text sx={{ color: 'error' }}>{strings('topic_error', { error })}</Text>
       </Box>
     )
   }
@@ -72,7 +73,7 @@ const TopicStats = ({ conversation_id }) => {
   if (!stats) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>No statistics available.</Text>
+        <Text>{strings('topic_stats_no_data')}</Text>
       </Box>
     )
   }
@@ -85,26 +86,26 @@ const TopicStats = ({ conversation_id }) => {
   return (
     <Box>
       <Heading as="h3" sx={{ mb: 4 }}>
-        Topic Moderation Statistics
+        {strings('topic_stats_heading')}
       </Heading>
 
       <Flex sx={{ gap: 3, mb: 4, flexWrap: 'wrap' }}>
-        <StatCard title="Total Topics" value={stats.total_topics} />
-        <StatCard title="Pending" value={stats.pending} color="gray" />
-        <StatCard title="Accepted" value={stats.accepted} color="primary" />
-        <StatCard title="Rejected" value={stats.rejected} color="error" />
-        <StatCard title="Completion Rate" value={`${completionRate}%`} color="info" />
+        <StatCard title={strings('topic_stats_total')} value={stats.total_topics} />
+        <StatCard title={strings('topic_stats_pending')} value={stats.pending} color="gray" />
+        <StatCard title={strings('topic_stats_accepted')} value={stats.accepted} color="primary" />
+        <StatCard title={strings('topic_stats_rejected')} value={stats.rejected} color="error" />
+        <StatCard title={strings('topic_stats_completion')} value={`${completionRate}%`} color="info" />
       </Flex>
 
       <Box sx={{ mt: 4 }}>
         <Heading as="h4" sx={{ mb: 3, fontSize: 2 }}>
-          Moderation Progress
+          {strings('topic_stats_progress_heading')}
         </Heading>
 
         <Box sx={{ bg: 'muted', borderRadius: 'default', p: 3 }}>
           <Flex sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Text sx={{ fontWeight: 'bold' }}>Overall Progress</Text>
-            <Text sx={{ fontSize: 1 }}>{completionRate}% Complete</Text>
+            <Text sx={{ fontWeight: 'bold' }}>{strings('topic_stats_overall')}</Text>
+            <Text sx={{ fontSize: 1 }}>{strings('topic_stats_complete', { rate: completionRate })}</Text>
           </Flex>
 
           <Box
@@ -144,9 +145,9 @@ const TopicStats = ({ conversation_id }) => {
               flexWrap: 'wrap',
               gap: [1, 2, 2]
             }}>
-            <Text sx={{ color: 'primary', whiteSpace: 'nowrap' }}>Accepted: {stats.accepted}</Text>
-            <Text sx={{ color: 'error', whiteSpace: 'nowrap' }}>Rejected: {stats.rejected}</Text>
-            <Text sx={{ color: 'gray', whiteSpace: 'nowrap' }}>Pending: {stats.pending}</Text>
+            <Text sx={{ color: 'primary', whiteSpace: 'nowrap' }}>{strings('topic_stats_accepted_count', { count: stats.accepted })}</Text>
+            <Text sx={{ color: 'error', whiteSpace: 'nowrap' }}>{strings('topic_stats_rejected_count', { count: stats.rejected })}</Text>
+            <Text sx={{ color: 'gray', whiteSpace: 'nowrap' }}>{strings('topic_stats_pending_count', { count: stats.pending })}</Text>
           </Flex>
         </Box>
       </Box>
@@ -154,10 +155,10 @@ const TopicStats = ({ conversation_id }) => {
       {stats.total_topics === 0 && (
         <Box sx={{ textAlign: 'center', py: 4, mt: 4 }}>
           <Text sx={{ color: 'textSecondary' }}>
-            No topics have been generated for this conversation yet.
+            {strings('topic_stats_no_topics')}
           </Text>
           <Text sx={{ fontSize: 0, color: 'textSecondary', mt: 2 }}>
-            Run the Delphi pipeline to generate topics for moderation.
+            {strings('topic_stats_run_pipeline')}
           </Text>
         </Box>
       )}

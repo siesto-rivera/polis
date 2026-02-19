@@ -25,8 +25,18 @@ if (!conversation_id ||
   return Astro.redirect('/404');
 }
 
+// Determine language from URL param or Accept-Language header for SSR
+const uiLang = Astro.url.searchParams.get('ui_lang');
+let langForTranslation = uiLang;
+if (!langForTranslation) {
+  const acceptLangHeader = Astro.request.headers.get('Accept-Language');
+  if (acceptLangHeader) {
+    langForTranslation = acceptLangHeader.split(',')[0].split(';')[0].trim();
+  }
+}
+
 // Load translations first so we can use them in error messages
-const s = await getTranslations();
+const s = await getTranslations(langForTranslation || undefined);
 
 let initialData;
 let fetchError = null;

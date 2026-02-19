@@ -80,7 +80,7 @@ const ConversationHasCommentsCheck = ({ conversation_id, strict_moderation, load
 
   return (
     <div>
-      {!shouldShowLoading ? createCommentMarkup() : <span> Loading accepted comments... </span>}
+      {!shouldShowLoading ? createCommentMarkup() : <span>{strings('dist_loading_comments')}</span>}
     </div>
   )
 }

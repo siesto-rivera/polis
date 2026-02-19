@@ -3,6 +3,7 @@
 import { useSelector } from 'react-redux'
 import PropTypes from 'prop-types'
 import ModerateCommentsList from './ModerateCommentsList'
+import strings from '../../../strings/strings'
 
 const ModerateCommentsTodo = ({ pagination, onPageChange, loading = false }) => {
   const { unmoderated_comments } = useSelector((state) => state.mod_comments_unmoderated)
@@ -14,7 +15,7 @@ const ModerateCommentsTodo = ({ pagination, onPageChange, loading = false }) => 
       onPageChange={onPageChange}
       loading={loading}
       variant="unmoderated"
-      loadingText="Loading unmoderated comments..."
+      loadingText={strings('mod_loading_unmoderated')}
       testId="pending-comment"
       maxComments={100}
     />

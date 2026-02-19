@@ -1,6 +1,7 @@
 import { Box, Text, Button, Flex, Heading } from 'theme-ui'
 import { useState, useRef, useCallback } from 'react'
 import PropTypes from 'prop-types'
+import strings from '../../../strings/strings'
 
 /**
  * Parses file content to extract XIDs.
@@ -232,7 +233,7 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
               lineHeight: 'body',
               m: 0
             }}>
-            Upload XIDs
+            {strings('participants_upload_heading')}
           </Heading>
           <Button variant="outline" size="small" onClick={handleClose}>
             ✕
@@ -242,8 +243,7 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
         {/* Content */}
         <Box sx={{ p: [3], overflow: 'auto', flex: 1 }}>
           <Text sx={{ mb: [3], color: 'text', fontSize: [1] }}>
-            Upload a file or paste a list of XIDs to allow. Supports CSV files (with or without
-            headers) and plain text files (one XID per line).
+            {strings('participants_upload_desc')}
           </Text>
 
           {/* Drop zone */}
@@ -275,13 +275,13 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
               style={{ display: 'none' }}
             />
             {isProcessing ? (
-              <Text sx={{ color: 'mediumGray' }}>Processing file...</Text>
+              <Text sx={{ color: 'mediumGray' }}>{strings('participants_processing')}</Text>
             ) : (
               <>
                 <Text sx={{ mb: [2], color: 'text', fontSize: [1] }}>
-                  {isDragging ? 'Drop file here' : 'Click to browse or drag and drop file here'}
+                  {isDragging ? strings('participants_drop_here') : strings('participants_browse_or_drop')}
                 </Text>
-                <Text sx={{ color: 'mediumGray', fontSize: [0] }}>Supports CSV and text files</Text>
+                <Text sx={{ color: 'mediumGray', fontSize: [0] }}>{strings('participants_supports_csv')}</Text>
               </>
             )}
           </Box>
@@ -296,14 +296,14 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
                 fontWeight: 'bold',
                 fontSize: [1]
               }}>
-              Allowed XIDs
+              {strings('participants_allowed_xids')}
             </Text>
             <Box
               as="textarea"
               ref={textareaRef}
               value={xidsText}
               onChange={(e) => setXidsText(e.target.value)}
-              placeholder="Paste XIDs here, one per line, or upload a file above"
+              placeholder={strings('participants_paste_placeholder')}
               sx={{
                 fontFamily: 'mono',
                 fontSize: [1],
@@ -345,7 +345,7 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
                   cursor: 'pointer',
                   fontSize: [1]
                 }}>
-                Replace all existing XIDs
+                {strings('participants_replace_all')}
               </Text>
             </Box>
           </Flex>
@@ -361,10 +361,10 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
             gap: [2]
           }}>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {strings('participants_cancel')}
           </Button>
           <Button onClick={handleUpload} disabled={!xidsText.trim()}>
-            Upload XIDs
+            {strings('participants_upload_xids')}
           </Button>
         </Flex>
       </Box>

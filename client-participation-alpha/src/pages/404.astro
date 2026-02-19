@@ -3,7 +3,16 @@ import Layout from './layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import { getTranslations } from '../strings/strings.js';
 
-const s = await getTranslations();
+const uiLang = Astro.url.searchParams.get('ui_lang');
+let langForTranslation = uiLang;
+if (!langForTranslation) {
+  const acceptLangHeader = Astro.request.headers.get('Accept-Language');
+  if (acceptLangHeader) {
+    langForTranslation = acceptLangHeader.split(',')[0].split(';')[0].trim();
+  }
+}
+
+const s = await getTranslations(langForTranslation || undefined);
 ---
 
 <Layout title="Page Not Found">

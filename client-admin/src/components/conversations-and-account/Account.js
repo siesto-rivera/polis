@@ -4,6 +4,7 @@ import { Box, Heading } from 'theme-ui'
 
 import Spinner from '../framework/Spinner'
 import { useUser } from '../../util/auth'
+import strings from '../../strings/strings'
 
 const Account = () => {
   const userContext = useUser()
@@ -19,9 +20,9 @@ const Account = () => {
               lineHeight: 'body',
               mb: [3, null, 4]
             }}>
-            Account
+            {strings('account_heading')}
           </Heading>
-          <p>Hi {userContext?.user?.hname?.split(' ')[0]}!</p>
+          <p>{strings('account_greeting', { name: userContext?.user?.hname?.split(' ')[0] })}</p>
           <Box>
             <p>{userContext?.user?.hname}</p>
             <p>{userContext?.user?.email}</p>

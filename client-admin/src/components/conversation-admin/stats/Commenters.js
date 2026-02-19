@@ -5,6 +5,7 @@ import { VictoryChart, VictoryArea } from 'victory'
 import victoryTheme from './victoryTheme'
 import theme from '../../../theme'
 import PropTypes from 'prop-types'
+import strings from '../../../strings/strings'
 
 const Commenters = ({ size, firstCommentTimes }) => {
   if (firstCommentTimes.length <= 1) return null /* handle seed commenter */
@@ -17,7 +18,7 @@ const Commenters = ({ size, firstCommentTimes }) => {
           lineHeight: 'body',
           my: [2]
         }}>
-        Commenters over time, by time of first comment
+        {strings('stats_commenters_over_time')}
       </Heading>
       <Box sx={{ overflow: 'hidden', width: '100%' }}>
         <VictoryChart

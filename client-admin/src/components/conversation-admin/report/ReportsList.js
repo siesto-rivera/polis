@@ -10,11 +10,15 @@ import { hasDelphiEnabled, isAdminOrMod, useUser } from '../../../util/auth'
 import { useConversationData } from '../../../util/conversation_data'
 import PolisNet from '../../../util/net'
 import Url from '../../../util/url'
+import strings from '../../../strings/strings'
+import { getLocale } from '../../../strings/strings'
 
-const modMap = {
-  0: 'Showing only moderated comments',
-  '-1': 'Showing moderated and unmoderated comments',
-  '-2': 'Showing all comments, including those moderated out'
+const getModText = (level) => {
+  const l = String(level)
+  if (l === '0') return strings('reports_mod_level_0')
+  if (l === '-1') return strings('reports_mod_level_minus1')
+  if (l === '-2') return strings('reports_mod_level_minus2')
+  return ''
 }
 
 const formatTimestamp = (timestamp) => {
@@ -26,13 +30,13 @@ const formatTimestamp = (timestamp) => {
   const diffMinutes = Math.floor(diffMs / (1000 * 60))
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`
+    return strings('reports_minutes_ago', { count: diffMinutes })
   } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+    return strings('reports_hours_ago', { count: diffHours })
   } else if (diffDays < 7) {
-    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
+    return strings('reports_days_ago', { count: diffDays })
   } else {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(getLocale(), {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -139,7 +143,7 @@ const ReportsList = () => {
   }
 
   if (state.loading) {
-    return <div>Loading Reports...</div>
+    return <div>{strings('reports_loading')}</div>
   }
 
   return (
@@ -151,23 +155,23 @@ const ReportsList = () => {
           lineHeight: 'body',
           mb: [3, null, 4]
         }}>
-        Reports
+        {strings('reports_heading')}
       </Heading>
       <Box sx={{ mb: [3, null, 4] }}>
         {hasDelphiEnabled(authUser) && (
           <Box>
-            Select which comments will be visible in this report:
+            {strings('reports_select_comments')}
             <select
               defaultValue={-2}
               onChange={(e) => setModLevel(e.target.value)}
               style={{ display: 'block', margin: '1em 0' }}>
-              <option value={-2}>Include all comments</option>
-              <option value={-1}>Include all comments except for moderation rejections</option>
-              <option value={0}>Include only moderator accepted comments</option>
+              <option value={-2}>{strings('reports_include_all')}</option>
+              <option value={-1}>{strings('reports_include_no_rejected')}</option>
+              <option value={0}>{strings('reports_include_accepted_only')}</option>
             </select>
           </Box>
         )}
-        <Button onClick={createReportClicked}>Create report url</Button>
+        <Button onClick={createReportClicked}>{strings('reports_create')}</Button>
       </Box>
       {state.reports
         .sort((a, b) => parseInt(b.modified) - parseInt(a.modified))
@@ -199,7 +203,7 @@ const ReportsList = () => {
                       color: 'text',
                       mb: [1]
                     }}>
-                    Modified {formatTimestamp(report.modified)}
+                    {strings('reports_modified')} {formatTimestamp(report.modified)}
                   </Text>
                   <Text
                     sx={{
@@ -207,7 +211,7 @@ const ReportsList = () => {
                       color: 'textSecondary',
                       fontStyle: 'italic'
                     }}>
-                    Report ID: {report.report_id}
+                    {strings('reports_report_id')} {report.report_id}
                   </Text>
                 </Flex>
 
@@ -219,7 +223,7 @@ const ReportsList = () => {
                         color: 'textSecondary',
                         fontStyle: 'italic'
                       }}>
-                      {modMap[String(report.mod_level)] || modMap[Number(report.mod_level)]}
+                      {getModText(report.mod_level)}
                     </Text>
                   </Box>
                 )}
@@ -253,46 +257,46 @@ const ReportsList = () => {
                       color: 'text',
                       mb: [2]
                     }}>
-                    Report URLs
+                    {strings('reports_urls')}
                   </Text>
                   <ReportLink
-                    title="Standard Report"
+                    title={strings('reports_standard')}
                     href={`${Url.reportUrlPrefix}report/${report.report_id}`}
                     urlPrefix={`${Url.reportUrlPrefix}report/${report.report_id}`}
                   />
                   <ReportLink
-                    title="Data Export"
+                    title={strings('reports_data_export')}
                     href={`${Url.reportUrlPrefix}exportReport/${report.report_id}`}
                     urlPrefix={`${Url.reportUrlPrefix}exportReport/${report.report_id}`}
                   />
                   {hasDelphiEnabled(authUser) ? (
                     <>
                       <ReportLink
-                        title="Topic"
+                        title={strings('reports_topic')}
                         href={`${Url.reportUrlPrefix}topicReport/${report.report_id}`}
                         urlPrefix={`${Url.reportUrlPrefix}topicReport/${report.report_id}`}
                       />
                       <ReportLink
-                        title="Topics Viz"
+                        title={strings('reports_topics_viz')}
                         href={`${Url.reportUrlPrefix}topicsVizReport/${report.report_id}`}
                         urlPrefix={`${Url.reportUrlPrefix}topicsVizReport/${report.report_id}`}
                       />
                       <ReportLink
-                        title="Topic Stats"
+                        title={strings('reports_topic_stats')}
                         href={`${Url.reportUrlPrefix}topicStats/${report.report_id}`}
                         urlPrefix={`${Url.reportUrlPrefix}topicStats/${report.report_id}`}
                       />
                       <ReportLink
-                        title="Topic Map Narrative"
+                        title={strings('reports_topic_map_narrative')}
                         href={`${Url.reportUrlPrefix}topicMapNarrativeReport/${report.report_id}`}
                         urlPrefix={`${Url.reportUrlPrefix}topicMapNarrativeReport/${report.report_id}`}
                       />
                     </>
                   ) : (
                     <ReportLink
-                      title="Analysis & Insights"
+                      title={strings('reports_analysis_insights')}
                       href="https://pro.pol.is/"
-                      urlPrefix="Discover more with Delphi - advanced data analysis and AI"
+                      urlPrefix={strings('reports_delphi_promo')}
                     />
                   )}
                 </Box>

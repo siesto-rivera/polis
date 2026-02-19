@@ -20,6 +20,7 @@ import ParticipantManagement from './ParticipantManagement'
 import Reports from './report/Reports'
 import ShareAndEmbed from './ShareAndEmbed'
 import Spinner from '../framework/Spinner'
+import strings from '../../strings/strings'
 import TopicModeration from './topic-moderation/'
 
 const ConversationAdmin = () => {
@@ -122,12 +123,12 @@ const ConversationAdmin = () => {
         }}>
         <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
           <Link sx={{ variant: 'links.nav' }} to={`/`}>
-            All
+            {strings('nav_all')}
           </Link>
         </Box>
         <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
           <Link sx={{ variant: url ? 'links.nav' : 'links.activeNav' }} to={baseUrl}>
-            Configure
+            {strings('nav_configure')}
           </Link>
         </Box>
         <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
@@ -136,7 +137,7 @@ const ConversationAdmin = () => {
               variant: url === 'share' ? 'links.activeNav' : 'links.nav'
             }}
             to={`${baseUrl}/share`}>
-            Distribute
+            {strings('nav_distribute')}
           </Link>
         </Box>
         <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
@@ -146,7 +147,7 @@ const ConversationAdmin = () => {
             }}
             data-testid="moderate-comments"
             to={`${baseUrl}/comments`}>
-            Moderate
+            {strings('nav_moderate')}
           </Link>
         </Box>
         <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
@@ -155,7 +156,7 @@ const ConversationAdmin = () => {
               variant: url === 'stats' ? 'links.activeNav' : 'links.nav'
             }}
             to={`${baseUrl}/stats`}>
-            Monitor
+            {strings('nav_monitor')}
           </Link>
         </Box>
         <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
@@ -164,7 +165,7 @@ const ConversationAdmin = () => {
               variant: url === 'reports' ? 'links.activeNav' : 'links.nav'
             }}
             to={`${baseUrl}/reports`}>
-            Reports
+            {strings('nav_reports')}
           </Link>
         </Box>
         {/* <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
@@ -183,7 +184,7 @@ const ConversationAdmin = () => {
               variant: url === 'invite-tree' ? 'links.activeNav' : 'links.nav'
             }}
             to={`${baseUrl}/invite-tree`}>
-            Invite Tree
+            {strings('nav_invite_tree')}
           </Link>
         </Box>
         {conversationData?.treevite_enabled && (
@@ -193,7 +194,7 @@ const ConversationAdmin = () => {
                 variant: url === 'invite-codes' ? 'links.activeNav' : 'links.nav'
               }}
               to={`${baseUrl}/invite-codes`}>
-              Invite Codes
+              {strings('nav_invite_codes')}
             </Link>
           </Box>
         )}
@@ -204,7 +205,7 @@ const ConversationAdmin = () => {
                 variant: url === 'participants' ? 'links.activeNav' : 'links.nav'
               }}
               to={`${baseUrl}/participants`}>
-              Participants
+              {strings('nav_participants')}
             </Link>
           </Box>
         )}
@@ -215,7 +216,7 @@ const ConversationAdmin = () => {
                 variant: url === 'import' ? 'links.activeNav' : 'links.nav'
               }}
               to={`${baseUrl}/import`}>
-              Import
+              {strings('nav_import')}
             </Link>
           </Box>
         )}

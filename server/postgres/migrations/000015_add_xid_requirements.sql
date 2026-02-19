@@ -52,7 +52,7 @@ ADD COLUMN pid INTEGER;
 
 ALTER TABLE xids
 ADD CONSTRAINT xids_pid_fkey
-    FOREIGN KEY (pid) REFERENCES participants(pid) ON DELETE SET NULL;
+    FOREIGN KEY (zid, pid) REFERENCES participants(zid, pid) ON DELETE SET NULL;
 
 -- Performance indexes for efficient xid lookups
 CREATE INDEX idx_xids_zid ON xids(zid);

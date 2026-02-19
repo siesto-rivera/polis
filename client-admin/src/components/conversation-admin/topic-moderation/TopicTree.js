@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { Box, Flex, Heading, Text, Button } from 'theme-ui'
 import { Link, useParams } from 'react-router-dom'
 import PropTypes from 'prop-types'
+import strings from '../../../strings/strings'
 
 const TopicTree = ({ conversation_id }) => {
   const [selectedLayer, setSelectedLayer] = useState('0')
@@ -26,7 +27,7 @@ const TopicTree = ({ conversation_id }) => {
         setError(data.message || 'Failed to load topics')
       }
     } catch (err) {
-      setError('Network error loading topics')
+      setError(strings('topic_network_error_topics'))
     } finally {
       setLoading(false)
     }
@@ -115,15 +116,15 @@ const TopicTree = ({ conversation_id }) => {
                 {isExpanded ? '−' : '+'}
               </Button>
               <Text sx={{ fontWeight: 'bold', color: getStatusColor(status), fontSize: [1, 2, 2] }}>
-                Layer {layerId}, Cluster {clusterId}
+                {strings('topic_layer', { id: layerId })}, {strings('topic_cluster', { id: clusterId })}
               </Text>
-              <Text sx={{ fontSize: 0, color: 'textSecondary', ml: 2 }}>Status: {status}</Text>
+              <Text sx={{ fontSize: 0, color: 'textSecondary', ml: 2 }}>{strings('topic_status_label', { status })}</Text>
             </Flex>
             <Text sx={{ mb: 2, fontSize: [1, 2, 2], wordWrap: 'break-word' }}>
-              {topic.topic_name || 'Unnamed Topic'}
+              {topic.topic_name || strings('topic_unnamed')}
             </Text>
             <Text sx={{ fontSize: 0, color: 'textSecondary', ml: 2 }}>
-              {commentCount > 0 ? commentCount + ' comments' : 'No comments'}
+              {commentCount > 0 ? strings('topic_n_comments', { count: commentCount }) : strings('topic_no_comments')}
             </Text>
           </Box>
           <Flex
@@ -144,7 +145,7 @@ const TopicTree = ({ conversation_id }) => {
                 py: [1, 1, 1],
                 width: ['100%', 'auto', 'auto']
               }}>
-              Accept
+              {strings('topic_accept')}
             </Button>
             <Button
               variant="danger"
@@ -157,7 +158,7 @@ const TopicTree = ({ conversation_id }) => {
                 py: [1, 1, 1],
                 width: ['100%', 'auto', 'auto']
               }}>
-              Reject
+              {strings('topic_reject')}
             </Button>
             <Link
               to={`/m/${conversation_id}/topics/topic/${encodeURIComponent(topicKey)}`}
@@ -166,7 +167,7 @@ const TopicTree = ({ conversation_id }) => {
                 variant="outline"
                 size="small"
                 sx={{ fontSize: [0, 1, 1], px: [2, 2, 2], py: [1, 1, 1], width: '100%' }}>
-                View Comments
+                {strings('topic_view_comments')}
               </Button>
             </Link>
           </Flex>
@@ -174,14 +175,14 @@ const TopicTree = ({ conversation_id }) => {
         {isExpanded && (
           <Box sx={{ mt: 3, pl: 4, borderLeft: '2px solid', borderColor: 'border' }}>
             <Text sx={{ fontSize: 0, color: 'textSecondary', mb: 2 }}>
-              Model: {topic.model_name || 'Unknown'}
+              {strings('topic_model', { model: topic.model_name || strings('topic_unknown') })}
             </Text>
             <Text sx={{ fontSize: 0, color: 'textSecondary' }}>
-              Created: {topic.created_at ? new Date(topic.created_at).toLocaleString() : 'Unknown'}
+              {strings('topic_created_at', { date: topic.created_at ? new Date(topic.created_at).toLocaleString() : strings('topic_unknown') })}
             </Text>
             {topic.moderation?.moderator && (
               <Text sx={{ fontSize: 0, color: 'textSecondary', mt: 1 }}>
-                Moderated by: {topic.moderation.moderator}
+                {strings('topic_moderated_by', { moderator: topic.moderation.moderator })}
               </Text>
             )}
           </Box>
@@ -195,7 +196,7 @@ const TopicTree = ({ conversation_id }) => {
     return (
       <Box key={layerId} sx={{ mb: 4 }}>
         <Heading as="h4" sx={{ mb: 3, fontSize: 2 }}>
-          Layer {layerId} ({layerTopics.length} topics)
+          {strings('topic_layer_count', { id: layerId, count: layerTopics.length })}
         </Heading>
         {layerTopics.map(([clusterId, topic]) => renderTopic(topic, layerId, clusterId))}
       </Box>
@@ -205,7 +206,7 @@ const TopicTree = ({ conversation_id }) => {
   if (loading) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>Loading topics...</Text>
+        <Text>{strings('topic_loading_topics')}</Text>
       </Box>
     )
   }
@@ -213,9 +214,9 @@ const TopicTree = ({ conversation_id }) => {
   if (error) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text sx={{ color: 'error' }}>Error: {error}</Text>
+        <Text sx={{ color: 'error' }}>{strings('topic_error', { error })}</Text>
         <Button sx={{ mt: 2 }} onClick={loadTopics}>
-          Retry
+          {strings('topic_retry')}
         </Button>
       </Box>
     )
@@ -224,10 +225,9 @@ const TopicTree = ({ conversation_id }) => {
   if (!topicsData || Object.keys(topicsData).length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>No topics available for this conversation.</Text>
+        <Text>{strings('topic_no_topics')}</Text>
         <Text sx={{ fontSize: 0, color: 'textSecondary', mt: 2 }}>
-          Topics are generated by the Delphi pipeline. Make sure the pipeline has been run for this
-          conversation.
+          {strings('topic_no_topics_hint')}
         </Text>
       </Box>
     )
@@ -238,7 +238,7 @@ const TopicTree = ({ conversation_id }) => {
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <Text sx={{ fontWeight: 'bold', mb: [2], display: 'block' }}>View Layer:</Text>
+        <Text sx={{ fontWeight: 'bold', mb: [2], display: 'block' }}>{strings('topic_view_layer')}</Text>
         <Flex sx={{ gap: 2, flexWrap: 'wrap' }}>
           {layers.map(([layerId]) => (
             <Button
@@ -252,7 +252,7 @@ const TopicTree = ({ conversation_id }) => {
                 py: [1, 2, 2],
                 minWidth: ['auto', 'auto', 'auto']
               }}>
-              Layer {layerId}
+              {strings('topic_layer', { id: layerId })}
             </Button>
           ))}
           <Button
@@ -265,7 +265,7 @@ const TopicTree = ({ conversation_id }) => {
               py: [1, 2, 2],
               minWidth: ['auto', 'auto', 'auto']
             }}>
-            All Layers
+            {strings('topic_all_layers')}
           </Button>
         </Flex>
       </Box>

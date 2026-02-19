@@ -60,14 +60,14 @@ const ModerateCommentsSeed = ({ params }) => {
   }
 
   const getButtonText = () => {
-    let text = 'Submit'
+    let text = strings('seed_submit')
 
     if (success) {
-      text = 'Success!'
+      text = strings('seed_success')
     }
 
     if (loading) {
-      text = 'Saving...'
+      text = strings('seed_saving')
     }
 
     return text
@@ -78,11 +78,10 @@ const ModerateCommentsSeed = ({ params }) => {
       {params.uploadOnly ? null : (
         <>
           <Text sx={{ mb: [2] }}>
-            Add{' '}
+            {strings('seed_add')}{' '}
             <Link target="_blank" href="https://compdemocracy.org/seed-comments">
-              seed comments or bulk upload as csv
-            </Link>{' '}
-            for participants to vote on:
+              {strings('seed_link_text')}
+            </Link>{' '}{strings('seed_for_participants')}
           </Text>
           <Box sx={{ mb: [2] }}>
             <textarea
@@ -119,11 +118,11 @@ const ModerateCommentsSeed = ({ params }) => {
             lineHeight: 'body',
             my: [3, null, 4]
           }}>
-          Upload a CSV of seed comments
+          {strings('seed_upload_csv_heading')}
         </Heading>
         {params.uploadOnly ? (
           <>
-            CSV Format:
+            {strings('seed_csv_format')}
             <pre>
               <code>
                 comment_text,original_id
@@ -133,11 +132,11 @@ const ModerateCommentsSeed = ({ params }) => {
                 This is sample comment two,550e8400-e29b-41d4-a716-446655440000
               </code>
             </pre>
-            original_id MUST be a UUID.
+            {strings('seed_original_id_note')}
           </>
         ) : (
           <>
-            CSV Format:
+            {strings('seed_csv_format')}
             <pre>
               <code>
                 comment_text
