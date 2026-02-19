@@ -303,6 +303,9 @@ npm/docker가 이상한 상태에 빠지는 경우가 있으며, 특히 네이�
 
 일부 의존성, 특히 nodejs 및 postgres 관련 패키지를 [Rosetta 터미널](https://support.apple.com/en-us/HT211861)에서 설치해야 할 수 있습니다. Apple 컴퓨터에서 이상한 빌드 문제가 발생하면 이슈를 생성하거나 문의하세요.
 
+#### DB
+https://console.neon.tech/
+
 ## 라이선스
 
 [AGPLv3 (섹션 7에 따른 추가 권한 포함)](/LICENSE)
