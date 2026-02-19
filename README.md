@@ -1,8 +1,8 @@
     # Polis
 
-Polis is an AI powered sentiment gathering platform. More organic than surveys and less effort than focus groups.
+Polis는 AI 기반 의견 수집 플랫폼입니다. 설문조사보다 유기적이고, 포커스 그룹보다 적은 노력으로 운영할 수 있습니다.
 
-For a detailed methods paper, see [Polis: Scaling Deliberation by Mapping High Dimensional Opinion Spaces][methods-paper].
+자세한 방법론 논문은 [Polis: Scaling Deliberation by Mapping High Dimensional Opinion Spaces][methods-paper]를 참조하세요.
 
    [methods-paper]: https://www.e-revistes.uji.es/index.php/recerca/article/view/5516/6558
 
@@ -16,17 +16,16 @@ For a detailed methods paper, see [Polis: Scaling Deliberation by Mapping High D
 
 ---
 
-## 🎈 🪁 Start here! 🪁 🎈
+## 여기서 시작하세요!
 
-If you're interested in using or contributing to Polis, please see the following:
+Polis 사용 또는 기여에 관심이 있으시다면 아래를 참조하세요:
 
-- [📚 **knowledge base**][knowledge-base]: for a comprehensive wiki to help you understand and use the system
-- [🌐 **main deployment**](https://pol.is): the main deployment of Polis is at <https://pol.is>, and is
-  free to use for nonprofits and government
-- [💬 **discussions**][discussions]: for questions (QA) and discussion
-- [✔️ **issues**][issues]: for well-defined technical issues
-- [🏗️ **project board**][board]: somewhat incomplete, but still useful; We stopped around the time that Projects Beta came out, and we have a [Projects Beta Board][beta-board] that we'll eventually be migrating to
-- [✉️ reach out][hello]: if you are applying Polis in a high-impact context, and need more help than you're able to get through the public channels above
+- [**지식 베이스**][knowledge-base]: 시스템을 이해하고 사용하는 데 도움이 되는 종합 위키
+- [**메인 배포**](https://pol.is): Polis의 메인 배포는 <https://pol.is>이며, 비영리 및 정부 기관은 무료로 사용 가능합니다
+- [**토론**][discussions]: 질의응답(QA) 및 토론
+- [**이슈**][issues]: 명확하게 정의된 기술적 이슈
+- [**프로젝트 보드**][board]: 다소 불완전하지만 여전히 유용합니다
+- [**문의**][hello]: 높은 영향력이 있는 맥락에서 Polis를 적용 중이며, 위 공개 채널로는 충분한 도움을 받기 어려운 경우
 
    [knowledge-base]: https://compdemocracy.org/Welcome
    [issues]: https://github.com/compdemocracy/polis/issues
@@ -35,83 +34,82 @@ If you're interested in using or contributing to Polis, please see the following
    [discussions]: https://github.com/compdemocracy/polis/discussions
    [hello]: mailto:hello@compdemocracy.org
 
-If you're trying to set up a Polis deployment or development environment, then please read the rest of this document 👇 ⬇️ 👇
+Polis 배포 또는 개발 환경을 설정하려면 이 문서의 나머지 부분을 읽어주세요.
 
 ---
 
-## ⚡ Running Polis
+## Polis 실행하기
 
-Polis comes with Docker infrastructure for running a complete system, whether for a [production deployment](#-production-deployment) or a [development environment](#-development-tooling) (details for each can be found in later sections of this document).
-As a consequence, the only prerequisite to running Polis is that you install a recent `docker` (and Docker Desktop if you are on Mac or Windows).
+Polis는 [프로덕션 배포](#프로덕션-배포) 또는 [개발 환경](#개발-도구)을 위한 완전한 시스템을 Docker 인프라로 제공합니다.
+따라서 Polis를 실행하기 위한 유일한 전제 조건은 최신 `docker`(Mac 또는 Windows의 경우 Docker Desktop)를 설치하는 것입니다.
 
-If you aren't able to use Docker for some reason, the various Dockerfiles found in subdirectories (`math`, `server`, `delphi`, `*-client`) of this repository _can_ be used as a reference for how you'd set up a system manually.
-If you're interested in doing the legwork to support alternative infrastructure, please [let us know in an issue](https://github.com/compdemocracy.org/issues).
+Docker를 사용할 수 없는 경우, 이 저장소의 하위 디렉토리(`math`, `server`, `delphi`, `*-client`)에 있는 Dockerfile을 수동 설정의 참고 자료로 활용할 수 있습니다.
 
-### Quick Start
+### 빠른 시작
 
-#### 1. Install and Configure SSL Certificates
+#### 1. SSL 인증서 설치 및 설정
 
-Polis uses locally trusted SSL certificates for the OIDC authentication simulator. This is a one-time setup:
+Polis는 OIDC 인증 시뮬레이터를 위해 로컬 신뢰 SSL 인증서를 사용합니다. 이 설정은 한 번만 하면 됩니다:
 
 ```sh
-# Install mkcert (macOS with Homebrew)
+# mkcert 설치 (macOS + Homebrew)
 brew install mkcert
-brew install nss  # if you use Firefox
+brew install nss  # Firefox를 사용하는 경우
 
-# Other platforms: https://github.com/FiloSottile/mkcert#installation
+# 기타 플랫폼: https://github.com/FiloSottile/mkcert#installation
 ```
 
 ```sh
-# Install the local Certificate Authority
+# 로컬 인증 기관(CA) 설치
 mkcert -install
 
-# Generate certificates for localhost
+# localhost용 인증서 생성
 mkdir -p ~/.simulacrum/certs
 cd ~/.simulacrum/certs
 mkcert -cert-file localhost.pem -key-file localhost-key.pem localhost 127.0.0.1 ::1 oidc-simulator host.docker.internal
 
-# Copy the root CA certificate (needed for server-to-server communication)
+# 루트 CA 인증서 복사 (서버 간 통신에 필요)
 cp "$(mkcert -CAROOT)/rootCA.pem" ~/.simulacrum/certs/
 ```
 
-**Important**: After running `mkcert -install`, completely restart your browser to trust the certificates.
+**중요**: `mkcert -install` 실행 후, 인증서를 신뢰하려면 브라우저를 완전히 재시작하세요.
 
-#### 2. Generate JWT Keys
+#### 2. JWT 키 생성
 
-Polis uses JWT keys for participant authentication. Generate them with:
+Polis는 참여자 인증을 위해 JWT 키를 사용합니다. 다음 명령으로 생성하세요:
 
 ```sh
 make generate-jwt-keys
 ```
 
-This creates `server/keys/jwt-private.pem` and `server/keys/jwt-public.pem`.
+이 명령은 `server/keys/jwt-private.pem`과 `server/keys/jwt-public.pem`을 생성합니다.
 
-#### 3. Start Polis
+#### 3. Polis 시작
 
 ```sh
 cp example.env .env
 make start
 ```
 
-That should run docker compose with the development overlay (see below) and default configuration values.
+위 명령은 개발 오버레이(아래 참조)와 기본 설정값으로 docker compose를 실행합니다.
 
-You may encounter an error on mac if AirPlay receiver is enabled, which defaults to port 5000 and collides with Polis API_SERVER_PORT. You can change this in your `.env` file or disable AirPlay receiver in system settings.
+Mac에서 AirPlay 수신기가 활성화되어 있으면 포트 5000 충돌로 오류가 발생할 수 있습니다. `.env` 파일에서 포트를 변경하거나 시스템 설정에서 AirPlay 수신기를 비활성화하세요.
 
-Visit `localhost:80/createuser` and get started.
+`localhost:80/createuser`에 접속하여 시작하세요.
 
 ### Docker & Docker Compose
 
-Newer versions of `docker` have `docker compose` built in as a subcommand.
-If you are using an older version (and don't want to upgrade), you'll need to separately install `docker-compose`, and use that instead in the instructions that follow.
-Note however that the newer `docker compose` command is required to [take advantage of Docker Swarm](/docs/scaling#docker-compose-over-docker-swarm) as a scaling option.
+최신 버전의 `docker`에는 `docker compose`가 하위 명령으로 내장되어 있습니다.
+이전 버전을 사용하는 경우 `docker-compose`를 별도로 설치해야 합니다.
+단, Docker Swarm을 활용한 [스케일링](/docs/scaling#docker-compose-over-docker-swarm) 옵션을 사용하려면 최신 `docker compose` 명령이 필요합니다.
 
-Many convenient commands are found in the Makefile. Run `make help` for a list of available commands.
+Makefile에 편리한 명령어들이 있습니다. 사용 가능한 명령 목록은 `make help`로 확인하세요.
 
-### Building and running the containers
+### 컨테이너 빌드 및 실행
 
-First clone the repository, then navigate via command line to the root directory and run the following command to build and run the docker containers.
+먼저 저장소를 클론한 후, 명령줄에서 루트 디렉토리로 이동하여 다음 명령을 실행해 Docker 컨테이너를 빌드하고 실행합니다.
 
-Copy the example.env file and modify as needed (although it should just work as is for development and testing purposes).
+example.env 파일을 복사하고 필요에 따라 수정하세요 (개발 및 테스트 목적이라면 그대로 사용해도 됩니다).
 
 ```sh
 cp example.env .env
@@ -121,56 +119,52 @@ cp example.env .env
 docker compose --profile postgres --profile local-services up --build
 ```
 
-If you get a permission error, try running this command with `sudo`.
-If this fixes the problem, sudo will be necessary for all other commands as well.
-To avoid having to use `sudo` in the future (on a Linux or Windows machine with WSL), [you can follow setup instructions here.](https://docs.docker.com/engine/install/linux-postinstall/)
+권한 오류가 발생하면 `sudo`를 붙여 실행해보세요.
+향후 `sudo` 없이 사용하려면 (Linux 또는 WSL) [여기의 설정 안내](https://docs.docker.com/engine/install/linux-postinstall/)를 따르세요.
 
-Once you've built the docker images, you can run without `--build`, which may be faster. Run
+Docker 이미지를 빌드한 후에는 `--build` 없이 실행할 수 있으며, 더 빠를 수 있습니다:
 
 ```sh
 docker compose --profile postgres --profile local-services up
 ```
 
-or simply
+또는 간단히
 
 ```sh
 make start
 ```
 
-Any time you want to _rebuild_ the images, just reaffix `--build` when you run. Another way to
-easily rebuild and start your containers is with `make start-rebuild`.
+이미지를 _다시 빌드_하려면 `--build`를 다시 붙이면 됩니다. `make start-rebuild`로도 쉽게 빌드 및 시작할 수 있습니다.
 
-If you have only changed configuration values in .env, you can recreate your containers without
-fully rebuilding them with `--force-recreate`. For example:
+.env의 설정값만 변경한 경우, `--force-recreate`로 완전한 재빌드 없이 컨테이너를 재생성할 수 있습니다:
 
 ```sh
 docker compose --profile postgres --profile local-services down
 docker compose --profile postgres --profile local-services up --force-recreate
 ```
 
-To see what the environment of your containers is going to look like, run:
+컨테이너 환경이 어떻게 구성되는지 확인하려면:
 
 ```sh
 docker compose --profile postgres --profile local-services convert
 ```
 
-#### Using a local or remote (non-docker) database
+#### 로컬 또는 원격(비 Docker) 데이터베이스 사용
 
-Omit the `--profile postgres` flag to use a local or remote database. You will need to set the `DATABASE_URL` environment variable in your `.env` file to point to your database.
+로컬 또는 원격 데이터베이스를 사용하려면 `--profile postgres` 플래그를 생략하세요. `.env` 파일에서 `DATABASE_URL` 환경 변수를 데이터베이스에 맞게 설정해야 합니다.
 
-When using `make` commands, setting POSTGRES_DOCKER to `true` or `false` will determine whether to automatically include `--profile postgres` when it calls out to `docker compose`.
+`make` 명령 사용 시, `POSTGRES_DOCKER`를 `true` 또는 `false`로 설정하면 `docker compose` 호출 시 `--profile postgres`의 자동 포함 여부가 결정됩니다.
 
-#### Production Mode Shortcuts
+#### 프로덕션 모드 단축키
 
-The commands in the Makefile can be prefaced with PROD. If so, the "dev overlay" configuration in `docker-compose.dev.yml` will be ignored.
-Ports from services other than the HTTP proxy (80/443) will not be exposed. Containers will not mount local directories, watch for changes,
-or rebuild themselves. In theory this should be one way to run Polis in a production environment.
+Makefile의 명령에 PROD를 접두사로 붙이면 `docker-compose.dev.yml`의 "개발 오버레이" 설정이 무시됩니다.
+HTTP 프록시(80/443) 외의 서비스 포트는 노출되지 않으며, 컨테이너는 로컬 디렉토리를 마운트하거나 변경을 감시하거나 자동으로 재빌드하지 않습니다.
 
-You need a `prod.env` file:
+`prod.env` 파일이 필요합니다:
 
-`cp example.env prod.env` (and update accordingly).
+`cp example.env prod.env` (그리고 적절히 수정하세요).
 
-Then you can run things like:
+그런 다음 다음과 같이 실행할 수 있습니다:
 
 ```sh
 make PROD start
@@ -178,144 +172,137 @@ make PROD start
 make PROD start-rebuild
 ```
 
-### Running without Local Cloud Service Emulators
+### 로컬 클라우드 서비스 에뮬레이터 없이 실행
 
-If you want to run the stack without the local MinIO and DynamoDB services (e.g., to test connecting to real AWS services configured in your .env file), simply omit the --profile local-services flag.
+로컬 MinIO 및 DynamoDB 서비스 없이 스택을 실행하려면 (예: .env 파일에 설정된 실제 AWS 서비스에 연결하려는 경우) `--profile local-services` 플래그를 생략하세요.
 
-Example: Run with the containerized DB but connect to external/real cloud services:
+예시: 컨테이너화된 DB를 사용하되 외부/실제 클라우드 서비스에 연결:
 
 ```sh
 docker compose --profile postgres up
 ```
 
-Example: Run with an external DB and external/real cloud services (closest to production):
+예시: 외부 DB와 외부/실제 클라우드 서비스 사용 (프로덕션에 가장 가까운 구성):
 
 ```sh
 docker compose up
 ```
 
-### Testing out your instance
+### 인스턴스 테스트
 
-You can now test your setup by visiting `http://localhost:80/home`.
+이제 `http://localhost:80/home`에 접속하여 설정을 테스트할 수 있습니다.
 
-#### Using Predefined Test Accounts
+#### 사전 정의된 테스트 계정 사용
 
-When running with `make start` or the development configuration, an OIDC Simulator automatically starts with predefined test users. You can log in immediately using:
+`make start` 또는 개발 설정으로 실행하면 사전 정의된 테스트 사용자가 있는 OIDC 시뮬레이터가 자동으로 시작됩니다. 다음 계정으로 즉시 로그인할 수 있습니다:
 
-- **Email**: `admin@polis.test`
-- **Password**: `Te$tP@ssw0rd*`
+- **이메일**: `admin@polis.test`
+- **비밀번호**: `Te$tP@ssw0rd*`
 
-Additional test users are available:
+추가 테스트 사용자:
 
 - `moderator@polis.test` / `Te$tP@ssw0rd*`
-- `test.user.0@polis.test` through `test.user.49@polis.test` (all with password `Te$tP@ssw0rd*`)
+- `test.user.0@polis.test` ~ `test.user.49@polis.test` (모두 비밀번호 `Te$tP@ssw0rd*`)
 
-Due to limitations of the OIDC Simulator, you cannot register new admin users in development and test environments.
+OIDC 시뮬레이터의 제한으로 인해, 개발 및 테스트 환경에서는 새로운 관리자 사용자를 등록할 수 없습니다.
 
-#### Shutting down
+#### 종료
 
-When you're done working, you can end the process using `Ctrl+C`, or typing `docker compose --profile postgres --profile local-services down`
-if you are running in "detached mode".
+작업이 끝나면 `Ctrl+C`로 프로세스를 종료하거나, "분리 모드"로 실행 중인 경우 `docker compose --profile postgres --profile local-services down`을 입력하세요.
 
-### Updating the system
+### 시스템 업데이트
 
-If you want to update the system, you may need to handle the following:
+시스템을 업데이트하려면 다음을 처리해야 할 수 있습니다:
 
-- [⬆️ Run database migrations](docs/migrations.md), if there are new such
-- Update docker images by running with `--build` if there have been changes to the Dockerfiles
-  - consider using `--no-cache` if you'd like to rebuild from scratch, but note that this will take much longer
-
----
-
-## 🚀 Production deployment
-
-While the commands above will get a functional Polis system up and running, additional steps must be taken to properly configure, secure and scale the system.
-In particular
-
-- [⚙️ Configure the system](docs/configuration.md), esp:
-  - the domain name you'll be serving from
-  - enable and add API keys for 3rd party services (e.g. automatic comment translation, spam filtering, etc)
-- [🔏 Set up SSL/HTTPS](docs/ssl.md), to keep the site secure
-- [📈 Scale](docs/scaling.md) for large or many concurrent conversations
-
-### Support
-
-We encourage you to take advantage of the public channels above for support setting up a deployment.
-However, if you are deploying in a high impact context and need help, please [reach out to us][hello]
+- 새로운 [데이터베이스 마이그레이션 실행](docs/migrations.md)
+- Dockerfile에 변경이 있는 경우 `--build`로 Docker 이미지 업데이트
+  - 처음부터 완전히 재빌드하려면 `--no-cache` 사용을 고려하세요 (시간이 더 오래 걸립니다)
 
 ---
 
-## 💻 Development tooling
+## 프로덕션 배포
 
-Once you've gotten [Polis running (as described above)](#-running-polis), you can enable developer conveniences by running
+위의 명령으로 Polis 시스템을 실행할 수 있지만, 시스템을 적절히 구성, 보안 및 확장하려면 추가 단계가 필요합니다.
+특히:
+
+- [시스템 구성](docs/configuration.md), 특히:
+  - 서비스를 제공할 도메인 이름
+  - 서드파티 서비스를 위한 API 키 활성화 및 추가 (자동 댓글 번역, 스팸 필터링 등)
+- [SSL/HTTPS 설정](docs/ssl.md), 사이트 보안을 위해
+- [스케일링](docs/scaling.md), 대규모 또는 다수의 동시 대화를 위해
+
+### 지원
+
+배포 설정에 대한 지원은 위의 공개 채널을 활용하시기 바랍니다.
+다만, 높은 영향력이 있는 맥락에서 배포 중이며 도움이 필요하시면 [문의해 주세요][hello]
+
+---
+
+## 개발 도구
+
+[위에서 설명한 대로 Polis를 실행](#polis-실행하기)한 후, 다음 명령으로 개발자 편의 기능을 활성화할 수 있습니다:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile postgres up
 ```
 
-(run with `--build` if this is your first time running, or if you need to rebuild containers)
+(처음 실행하거나 컨테이너를 재빌드해야 하는 경우 `--build`와 함께 실행하세요)
 
-This enables:
+이 명령은 다음을 활성화합니다:
 
-- Live code reloading and static type checking of the server code
-- A nREPL connection port open for connecting to the running math process
-- Ports open for connecting directly to the database container
-- Live code reloading for the client repos (in process)
-- etc.
+- 서버 코드의 실시간 코드 리로딩 및 정적 타입 검사
+- 실행 중인 math 프로세스에 연결하기 위한 nREPL 연결 포트 개방
+- 데이터베이스 컨테이너에 직접 연결하기 위한 포트 개방
+- 클라이언트 저장소의 실시간 코드 리로딩 (진행 중)
+- 등등
 
-This command takes advantage of the `docker-compose.dev.yml` _overlay_ file, which layers the developer conveniences describe above into the base system, as described in the `docker-compose.yml` file.
-You can specify these `-f docker-compose.yml -f docker-compose.dev.yml` arguments for any `docker` command which you need to take advantage of these features (not just `docker compose --profile postgres up`).
+이 명령은 `docker-compose.dev.yml` _오버레이_ 파일을 활용하며, `docker-compose.yml` 파일에 설명된 기본 시스템 위에 개발자 편의 기능을 추가합니다.
+이러한 기능이 필요한 모든 `docker` 명령에 `-f docker-compose.yml -f docker-compose.dev.yml` 인수를 지정할 수 있습니다.
 
-You can create your own `docker-compose.x.yml` file as an overlay and add or modify any values you need to differ
-from the defaults found in the `docker-compose.yml` file and pass it as the second argument to the `docker compose -f` command above.
+`docker-compose.x.yml` 파일을 직접 만들어 오버레이로 사용하고, `docker-compose.yml`의 기본값과 다른 값을 추가하거나 수정할 수 있습니다.
 
-### Testing
+### 테스트
 
-We use Cypress for automated, end-to-end browser testing for PRs on GitHub (see badge above).
-Please see [`e2e/README.md`](/e2e/README.md) for more information on running these tests locally.
+GitHub PR에 대한 자동화된 엔드투엔드 브라우저 테스트에 Cypress를 사용합니다 (위 배지 참조).
+이 테스트를 로컬에서 실행하는 방법은 [`e2e/README.md`](/e2e/README.md)를 참조하세요.
 
-### Miscellaneous & troubleshooting
+### 기타 사항 및 문제 해결
 
-#### Docker Problems
+#### Docker 문제
 
-A lot of issues might be resolved by killing all docker containers and/or restarting docker entirely. If that doesn't
-work, this will wipe all of your polis containers and volumes (**INCLUDING THE DATABASE VOLUME, so don't use this in prod!**) and completely rebuild them:
+많은 문제는 모든 Docker 컨테이너를 종료하거나 Docker 자체를 재시작하면 해결될 수 있습니다. 그래도 해결되지 않으면 다음 명령으로 모든 Polis 컨테이너와 볼륨을 삭제하고 (**데이터베이스 볼륨 포함이므로 프로덕션에서는 사용하지 마세요!**) 완전히 재빌드할 수 있습니다:
 
 `make start-FULL-REBUILD`
 
-see also `make help` for additional commands that might be useful.
+추가 유용한 명령은 `make help`를 참조하세요.
 
-#### Git Configuration
+#### Git 설정
 
-Due to past file re-organizations, you may find the following git configuration helpful for looking at history:
+과거 파일 재구성으로 인해, 다음 Git 설정이 히스토리 조회에 도움이 될 수 있습니다:
 
 ```sh
 git config --local include.path ../.gitconfig
 ```
 
-#### Running as a background process
+#### 백그라운드 프로세스로 실행
 
-If you would like to run docker compose as a background process, run the `up` commands with the `--detach` flag, and use `docker compose --profile postgres --profile local-services down` to stop.
+docker compose를 백그라운드 프로세스로 실행하려면 `up` 명령에 `--detach` 플래그를 추가하고, `docker compose --profile postgres --profile local-services down`으로 중지하세요.
 
-#### Using Docker Machine as your development environment
+#### Docker Machine을 개발 환경으로 사용
 
-If your development machine is having trouble handling all of the docker containers, look into [using Docker Machine](/docs/docker-machine.md).
+개발 머신이 모든 Docker 컨테이너를 처리하는 데 어려움이 있다면 [Docker Machine 사용 안내](/docs/docker-machine.md)를 참조하세요.
 
-#### Resolving problems with npm not finding libraries
+#### npm이 라이브러리를 찾지 못하는 문제 해결
 
-Sometimes npm/docker get in a weird state, especially with native libs, and fail to recover gracefully.
-You may get a message like `Error: Cannot find module .... bcrypt`.
+npm/docker가 이상한 상태에 빠지는 경우가 있으며, 특히 네이티브 라이브러리에서 발생합니다.
+`Error: Cannot find module .... bcrypt`와 같은 메시지가 나타날 수 있습니다.
 
-If this happens to you, try
-[following the instructions here.](https://github.com/compdemocracy/polis/issues/1391)
+이 경우 [여기의 안내를 따르세요.](https://github.com/compdemocracy/polis/issues/1391)
 
-#### Issues with Apple Silicon (M1 & M2) chips
+#### Apple Silicon (M1 & M2) 칩 관련 문제
 
-You may find it necessary to install some dependencies, namely nodejs and postgres stuff, in a [Rosetta terminal](https://support.apple.com/en-us/HT211861). Create an issue or reach out if you are having strange build issues on Apple computers.
+일부 의존성, 특히 nodejs 및 postgres 관련 패키지를 [Rosetta 터미널](https://support.apple.com/en-us/HT211861)에서 설치해야 할 수 있습니다. Apple 컴퓨터에서 이상한 빌드 문제가 발생하면 이슈를 생성하거나 문의하세요.
 
-## ©️  License
+## 라이선스
 
-[AGPLv3 with additional permission under section 7](/LICENSE)
-
-
-## db: https://console.neon.tech/
+[AGPLv3 (섹션 7에 따른 추가 권한 포함)](/LICENSE)
