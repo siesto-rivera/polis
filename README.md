@@ -1,18 +1,57 @@
-    # Polis
+# Polis - 참여민주주의 시민의힘
 
-Polis는 AI 기반 의견 수집 플랫폼입니다. 설문조사보다 유기적이고, 포커스 그룹보다 적은 노력으로 운영할 수 있습니다.
+> **이 프로젝트는 [Computational Democracy Project](https://compdemocracy.org/)의 오픈소스 프로젝트 [Polis](https://github.com/compdemocracy/polis)에 전적으로 기반합니다.**
+>
+> 한글화 및 한국 환경에 맞는 커스터마이징 작업을 추가하여 운영하고 있습니다.
 
-자세한 방법론 논문은 [Polis: Scaling Deliberation by Mapping High Dimensional Opinion Spaces][methods-paper]를 참조하세요.
+**배포 URL**: [https://polis.peoplepower21.org](https://polis.peoplepower21.org)
 
-   [methods-paper]: https://www.e-revistes.uji.es/index.php/recerca/article/view/5516/6558
+---
 
-<!-- Changes to badge text in URLs below, require changes to "name" value in .github/workflows/*.yml -->
-[![DPG Badge](https://img.shields.io/badge/Verified-DPG-3333AB?logo=data:image/svg%2bxml;base64,PHN2ZyB3aWR0aD0iMzEiIGhlaWdodD0iMzMiIHZpZXdCb3g9IjAgMCAzMSAzMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE0LjIwMDggMjEuMzY3OEwxMC4xNzM2IDE4LjAxMjRMMTEuNTIxOSAxNi40MDAzTDEzLjk5MjggMTguNDU5TDE5LjYyNjkgMTIuMjExMUwyMS4xOTA5IDEzLjYxNkwxNC4yMDA4IDIxLjM2NzhaTTI0LjYyNDEgOS4zNTEyN0wyNC44MDcxIDMuMDcyOTdMMTguODgxIDUuMTg2NjJMMTUuMzMxNCAtMi4zMzA4MmUtMDVMMTEuNzgyMSA1LjE4NjYyTDUuODU2MDEgMy4wNzI5N0w2LjAzOTA2IDkuMzUxMjdMMCAxMS4xMTc3TDMuODQ1MjEgMTYuMDg5NUwwIDIxLjA2MTJMNi4wMzkwNiAyMi44Mjc3TDUuODU2MDEgMjkuMTA2TDExLjc4MjEgMjYuOTkyM0wxNS4zMzE0IDMyLjE3OUwxOC44ODEgMjYuOTkyM0wyNC44MDcxIDI5LjEwNkwyNC42MjQxIDIyLjgyNzdMMzAuNjYzMSAyMS4wNjEyTDI2LjgxNzYgMTYuMDg5NUwzMC42NjMxIDExLjExNzdMMjQuNjI0MSA5LjM1MTI3WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==)](https://digitalpublicgoods.net/r/polis)
-[![Docker Image Builds](https://github.com/compdemocracy/polis/workflows/Docker%20image%20builds/badge.svg)][docker-image-builds]
-[![E2E Tests](https://github.com/compdemocracy/polis/workflows/E2E%20Tests/badge.svg)][e2e-tests]
+## 프로젝트 개요
 
-   [docker-image-builds]: https://hub.docker.com/u/compdem
-   [e2e-tests]: https://github.com/compdemocracy/polis/actions?query=workflow%3A%22E2E+Tests%22
+이 저장소는 원본 Polis 프로젝트를 포크(fork)하여 다음 작업을 수행한 것입니다:
+
+- **한글화**: 관리자 인터페이스(client-admin) 및 참여 인터페이스의 한국어 지원
+- **UI 프레임워크 전환**: client-admin을 theme-ui에서 React Bootstrap으로 마이그레이션
+- **OIDC 인증**: OIDC 시뮬레이터 기반 인증 시스템 적용
+- **EC2 배포**: AWS EC2 + Let's Encrypt SSL + GitHub Actions 자동 배포 구성
+
+원본 프로젝트: [https://github.com/compdemocracy/polis](https://github.com/compdemocracy/polis)
+
+---
+
+## 배포 환경
+
+| 항목 | 값 |
+|------|-----|
+| 도메인 | `polis.peoplepower21.org` |
+| 서버 | AWS EC2 (ap-northeast-2) |
+| SSL | Let's Encrypt (자동 갱신) |
+| DB | Neon PostgreSQL |
+| 컨테이너 | Docker Compose |
+| CI/CD | GitHub Actions (`main` push 시 자동 배포) |
+
+### GitHub Actions 배포 흐름
+
+`main` 브랜치에 push하면 `.github/workflows/deploy-ec2.yml`이 실행됩니다:
+
+- **client-admin 변경**: GitHub Actions에서 번들 빌드 후 SCP로 EC2에 전송 (빠른 배포)
+- **server/nginx/delphi 등 변경**: EC2에서 `git pull` + `docker compose build` 실행
+- 변경되지 않은 서비스는 재빌드하지 않음 (선택적 배포)
+
+### 수동 배포
+
+```bash
+ssh -i <key>.pem ec2-user@3.36.185.213
+cd ~/polis
+git pull origin main
+docker compose up -d --build --force-recreate
+```
+
+---
+
+> **아래 내용은 원본 Polis 프로젝트의 README.md를 한국어로 번역한 것입니다.**
 
 ---
 
@@ -302,9 +341,6 @@ npm/docker가 이상한 상태에 빠지는 경우가 있으며, 특히 네이�
 #### Apple Silicon (M1 & M2) 칩 관련 문제
 
 일부 의존성, 특히 nodejs 및 postgres 관련 패키지를 [Rosetta 터미널](https://support.apple.com/en-us/HT211861)에서 설치해야 할 수 있습니다. Apple 컴퓨터에서 이상한 빌드 문제가 발생하면 이슈를 생성하거나 문의하세요.
-
-#### DB
-https://console.neon.tech/
 
 ## 라이선스
 
