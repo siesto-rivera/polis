@@ -1,6 +1,5 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Heading, Box, Text } from 'theme-ui'
 import { useCallback, useRef } from 'react'
 import { useDispatch } from 'react-redux'
 import emoji from 'react-easy-emoji'
@@ -14,6 +13,17 @@ import {
   optimisticConversationDataUpdateOnTyping
 } from '../../actions'
 import strings from '../../strings/strings'
+
+const inputStyle = {
+  display: 'block',
+  fontFamily: "'Space Mono', monospace",
+  fontSize: '16px',
+  width: '100%',
+  maxWidth: '35em',
+  borderRadius: 2,
+  padding: '8px',
+  border: '1px solid #60656f'
+}
 
 const ConversationConfig = () => {
   const dispatch = useDispatch()
@@ -47,91 +57,51 @@ const ConversationConfig = () => {
   }
 
   return (
-    <Box>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4]
-        }}>
+    <div>
+      <h3 className="mb-3 mb-xl-4" style={{ fontSize: '20px', lineHeight: 1.5 }}>
         {strings('config_heading')}
-      </Heading>
-      <Box sx={{ mb: [4] }}>
-        {loading ? <Text>{emoji('💾')} {strings('config_saving')}</Text> : <Text>{emoji('⚡')} {strings('config_up_to_date')}</Text>}
-        {error ? <Text>{strings('config_error_saving')}</Text> : null}
-      </Box>
+      </h3>
+      <div className="mb-4">
+        {loading ? <span>{emoji('💾')} {strings('config_saving')}</span> : <span>{emoji('⚡')} {strings('config_up_to_date')}</span>}
+        {error ? <span>{strings('config_error_saving')}</span> : null}
+      </div>
 
       <CheckboxField field="is_active" label={strings('config_is_active_label')}>
         {strings('config_is_active_desc')}
       </CheckboxField>
 
-      <Box sx={{ mb: [3] }}>
-        <Text sx={{ display: 'block', mb: [2] }}>{strings('config_topic')}</Text>
+      <div className="mb-3">
+        <span className="d-block mb-2">{strings('config_topic')}</span>
         <input
           ref={topicRef}
-          sx={{
-            display: 'block',
-            fontFamily: 'body',
-            fontSize: [2],
-            width: ['100%', '100%', '35em'],
-            maxWidth: ['100%', '100%', '35em'],
-            borderRadius: 2,
-            padding: [2],
-            border: '1px solid',
-            borderColor: 'mediumGray'
-          }}
+          style={inputStyle}
           data-testid="topic"
           onBlur={(e) => handleStringValueChange('topic', e.target.value)}
           onChange={(e) => handleConfigInputTyping('topic', e.target.value)}
           value={conversationData.topic || ''}
         />
-      </Box>
+      </div>
 
-      <Box sx={{ mb: [3] }}>
-        <Text sx={{ display: 'block', mb: [2] }}>{strings('config_description')}</Text>
+      <div className="mb-3">
+        <span className="d-block mb-2">{strings('config_description')}</span>
         <textarea
           ref={descriptionRef}
-          sx={{
-            display: 'block',
-            fontFamily: 'body',
-            fontSize: [2],
-            width: ['100%', '100%', '35em'],
-            maxWidth: ['100%', '100%', '35em'],
-            height: '7em',
-            resize: 'none',
-            padding: [2],
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'mediumGray'
-          }}
+          style={{ ...inputStyle, height: '7em', resize: 'none' }}
           data-testid="description"
           onBlur={(e) => handleStringValueChange('description', e.target.value)}
           onChange={(e) => handleConfigInputTyping('description', e.target.value)}
           value={conversationData.description || ''}
         />
-      </Box>
+      </div>
 
-      <Heading
-        as="h6"
-        sx={{
-          fontSize: [1, null, 2],
-          lineHeight: 'body',
-          my: [3, null, 4]
-        }}>
+      <h6 className="my-3 my-xl-4" style={{ fontSize: '14px', lineHeight: 1.5 }}>
         {strings('config_seed_comments')}
-      </Heading>
+      </h6>
       <ModerateCommentsSeed params={{ conversation_id: conversationData.conversation_id }} />
 
-      <Heading
-        as="h6"
-        sx={{
-          fontSize: [1, null, 2],
-          lineHeight: 'body',
-          my: [3, null, 4]
-        }}>
+      <h6 className="my-3 my-xl-4" style={{ fontSize: '14px', lineHeight: 1.5 }}>
         {strings('config_customize_ui')}
-      </Heading>
+      </h6>
 
       <CheckboxField field="vis_type" label={strings('config_vis_label')} isIntegerBool>
         {strings('config_vis_desc')}
@@ -163,7 +133,7 @@ const ConversationConfig = () => {
       <CheckboxField field="importance_enabled" label={strings('config_importance_label')}>
         {strings('config_importance_desc')}
       </CheckboxField>
-    </Box>
+    </div>
   )
 }
 

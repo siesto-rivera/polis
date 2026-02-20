@@ -1,4 +1,4 @@
-import { Heading, Box, Text, Button } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 
@@ -81,70 +81,52 @@ const InviteTree = () => {
   }
 
   return (
-    <Box>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4]
-        }}>
+    <div>
+      <h3 className="mb-3" style={{ lineHeight: 1.5 }}>
         {strings('invite_tree_heading')}
-      </Heading>
+      </h3>
 
       {!enabled ? (
-        <Text>
+        <span>
           {strings('invite_tree_not_enabled')}
-        </Text>
+        </span>
       ) : (
         <>
-          <Box sx={{ mb: [3] }}>
-            <Text sx={{ display: 'block', mb: [2] }}>
+          <div className="mb-3">
+            <span className="d-block mb-2">
               {strings('invite_tree_invite_only')}
-            </Text>
-          </Box>
+            </span>
+          </div>
 
-          <Heading
-            as="h6"
-            sx={{
-              fontSize: [1, null, 2],
-              lineHeight: 'body',
-              my: [3, null, 3]
-            }}>
+          <h6 className="my-3" style={{ lineHeight: 1.5 }}>
             {strings('invite_waves_heading')}
-          </Heading>
+          </h6>
           {loading ? (
             <Spinner />
           ) : error ? (
-            <Text sx={{ color: 'error' }}>{String(error)}</Text>
+            <span style={{ color: 'var(--bs-danger)' }}>{String(error)}</span>
           ) : hasWaves ? (
-            <Box as="ul" sx={{ pl: [3], mb: [3] }}>
+            <ul className="ps-3 mb-3">
               {waves.map((w) => (
                 <li key={w.id}>
-                  <Text>
+                  <span>
                     {strings('invite_wave_info', { wave: w.wave, parent: w.parent_wave || 0, ipu: w.invites_per_user || 0, owner: w.owner_invites || 0, size: w.size || 0 })}
-                  </Text>
+                  </span>
                 </li>
               ))}
-            </Box>
+            </ul>
           ) : (
-            <Text>{strings('invite_no_waves')}</Text>
+            <span>{strings('invite_no_waves')}</span>
           )}
 
-          <Heading
-            as="h6"
-            sx={{
-              fontSize: [1, null, 2],
-              lineHeight: 'body',
-              my: [3, null, 3]
-            }}>
+          <h6 className="my-3" style={{ lineHeight: 1.5 }}>
             {strings('invite_create_next_wave')}
-          </Heading>
+          </h6>
 
-          <Box sx={{ mb: [3] }}>
-            <Text sx={{ display: 'block', mb: [2] }}>
+          <div className="mb-3">
+            <span className="d-block mb-2">
               {strings('invite_invites_per_user')}
-            </Text>
+            </span>
             <input
               type="number"
               min={0}
@@ -152,12 +134,12 @@ const InviteTree = () => {
               value={invitesPerUser}
               onChange={(e) => setInvitesPerUser(e.target.value)}
             />
-          </Box>
+          </div>
 
-          <Box sx={{ mb: [3] }}>
-            <Text sx={{ display: 'block', mb: [2] }}>
+          <div className="mb-3">
+            <span className="d-block mb-2">
               {strings('invite_owner_invites')}
-            </Text>
+            </span>
             <input
               type="number"
               min={0}
@@ -165,12 +147,12 @@ const InviteTree = () => {
               value={ownerInvites}
               onChange={(e) => setOwnerInvites(e.target.value)}
             />
-          </Box>
+          </div>
 
-          <Box sx={{ mb: [3] }}>
-            <Text sx={{ display: 'block', mb: [2] }}>
+          <div className="mb-3">
+            <span className="d-block mb-2">
               {strings('invite_parent_wave_desc')}
-            </Text>
+            </span>
             <select
               value={parentWaveOverride}
               onChange={(e) => setParentWaveOverride(e.target.value)}>
@@ -180,22 +162,22 @@ const InviteTree = () => {
                 <option key={w.id} value={w.wave}>{strings('invite_wave_n', { wave: w.wave })}</option>
               ))}
             </select>
-          </Box>
+          </div>
 
-          <Box sx={{ mb: [3], mt: [3] }}>
-            <Button sx={{ mt: [2] }} onClick={handleCreateWave} disabled={!canCreate || creating}>
+          <div className="mb-3 mt-3">
+            <Button className="mt-2" onClick={handleCreateWave} disabled={!canCreate || creating}>
               {creating ? strings('invite_creating') : strings('invite_create_wave')}
             </Button>
-          </Box>
+          </div>
 
           {createdSummary ? (
-            <Text>
+            <span>
               {strings('invite_created_summary', { wave: createdSummary.wave, count: createdSummary.invites_created })}
-            </Text>
+            </span>
           ) : null}
         </>
       )}
-    </Box>
+    </div>
   )
 }
 

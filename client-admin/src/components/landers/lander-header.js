@@ -1,40 +1,29 @@
-import { Component } from 'react'
-import { Flex, Box } from 'theme-ui'
-
 import { Link } from 'react-router'
 import Logomark from '../framework/Logomark'
-import theme from '../../theme'
 
-class Header extends Component {
-  render() {
-    return (
-      <Box>
-        <Flex
-          sx={{
-            margin: `0 auto`,
-            width: '100%',
-            paddingTop: '2rem',
-            paddingBottom: '1.45rem',
-            justifyContent: 'space-between'
-          }}>
-          <Box sx={{ zIndex: 1000 }}>
-            <Link sx={{ variant: 'links.nav' }} to="/home2">
-              <Logomark
-                style={{ marginRight: 10, position: 'relative', top: 6 }}
-                fill={theme.colors.primary}
-              />
-              Polis
-            </Link>
-          </Box>
-          <Box>
-            <Link sx={{ variant: 'links.nav' }} to="/signin">
-              Sign in
-            </Link>
-          </Box>
-        </Flex>
-      </Box>
-    )
-  }
+const Header = () => {
+  return (
+    <div>
+      <div
+        className="d-flex w-100 justify-content-between mx-auto"
+        style={{ paddingTop: '2rem', paddingBottom: '1.45rem' }}>
+        <div style={{ zIndex: 1000 }}>
+          <Link className="polis-nav-link" to="/home2">
+            <Logomark
+              style={{ marginRight: 10, position: 'relative', top: 6 }}
+              fill="#03a9f4"
+            />
+            Polis
+          </Link>
+        </div>
+        <div>
+          <Link className="polis-nav-link" to="/signin">
+            Sign in
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default Header

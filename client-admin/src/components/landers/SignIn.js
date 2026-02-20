@@ -2,7 +2,7 @@
 
 import PropTypes from 'prop-types'
 import { Navigate } from 'react-router'
-import { Heading, Box, Button } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import StaticLayout from './lander-layout'
 
 import { useAuth } from 'react-oidc-context'
@@ -22,22 +22,22 @@ const SignIn = ({ authed }) => {
 
   const drawLoginForm = () => {
     return (
-      <Box>
+      <div>
         {auth.error && (
-          <Box sx={{ color: 'red', my: [2], p: [2], bg: '#fee', borderRadius: 4 }}>
+          <div className="my-2 p-2" style={{ color: 'red', backgroundColor: '#fee', borderRadius: 4 }}>
             Auth error: {auth.error.message}
-          </Box>
+          </div>
         )}
         {auth.isLoading && (
-          <Box sx={{ color: 'gray', my: [2] }}>Loading auth...</Box>
+          <div className="my-2 text-polis-gray">Loading auth...</div>
         )}
         <Button
-          sx={{ my: [2] }}
+          className="my-2"
           id="signinButton"
           onClick={handleSignIn}>
           {strings('auth_sign_in')}
         </Button>
-      </Box>
+      </div>
     )
   }
 
@@ -47,12 +47,12 @@ const SignIn = ({ authed }) => {
 
   return (
     <StaticLayout>
-      <Box>
-        <Heading as="h1" sx={{ my: [4, null, 5], fontSize: [6, null, 7] }}>
+      <div>
+        <h1 className="my-4 my-xl-5" style={{ fontSize: '48px' }}>
           {strings('auth_sign_in')}
-        </Heading>
+        </h1>
         {drawLoginForm()}
-      </Box>
+      </div>
     </StaticLayout>
   )
 }

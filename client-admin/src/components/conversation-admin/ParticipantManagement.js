@@ -1,4 +1,4 @@
-import { Heading, Box, Text, Flex, Button } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import { useParams } from 'react-router'
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch } from 'react-redux'
@@ -73,20 +73,14 @@ const ParticipantManagement = () => {
   }
 
   return (
-    <Box>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4]
-        }}>
+    <div>
+      <h3 className="mb-3" style={{ lineHeight: 1.5 }}>
         {strings('participants_heading')}
-      </Heading>
-      <Text sx={{ mb: [3] }}>{strings('participants_manage', { id: conversationId })}</Text>
+      </h3>
+      <span className="mb-3">{strings('participants_manage', { id: conversationId })}</span>
 
-      <Flex sx={{ alignItems: 'flex-start', mb: [2] }}>
-        <Box sx={{ flexShrink: 0, position: 'relative', top: -0.5 }}>
+      <div className="d-flex align-items-start mb-2">
+        <div style={{ flexShrink: 0, position: 'relative', top: -0.5 }}>
           <input
             type="checkbox"
             data-testid="xid_required"
@@ -94,67 +88,67 @@ const ParticipantManagement = () => {
             onChange={handleXidRequiredToggle}
             disabled={useXidAllowList}
           />
-        </Box>
-        <Box
-          sx={{
-            ml: [2],
+        </div>
+        <div
+          className="ms-2"
+          style={{
             flex: '1 1 auto',
-            maxWidth: ['100%', '100%', '35em'],
+            maxWidth: '35em',
             wordWrap: 'break-word',
             overflowWrap: 'break-word'
           }}>
-          <Text>{strings('participants_xid_required')}</Text>
+          <span>{strings('participants_xid_required')}</span>
           {useXidAllowList && (
-            <Text sx={{ ml: [2], color: 'mediumGray', fontSize: [0] }}>
+            <span className="ms-2" style={{ color: '#999', fontSize: '0.75rem' }}>
               {strings('participants_xid_required_note')}
-            </Text>
+            </span>
           )}
-        </Box>
-      </Flex>
+        </div>
+      </div>
 
-      <Flex sx={{ alignItems: 'flex-start', mb: [3] }}>
-        <Box sx={{ flexShrink: 0, position: 'relative', top: -0.5 }}>
+      <div className="d-flex align-items-start mb-3">
+        <div style={{ flexShrink: 0, position: 'relative', top: -0.5 }}>
           <input
             type="checkbox"
             data-testid="use_xid_whitelist"
             checked={useXidAllowList}
             onChange={handleXidAllowListToggle}
           />
-        </Box>
-        <Box
-          sx={{
-            ml: [2],
+        </div>
+        <div
+          className="ms-2"
+          style={{
             flex: '1 1 auto',
-            maxWidth: ['100%', '100%', '35em'],
+            maxWidth: '35em',
             wordWrap: 'break-word',
             overflowWrap: 'break-word'
           }}>
-          <Text>{strings('participants_use_allow_list')}</Text>
-        </Box>
-      </Flex>
+          <span>{strings('participants_use_allow_list')}</span>
+        </div>
+      </div>
 
       {/* Tab controls */}
-      <Flex sx={{ gap: [2], mb: [3], flexWrap: 'wrap' }}>
+      <div className="d-flex mb-3 flex-wrap" style={{ gap: '0.5rem' }}>
         <Button
-          variant={activeTab === 'inUse' ? 'primary' : 'outline'}
-          size="small"
+          variant={activeTab === 'inUse' ? 'primary' : 'outline-secondary'}
+          size="sm"
           onClick={() => setActiveTab('inUse')}>
           {strings('participants_tab_in_use')}
         </Button>
         <Button
-          variant={activeTab === 'allowList' ? 'primary' : 'outline'}
-          size="small"
+          variant={activeTab === 'allowList' ? 'primary' : 'outline-secondary'}
+          size="sm"
           onClick={() => setActiveTab('allowList')}>
           {strings('participants_tab_allowed')}
         </Button>
-      </Flex>
+      </div>
 
       {activeTab === 'inUse' && loading && !xids.length ? (
         <Spinner />
       ) : activeTab === 'inUse' && error ? (
-        <Text sx={{ color: 'error', mb: [3] }}>{error}</Text>
+        <span className="mb-3" style={{ color: 'var(--bs-danger)' }}>{error}</span>
       ) : activeTab === 'inUse' && xids.length === 0 ? (
-        <Text sx={{ color: 'mediumGray', mb: [3] }}>{strings('participants_no_xids')}</Text>
+        <span className="mb-3" style={{ color: '#999' }}>{strings('participants_no_xids')}</span>
       ) : activeTab === 'inUse' ? (
         <>
           <XidsInUseTable xids={xids} conversationId={conversationId} />
@@ -163,7 +157,7 @@ const ParticipantManagement = () => {
       ) : (
         <XidAllowListTable conversationId={conversationId} />
       )}
-    </Box>
+    </div>
   )
 }
 

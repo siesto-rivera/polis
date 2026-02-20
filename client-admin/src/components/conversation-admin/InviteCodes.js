@@ -1,4 +1,4 @@
-import { Heading, Box, Text, Button, Select } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 
@@ -114,13 +114,13 @@ const InviteCodes = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 0:
-        return 'success'
+        return 'var(--bs-success)'
       case 1:
-        return 'info'
+        return 'var(--bs-info)'
       case 2:
-        return 'error'
+        return 'var(--bs-danger)'
       case 3:
-        return 'warning'
+        return 'var(--bs-warning)'
       default:
         return 'gray'
     }
@@ -167,133 +167,119 @@ const InviteCodes = () => {
   }
 
   return (
-    <Box>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4]
-        }}>
+    <div>
+      <h3 className="mb-3" style={{ lineHeight: 1.5 }}>
         {strings('invite_codes_heading')}
-      </Heading>
+      </h3>
 
       {!enabled ? (
-        <Text>
+        <span>
           {strings('invite_tree_not_enabled')}
-        </Text>
+        </span>
       ) : (
         <>
-          <Box
-            sx={{
-              mb: [3],
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: [2]
-            }}>
-            <Text sx={{ display: 'block', mb: [2] }}>
+          <div
+            className="d-flex mb-3 flex-wrap align-items-center justify-content-between"
+            style={{ gap: '0.5rem' }}>
+            <span className="d-block mb-2">
               {strings('invite_codes_desc')}
-            </Text>
+            </span>
             <Button
+              variant="outline-secondary"
               onClick={handleDownloadCsv}
-              variant="outline"
               disabled={!conversationId || downloadLoading}
-              sx={{ fontSize: [1] }}>
+              size="sm">
               {downloadLoading ? strings('invite_preparing') : strings('invite_download_csv')}
             </Button>
-          </Box>
+          </div>
 
           {/* Filters */}
-          <Box sx={{ mb: [3], p: [3], bg: 'lightGray', borderRadius: 2 }}>
-            <Text sx={{ fontWeight: 'bold', mb: [2] }}>{strings('invite_filters')}</Text>
-            <Box sx={{ display: 'flex', gap: [3], alignItems: 'end', flexWrap: 'wrap' }}>
-              <Box>
-                <Text sx={{ display: 'block', mb: [1], fontSize: [1] }}>{strings('invite_filter_wave')}</Text>
-                <Select
+          <div className="mb-3 p-3 rounded" style={{ backgroundColor: '#f0f0f0' }}>
+            <span style={{ fontWeight: 'bold' }} className="mb-2">{strings('invite_filters')}</span>
+            <div className="d-flex flex-wrap align-items-end" style={{ gap: '1rem' }}>
+              <div>
+                <span className="d-block mb-1" style={{ fontSize: '0.875rem' }}>{strings('invite_filter_wave')}</span>
+                <select
+                  className="form-select"
                   value={waveFilter}
                   onChange={(e) => setWaveFilter(e.target.value)}
-                  sx={{ minWidth: '120px' }}>
+                  style={{ minWidth: '120px' }}>
                   <option value="">{strings('invite_all_waves')}</option>
                   {availableWaves.map((wave) => (
                     <option key={wave.id} value={wave.id}>
                       {strings('invite_wave_n', { wave: wave.wave })}
                     </option>
                   ))}
-                </Select>
-              </Box>
+                </select>
+              </div>
 
-              <Box>
-                <Text sx={{ display: 'block', mb: [1], fontSize: [1] }}>{strings('invite_filter_status')}</Text>
-                <Select
+              <div>
+                <span className="d-block mb-1" style={{ fontSize: '0.875rem' }}>{strings('invite_filter_status')}</span>
+                <select
+                  className="form-select"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  sx={{ minWidth: '140px' }}>
+                  style={{ minWidth: '140px' }}>
                   <option value="">{strings('invite_all_statuses')}</option>
                   <option value="0">{strings('invite_status_unused')}</option>
                   <option value="1">{strings('invite_status_used')}</option>
                   <option value="2">{strings('invite_status_revoked')}</option>
                   <option value="3">{strings('invite_status_expired')}</option>
-                </Select>
-              </Box>
+                </select>
+              </div>
 
               {(waveFilter || statusFilter !== '') && (
-                <Button variant="outline" onClick={handleClearFilters} sx={{ fontSize: [1] }}>
+                <Button variant="outline-secondary" onClick={handleClearFilters} size="sm">
                   {strings('invite_clear_filters')}
                 </Button>
               )}
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {loading ? (
             <Spinner />
           ) : error ? (
-            <Text sx={{ color: 'error' }}>{String(error)}</Text>
+            <span style={{ color: 'var(--bs-danger)' }}>{String(error)}</span>
           ) : invites.length > 0 ? (
-            <Box>
-              <Text sx={{ mb: [2], fontWeight: 'bold' }}>
+            <div>
+              <span className="mb-2" style={{ fontWeight: 'bold' }}>
                 {strings('invite_found_codes', { count: pagination?.total || invites.length })}
-              </Text>
-              <Box as="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+              </span>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     <th
-                      sx={{
+                      style={{
                         textAlign: 'left',
-                        borderBottom: '1px solid',
-                        borderColor: 'mediumGray',
-                        pb: [2],
-                        pr: [3]
+                        borderBottom: '1px solid #ccc',
+                        paddingBottom: '0.5rem',
+                        paddingRight: '1rem'
                       }}>
                       {strings('invite_col_code')}
                     </th>
                     <th
-                      sx={{
+                      style={{
                         textAlign: 'left',
-                        borderBottom: '1px solid',
-                        borderColor: 'mediumGray',
-                        pb: [2],
-                        pr: [3]
+                        borderBottom: '1px solid #ccc',
+                        paddingBottom: '0.5rem',
+                        paddingRight: '1rem'
                       }}>
                       {strings('invite_col_wave')}
                     </th>
                     <th
-                      sx={{
+                      style={{
                         textAlign: 'left',
-                        borderBottom: '1px solid',
-                        borderColor: 'mediumGray',
-                        pb: [2],
-                        pr: [3]
+                        borderBottom: '1px solid #ccc',
+                        paddingBottom: '0.5rem',
+                        paddingRight: '1rem'
                       }}>
                       {strings('invite_col_status')}
                     </th>
                     <th
-                      sx={{
+                      style={{
                         textAlign: 'left',
-                        borderBottom: '1px solid',
-                        borderColor: 'mediumGray',
-                        pb: [2]
+                        borderBottom: '1px solid #ccc',
+                        paddingBottom: '0.5rem'
                       }}>
                       {strings('invite_col_used_at')}
                     </th>
@@ -303,65 +289,58 @@ const InviteCodes = () => {
                   {invites.map((invite) => (
                     <tr key={invite.id}>
                       <td
-                        sx={{
-                          borderBottom: '1px solid',
-                          borderColor: 'lightGray',
-                          py: [2],
-                          pr: [3],
+                        style={{
+                          borderBottom: '1px solid #eee',
+                          padding: '0.5rem 1rem 0.5rem 0',
                           fontFamily: 'monospace',
-                          fontSize: [1]
+                          fontSize: '0.875rem'
                         }}>
                         {invite.invite_code}
                       </td>
                       <td
-                        sx={{
-                          borderBottom: '1px solid',
-                          borderColor: 'lightGray',
-                          py: [2],
-                          pr: [3]
+                        style={{
+                          borderBottom: '1px solid #eee',
+                          padding: '0.5rem 1rem 0.5rem 0'
                         }}>
                         {invite.wave || strings('invite_na')}
                       </td>
                       <td
-                        sx={{
-                          borderBottom: '1px solid',
-                          borderColor: 'lightGray',
-                          py: [2],
-                          pr: [3],
+                        style={{
+                          borderBottom: '1px solid #eee',
+                          padding: '0.5rem 1rem 0.5rem 0',
                           color: getStatusColor(invite.status),
                           fontWeight: 'bold'
                         }}>
                         {getStatusText(invite.status)}
                       </td>
                       <td
-                        sx={{
-                          borderBottom: '1px solid',
-                          borderColor: 'lightGray',
-                          py: [2]
+                        style={{
+                          borderBottom: '1px solid #eee',
+                          padding: '0.5rem 0'
                         }}>
                         {invite.invite_used_at
                           ? new Date(invite.invite_used_at).toLocaleString()
-                          : '—'}
+                          : '\u2014'}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </Box>
+              </table>
 
               <Pagination
                 pagination={pagination}
                 onPageChange={handlePageChange}
                 loading={loading}
               />
-            </Box>
+            </div>
           ) : (
-            <Text>
+            <span>
               {strings('invite_no_codes')}
-            </Text>
+            </span>
           )}
         </>
       )}
-    </Box>
+    </div>
   )
 }
 

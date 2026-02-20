@@ -1,7 +1,6 @@
 /* eslint-disable */
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Heading, Flex, Box } from 'theme-ui'
 import { Routes, Route, Link, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context'
 import React, { useEffect, useRef } from 'react'
@@ -44,9 +43,9 @@ const TopicModeration = () => {
   // Check if conversationData is still loading
   if (!conversationData || conversationData.loading) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
         <div>{strings('topic_loading')}</div>
-      </Box>
+      </div>
     )
   }
 
@@ -55,43 +54,36 @@ const TopicModeration = () => {
   const url = location.pathname.split('/')[4]
 
   return (
-    <Box>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4]
+    <div>
+      <h3
+        style={{
+          fontSize: 24,
+          lineHeight: 1.5,
+          marginBottom: 16
         }}>
         {strings('topic_heading')}
-      </Heading>
+      </h3>
       {hasDelphiEnabled(authUser) ? (
-        <Flex sx={{ mb: [4], gap: [2, 3, 4], flexWrap: 'wrap' }}>
+        <div className="d-flex" style={{ marginBottom: 16, gap: 16, flexWrap: 'wrap' }}>
           <Link
-            sx={{
-              variant: url ? 'links.nav' : 'links.activeNav',
-              whiteSpace: 'nowrap'
-            }}
+            className={url ? '' : 'fw-bold'}
+            style={{ whiteSpace: 'nowrap' }}
             to={baseUrl}>
             {strings('topic_topics_tree')}
           </Link>
           <Link
-            sx={{
-              variant: url === 'proximity' ? 'links.activeNav' : 'links.nav',
-              whiteSpace: 'nowrap'
-            }}
+            className={url === 'proximity' ? 'fw-bold' : ''}
+            style={{ whiteSpace: 'nowrap' }}
             to={`${baseUrl}/proximity`}>
             {strings('topic_proximity_map')}
           </Link>
           <Link
-            sx={{
-              variant: url === 'stats' ? 'links.activeNav' : 'links.nav',
-              whiteSpace: 'nowrap'
-            }}
+            className={url === 'stats' ? 'fw-bold' : ''}
+            style={{ whiteSpace: 'nowrap' }}
             to={`${baseUrl}/stats`}>
             {strings('topic_statistics')}
           </Link>
-        </Flex>
+        </div>
       ) : (
         <>
           <h3>{strings('topic_not_enabled')}</h3>
@@ -99,16 +91,16 @@ const TopicModeration = () => {
         </>
       )}
       {hasDelphiEnabled(authUser) && (
-        <Box>
+        <div>
           <Routes>
             <Route path="/" element={<TopicTree conversation_id={conversation_id} />} />
             <Route path="proximity" element={<ProximityVisualization />} />
             <Route path="stats" element={<TopicStats conversation_id={conversation_id} />} />
             <Route path="topic/:topicKey" element={<TopicDetail />} />
           </Routes>
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   )
 }
 

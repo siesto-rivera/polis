@@ -6,7 +6,7 @@ module.exports = {
         loose: true
       }
     ],
-    ['@babel/preset-react', { runtime: 'automatic', importSource: 'theme-ui' }]
+    ['@babel/preset-react', { runtime: 'automatic' }]
   ],
   plugins: [
     ['@babel/plugin-proposal-decorators', { legacy: true }],

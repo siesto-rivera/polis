@@ -1,26 +1,19 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Box, Heading } from 'theme-ui'
 import { VictoryChart, VictoryArea } from 'victory'
 import victoryTheme from './victoryTheme'
-import theme from '../../../theme'
+import colors from '../../../theme/colors'
 import PropTypes from 'prop-types'
 import strings from '../../../strings/strings'
 
 const Commenters = ({ size, firstCommentTimes }) => {
-  if (firstCommentTimes.length <= 1) return null /* handle seed commenter */
+  if (firstCommentTimes.length <= 1) return null
   return (
-    <Box sx={{ mt: [5] }}>
-      <Heading
-        as="h6"
-        sx={{
-          fontSize: [2, null, 3],
-          lineHeight: 'body',
-          my: [2]
-        }}>
+    <div className="mt-5">
+      <h6 className="my-2" style={{ fontSize: '16px', lineHeight: 1.5 }}>
         {strings('stats_commenters_over_time')}
-      </Heading>
-      <Box sx={{ overflow: 'hidden', width: '100%' }}>
+      </h6>
+      <div style={{ overflow: 'hidden', width: '100%' }}>
         <VictoryChart
           theme={victoryTheme}
           height={size}
@@ -28,14 +21,14 @@ const Commenters = ({ size, firstCommentTimes }) => {
           domainPadding={{ x: 0, y: [0, 20] }}
           scale={{ x: 'time' }}>
           <VictoryArea
-            style={{ data: { fill: theme.colors.primary } }}
+            style={{ data: { fill: colors.primary } }}
             data={firstCommentTimes.map((d, i) => {
               return { x: new Date(d), y: i }
             })}
           />
         </VictoryChart>
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 

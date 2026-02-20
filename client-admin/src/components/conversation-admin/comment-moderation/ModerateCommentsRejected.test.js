@@ -1,11 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import * as actions from '../../../actions'
 import ModerateCommentsRejected from './ModerateCommentsRejected'
-import theme from '../../../theme'
 
 // Mock the Comment component
 jest.mock('./Comment', () => {
@@ -43,11 +41,7 @@ const createMockStore = (initialState = {}) => {
 
 const renderWithProviders = (component, { store } = {}) => {
   const mockStore = store || createMockStore()
-  return render(
-    <ThemeUIProvider theme={theme}>
-      <Provider store={mockStore}>{component}</Provider>
-    </ThemeUIProvider>
-  )
+  return render(<Provider store={mockStore}>{component}</Provider>)
 }
 
 describe('ModerateCommentsRejected', () => {

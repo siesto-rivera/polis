@@ -1,6 +1,5 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Heading, Link, Text } from 'theme-ui'
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 
@@ -75,136 +74,106 @@ const ParticipantXids = ({ conversation_id }) => {
 
   return (
     <div>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4],
-          display: 'block'
-        }}>
+      <h3
+        className="d-block mb-3"
+        style={{ lineHeight: 1.5 }}>
         DOWNLOAD XID CSV
-      </Heading>
+      </h3>
 
       {uuidLoading ? (
         // Show loading indicator while fetching UUID
-        <Text
-          sx={{
-            display: 'block',
-            mb: [3]
-          }}>
+        <span className="d-block mb-3">
           Loading conversation UUID for XID download...
-        </Text>
+        </span>
       ) : error ? (
         // Show error message if failed to fetch UUID
-        <Text
-          sx={{
-            display: 'block',
-            mb: [3],
-            color: 'error'
-          }}>
+        <span
+          className="d-block mb-3"
+          style={{ color: 'var(--bs-danger)' }}>
           Could not load conversation UUID for XID download
-        </Text>
+        </span>
       ) : conversationUuid ? (
         // Only show download links if we have the UUID
         <>
-          <Text
-            sx={{
-              display: 'block',
-              mb: [2]
-            }}>
+          <span className="d-block mb-2">
             <a
               download={downloadFilename}
               href={`${urlPrefix}api/v3/xid/${conversationUuid}-xid.csv`}
               type="text/csv">
               xid csv download: {downloadFilename}
             </a>
-          </Text>
+          </span>
 
-          <Text
-            sx={{
-              display: 'block',
-              mb: [3]
-            }}>
+          <span className="d-block mb-3">
             {`curl: ${urlPrefix}api/v3/xid/${conversationUuid}-xid.csv`}
-          </Text>
+          </span>
         </>
       ) : (
         // Fallback message when UUID is null but no error occurred
-        <Text
-          sx={{
-            display: 'block',
-            mb: [3]
-          }}>
+        <span className="d-block mb-3">
           No conversation UUID available for XID download
-        </Text>
+        </span>
       )}
 
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4],
-          mt: 4,
-          display: 'block'
-        }}>
+      <h3
+        className="d-block mb-3 mt-4"
+        style={{ lineHeight: 1.5 }}>
         WHAT IS AN XID? GET UP AND RUNNING WITH PARTICIPANT IDENTITY!
-      </Heading>
+      </h3>
 
       <ul>
         <li>
           Sometimes, the{' '}
-          <Link target="_blank" href="https://compdemocracy.org/owner">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/owner">
             owner
-          </Link>{' '}
+          </a>{' '}
           of a{' '}
-          <Link target="_blank" href="https://compdemocracy.org/conversation">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/conversation">
             conversation
-          </Link>{' '}
+          </a>{' '}
           has some existing linkage to the identity of their{' '}
-          <Link target="_blank" href="https://compdemocracy.org/participant">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/participant">
             participants
-          </Link>
+          </a>
           , i.e., they are sending out an email campaign or people are participating behind a login
           wall where the conversation is embedded
         </li>
 
         <li>
           A note: using{' '}
-          <Link target="_blank" href="https://compdemocracy.org/xid">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/xid">
             xid
-          </Link>{' '}
+          </a>{' '}
           assumes that the{' '}
-          <Link target="_blank" href="https://compdemocracy.org/owners">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/owners">
             owner
-          </Link>{' '}
+          </a>{' '}
           has the token, this is different from{' '}
-          <Link target="_blank" href="https://compdemocracy.org/creating-single-use-urls">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/creating-single-use-urls">
             creating single use urls
-          </Link>
+          </a>
         </li>
 
         <li>
-          <Link target="_blank" href="https://compdemocracy.org/xid">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/xid">
             xid
-          </Link>{' '}
+          </a>{' '}
           works in the embedded case — i.e., the{' '}
-          <Link target="_blank" href="https://compdemocracy.org/owners">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/owners">
             owner
-          </Link>{' '}
+          </a>{' '}
           has added the{' '}
-          <Link target="_blank" href="https://compdemocracy.org/embed-code">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/embed-code">
             embed code
-          </Link>{' '}
+          </a>{' '}
           to a page on their own web property
         </li>
 
         <li>
           Once the{' '}
-          <Link target="_blank" href="https://compdemocracy.org/conversation">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/conversation">
             conversation
-          </Link>{' '}
+          </a>{' '}
           has been embedded on a third party webpage, that page can, however it likes, via
           JavaScript or via templating for instance, add the data attribute{' '}
           <code>data-xid=&quot;test&quot;</code>
@@ -212,46 +181,46 @@ const ParticipantXids = ({ conversation_id }) => {
 
         <li>
           The{' '}
-          <Link target="_blank" href="https://compdemocracy.org/xid">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/xid">
             xid
-          </Link>{' '}
+          </a>{' '}
           value for each participant will be available on the participation record in the{' '}
-          <Link target="_blank" href="https://compdemocracy.org/export">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/export">
             export
-          </Link>
+          </a>
         </li>
 
         <li>
-          <Link target="_blank" href="https://compdemocracy.org/xid">
+          <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/xid">
             Example
-          </Link>
+          </a>
           <ul>
             <li>
               A common workflow for using{' '}
-              <Link target="_blank" href="https://compdemocracy.org/xid">
+              <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/xid">
                 xid
-              </Link>{' '}
+              </a>{' '}
               involves a table of demographic data available from a polling provider
             </li>
 
             <li>
-              <Link target="_blank" href="https://compdemocracy.org/participant">
+              <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/participant">
                 Participants
-              </Link>{' '}
+              </a>{' '}
               are sent an email and invited to participate
             </li>
 
             <li>
               Then, when the{' '}
-              <Link target="_blank" href="https://compdemocracy.org/participant">
+              <a target="_blank" rel="noreferrer" href="https://compdemocracy.org/participant">
                 participant
-              </Link>{' '}
+              </a>{' '}
               clicks through the email to a custom url, custom JavaScript written by whoever is
               controlling the third party website on which polis is embedded grabs a token out of
               the url and adds it to the
-              <div sx={{ display: 'inline-block' }}>
+              <span style={{ display: 'inline-block' }}>
                 <code>data-xid=&quot;someTokenFromTheURLBarThatIdentifiesTheUser&quot;</code>
-              </div>
+              </span>
             </li>
           </ul>
         </li>

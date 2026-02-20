@@ -2,11 +2,9 @@ import { BrowserRouter as Router } from 'react-router'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import { ConversationDataProvider } from '../../util/conversation_data'
 import ShareAndEmbed from './ShareAndEmbed'
-import theme from '../../theme'
 
 // Mock the child components
 jest.mock('./ConversationHasCommentsCheck', () => {
@@ -52,11 +50,9 @@ const renderWithProviders = (component, { store } = {}) => {
         v7_startTransition: true,
         v7_relativeSplatPath: true
       }}>
-      <ThemeUIProvider theme={theme}>
-        <Provider store={mockStore}>
-          <ConversationDataProvider>{component}</ConversationDataProvider>
-        </Provider>
-      </ThemeUIProvider>
+      <Provider store={mockStore}>
+        <ConversationDataProvider>{component}</ConversationDataProvider>
+      </Provider>
     </Router>
   )
 }

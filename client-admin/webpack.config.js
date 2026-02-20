@@ -1,7 +1,8 @@
 import { config } from 'dotenv'
-config()
+config({ path: '../.env' })
 import path from 'path'
 import HtmlWebPackPlugin from 'html-webpack-plugin'
+import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import CompressionPlugin from 'compression-webpack-plugin'
 import CopyPlugin from 'copy-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
@@ -73,7 +74,22 @@ export default (env, argv) => {
         },
         {
           test: /\.css$/,
-          use: ['style-loader', 'css-loader']
+          use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader']
+        },
+        {
+          test: /\.scss$/,
+          use: [
+            isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
+            'css-loader',
+            {
+              loader: 'sass-loader',
+              options: {
+                sassOptions: {
+                  silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'if-function']
+                }
+              }
+            }
+          ]
         },
         {
           test: /\.mdx?$/,
@@ -102,6 +118,11 @@ export default (env, argv) => {
       }),
 
       isProduction &&
+        new MiniCssExtractPlugin({
+          filename: 'static/css/admin_style.[contenthash].css'
+        }),
+
+      isProduction &&
         new CopyPlugin({
           patterns: [
             {
@@ -120,7 +141,7 @@ export default (env, argv) => {
 
       isProduction &&
         new CompressionPlugin({
-          test: /\.js$/,
+          test: /\.(js|css)$/,
           exclude: /\.map$/,
           filename: '[path][base]',
           algorithm: 'gzip',
@@ -150,6 +171,13 @@ export default (env, argv) => {
             writeHeadersJson('static/js/*.js', {
               'Content-Encoding': 'gzip',
               'Content-Type': 'application/javascript',
+              'Cache-Control': 'no-transform,public,max-age=31536000,s-maxage=31536000'
+            })
+
+            // Headers for CSS files
+            writeHeadersJson('static/css/*.css', {
+              'Content-Encoding': 'gzip',
+              'Content-Type': 'text/css',
               'Cache-Control': 'no-transform,public,max-age=31536000,s-maxage=31536000'
             })
 

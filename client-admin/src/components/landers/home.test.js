@@ -1,9 +1,7 @@
 import { BrowserRouter as Router } from 'react-router'
 import { render, screen, within } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import Home from './home'
-import theme from '../../theme'
 
 // Mock child components for isolation
 jest.mock('./ExploreKnowledgeBase', () => {
@@ -25,7 +23,7 @@ const AllTheProviders = ({ children }) => {
         v7_startTransition: true,
         v7_relativeSplatPath: true
       }}>
-      <ThemeUIProvider theme={theme}>{children}</ThemeUIProvider>
+      {children}
     </Router>
   )
 }

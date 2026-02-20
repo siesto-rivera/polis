@@ -1,12 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import { CheckboxField } from './CheckboxField'
 import { ConversationDataProvider } from '../../util/conversation_data'
 import * as actions from '../../actions'
-import theme from '../../theme'
 
 // Mock the actions
 jest.mock('../../actions', () => ({
@@ -32,11 +30,9 @@ const createMockStore = (initialState = {}) => {
 const renderWithProviders = (component, { store } = {}) => {
   const mockStore = store || createMockStore()
   return render(
-    <ThemeUIProvider theme={theme}>
-      <Provider store={mockStore}>
-        <ConversationDataProvider>{component}</ConversationDataProvider>
-      </Provider>
-    </ThemeUIProvider>
+    <Provider store={mockStore}>
+      <ConversationDataProvider>{component}</ConversationDataProvider>
+    </Provider>
   )
 }
 

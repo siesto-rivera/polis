@@ -2,12 +2,9 @@ import { BrowserRouter as Router } from 'react-router'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, waitFor } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
-
 import { mockAuth } from '../../../test-utils'
 import * as actions from '../../../actions'
 import CommentModeration from './index'
-import theme from '../../../theme'
 
 // Mock child components
 jest.mock('./ModerateCommentsTodo', () => {
@@ -81,9 +78,7 @@ const renderWithProviders = (component, { store } = {}) => {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-        <ThemeUIProvider theme={theme}>
-          <Provider store={mockStore}>{component}</Provider>
-        </ThemeUIProvider>
+        <Provider store={mockStore}>{component}</Provider>
       </Router>
     )
   }
@@ -234,11 +229,9 @@ describe('CommentModeration', () => {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-        <ThemeUIProvider theme={theme}>
-          <Provider store={createMockStore()}>
-            <CommentModeration />
-          </Provider>
-        </ThemeUIProvider>
+        <Provider store={createMockStore()}>
+          <CommentModeration />
+        </Provider>
       </Router>
     )
 

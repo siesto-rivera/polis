@@ -1,6 +1,5 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Heading, Box } from 'theme-ui'
 import { useAuth } from 'react-oidc-context'
 import { useParams } from 'react-router'
 import { useSelector, useDispatch } from 'react-redux'
@@ -23,13 +22,12 @@ const ConversationStats = () => {
   const { conversation_stats } = stats
   const times = dateSetupUtil()
 
-  // Responsive chart sizing based on viewport
   const getChartSize = () => {
     if (typeof window === 'undefined') return 350
     const width = window.innerWidth
-    if (width < 480) return Math.min(width - 64, 350) // Mobile: viewport - padding
-    if (width < 768) return 400 // Tablet
-    return 500 // Desktop
+    if (width < 480) return Math.min(width - 64, 350)
+    if (width < 768) return 400
+    return 500
   }
 
   const [chartSize, setChartSize] = useState(getChartSize())
@@ -42,7 +40,6 @@ const ConversationStats = () => {
 
   const getStatsRepeatedlyRef = useRef(null)
 
-  // Update chart size on window resize
   useEffect(() => {
     const handleResize = () => {
       setChartSize(getChartSize())
@@ -65,13 +62,8 @@ const ConversationStats = () => {
   }
 
   const startPolling = () => {
-    // Clear any existing interval
     stopPolling()
-
-    // Initial load
     loadStats()
-
-    // Start polling
     getStatsRepeatedlyRef.current = setInterval(() => {
       loadStats()
     }, 10000)
@@ -84,11 +76,9 @@ const ConversationStats = () => {
   }, [])
 
   useEffect(() => {
-    // Also handle metadata loading and polling logic
     const currentIsMod = conversationData?.is_mod
     const currentConversationId = params?.conversation_id
 
-    // Start polling when metadata is loaded for current conversation and user is mod
     const shouldStartPolling =
       conversationData?.conversation_id === currentConversationId &&
       currentIsMod &&
@@ -101,19 +91,13 @@ const ConversationStats = () => {
 
   const loading = !conversation_stats.firstCommentTimes || !conversation_stats.firstVoteTimes
 
-  if (loading) return <Box>{strings('stats_loading')}</Box>
+  if (loading) return <div>{strings('stats_loading')}</div>
 
   return (
     <div>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4]
-        }}>
+      <h3 className="mb-3 mb-xl-4" style={{ fontSize: '20px', lineHeight: 1.5 }}>
         {strings('stats_heading')}
-      </Heading>
+      </h3>
       <NumberCards data={conversation_stats} />
       <Voters
         firstVoteTimes={conversation_stats.firstVoteTimes}

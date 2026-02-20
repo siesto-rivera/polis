@@ -7,11 +7,20 @@ const Footer = (/*{conversation}*/) => {
  return (
    <div style={{
        display: "flex",
-       justifyContent: "center",
+       flexDirection: "column",
+       alignItems: "center",
        marginTop: 40,
        marginBottom: 60,
+       gap: 12,
      }}>
      <LargeLogo/>
+     <a
+       href="https://github.com/siesto-rivera/polis"
+       target="_blank"
+       rel="noopener noreferrer"
+       style={{ fontSize: 12, color: "#999", textDecoration: "none" }}>
+       Source Code (AGPL-3.0)
+     </a>
    </div>
  )
 };

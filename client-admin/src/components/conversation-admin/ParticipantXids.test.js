@@ -1,11 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 import { AuthContext } from 'react-oidc-context'
 import PropTypes from 'prop-types'
 
 import ParticipantXids from './ParticipantXids'
 import PolisNet from '../../util/net'
-import theme from '../../theme'
 
 // Mock dependencies
 jest.mock('../../util/net')
@@ -31,9 +29,7 @@ MockAuthProvider.propTypes = {
 
 const renderWithProviders = (component, { authValue } = {}) => {
   return render(
-    <ThemeUIProvider theme={theme}>
-      <MockAuthProvider authValue={authValue}>{component}</MockAuthProvider>
-    </ThemeUIProvider>
+    <MockAuthProvider authValue={authValue}>{component}</MockAuthProvider>
   )
 }
 
@@ -264,11 +260,9 @@ describe('ParticipantXids', () => {
 
       // Auth finishes loading
       rerender(
-        <ThemeUIProvider theme={theme}>
-          <MockAuthProvider authValue={{ isLoading: false, isAuthenticated: true }}>
-            <ParticipantXids conversation_id="conv123" />
-          </MockAuthProvider>
-        </ThemeUIProvider>
+        <MockAuthProvider authValue={{ isLoading: false, isAuthenticated: true }}>
+          <ParticipantXids conversation_id="conv123" />
+        </MockAuthProvider>
       )
 
       await waitFor(() => {

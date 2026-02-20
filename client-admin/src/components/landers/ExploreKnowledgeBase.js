@@ -1,20 +1,19 @@
-import { Box, Link, Heading } from 'theme-ui'
 import KnowledgeBase from './KnowledgeBase'
 
 const ExploreKnowledgeBase = () => {
   return (
-    <Box>
-      <Heading as="h3" sx={{ fontSize: [4], lineHeight: 'body', my: [2, null, 3] }}>
+    <div>
+      <h3 className="my-2 my-xl-3" style={{ fontSize: '24px', lineHeight: 1.5 }}>
         Explore
-      </Heading>
-      <Box sx={{ mb: [4, null, 5], maxWidth: ['100%', '100%', '35em'] }}>
-        <Box style={{ mb: [5, null, 6] }}>
+      </h3>
+      <div className="mb-4 mb-xl-5" style={{ maxWidth: '35em' }}>
+        <div>
           Onboard with a{' '}
-          <Link target="_blank" href="https://compdemocracy.org/knowledge-base">
+          <a target="_blank" href="https://compdemocracy.org/knowledge-base" rel="noreferrer">
             comprehensive knowledge base
-          </Link>{' '}
+          </a>{' '}
           including
-        </Box>
+        </div>
         <KnowledgeBase url="https://compdemocracy.org/Welcome" e="👋" txt="Welcome Guide" />
         <KnowledgeBase url="https://compdemocracy.org/Quickstart" e="🏎" txt="Quickstart" />
         <KnowledgeBase url="https://compdemocracy.org/Usage" e="🔩" txt="Usage Overview" />
@@ -27,8 +26,8 @@ const ExploreKnowledgeBase = () => {
           txt="Best Practices for Moderation"
         />
         <KnowledgeBase url="https://compdemocracy.org/Media-coverage" e="🗞" txt="Press" />
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 

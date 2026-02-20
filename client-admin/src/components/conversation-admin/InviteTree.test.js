@@ -2,12 +2,10 @@ import { BrowserRouter as Router } from 'react-router'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import { ConversationDataProvider } from '../../util/conversation_data'
 import InviteTree from './InviteTree'
 import PolisNet from '../../util/net'
-import theme from '../../theme'
 
 // Mock dependencies
 jest.mock('../../util/net')
@@ -48,11 +46,9 @@ const renderWithProviders = (component, { store } = {}) => {
         v7_startTransition: true,
         v7_relativeSplatPath: true
       }}>
-      <ThemeUIProvider theme={theme}>
-        <Provider store={mockStore}>
-          <ConversationDataProvider>{component}</ConversationDataProvider>
-        </Provider>
-      </ThemeUIProvider>
+      <Provider store={mockStore}>
+        <ConversationDataProvider>{component}</ConversationDataProvider>
+      </Provider>
     </Router>
   )
 }

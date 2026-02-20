@@ -1,35 +1,31 @@
-import { Component } from 'react'
-import { Box, Link, Heading } from 'theme-ui'
-
 import emoji from 'react-easy-emoji'
 
-class Header extends Component {
-  render() {
-    return (
-      <Box sx={{ mt: [3, null, 4] }}>
-        <Heading as="h3" sx={{ fontSize: [4], lineHeight: 'body', my: [2, null, 3] }}>
-          Legal
-        </Heading>
-        <Box sx={{ mb: [2, null, 3], maxWidth: ['100%', '100%', '30em'] }}>
-          Polis is built for the public with {emoji('❤️')} in Seattle {emoji('🇺🇸')}, with
-          contributions from around the {emoji('🌍🌏🌎')}
-        </Box>
-        <Box sx={{ mb: [2, null, 3] }}>
-          © {new Date().getFullYear()} The Authors <Link href="tos">TOS</Link>{' '}
-          <Link href="privacy">Privacy</Link>
-        </Box>
-        <div id="polis-donate">
-          <i>
-            Polis is powered by support from people like you. Contribute{' '}
-            <Link target="_blank" href="/donate">
-              here
-            </Link>
-            .
-          </i>
-        </div>
-      </Box>
-    )
-  }
+const Footer = () => {
+  return (
+    <div className="mt-3 mt-xl-4">
+      <h3 className="mb-2 mb-xl-3" style={{ fontSize: '24px', lineHeight: 1.5 }}>
+        Legal
+      </h3>
+      <div className="mb-2 mb-xl-3" style={{ maxWidth: '30em' }}>
+        Polis is built for the public with {emoji('❤️')} in Seattle {emoji('🇺🇸')}, with
+        contributions from around the {emoji('🌍🌏🌎')}
+      </div>
+      <div className="mb-2 mb-xl-3">
+        © {new Date().getFullYear()} The Authors <a href="tos">TOS</a>{' '}
+        <a href="privacy">Privacy</a>{' '}
+        <a href="https://github.com/siesto-rivera/polis" target="_blank" rel="noreferrer">Source Code (AGPL)</a>
+      </div>
+      <div id="polis-donate">
+        <i>
+          Polis is powered by support from people like you. Contribute{' '}
+          <a target="_blank" href="/donate" rel="noreferrer">
+            here
+          </a>
+          .
+        </i>
+      </div>
+    </div>
+  )
 }
 
-export default Header
+export default Footer

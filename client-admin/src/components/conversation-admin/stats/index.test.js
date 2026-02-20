@@ -2,13 +2,10 @@ import { BrowserRouter as Router } from 'react-router'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, waitFor, act } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
-
 import { ConversationDataProvider } from '../../../util/conversation_data'
 import { mockAuth } from '../../../test-utils'
 import * as actions from '../../../actions'
 import ConversationStats from './index'
-import theme from '../../../theme'
 
 // Mock child components to isolate the main component
 jest.mock('./NumberCards', () => {
@@ -117,11 +114,9 @@ const renderWithProviders = (component, { store } = {}) => {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-        <ThemeUIProvider theme={theme}>
-          <Provider store={mockStore}>
+        <Provider store={mockStore}>
             <ConversationDataProvider>{component}</ConversationDataProvider>
           </Provider>
-        </ThemeUIProvider>
       </Router>
     )
   }
@@ -220,13 +215,11 @@ describe('ConversationStats', () => {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-        <ThemeUIProvider theme={theme}>
-          <Provider store={store}>
-            <ConversationDataProvider>
-              <ConversationStats />
-            </ConversationDataProvider>
-          </Provider>
-        </ThemeUIProvider>
+        <Provider store={store}>
+          <ConversationDataProvider>
+            <ConversationStats />
+          </ConversationDataProvider>
+        </Provider>
       </Router>
     )
 

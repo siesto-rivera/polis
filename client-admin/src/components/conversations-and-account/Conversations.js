@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { handleCreateConversationSubmit, populateConversationsStore } from '../../actions'
 import PolisNet, { isAuthReady } from '../../util/net'
+import Button from 'react-bootstrap/Button'
+import CloseButton from 'react-bootstrap/CloseButton'
 
 import Url from '../../util/url'
 import { useAuth } from 'react-oidc-context'
-import { Box, Heading, Button, Text, Link, Image, Close } from 'theme-ui'
 import Conversation from './Conversation'
 import { useLocation, useNavigate } from 'react-router'
 import { isSuperAdmin } from '../../util/auth'
@@ -26,7 +27,7 @@ const Conversations = () => {
   const superAdmin = isSuperAdmin(userState)
 
   const [interstitialVisible, setInterstitialVisible] = useState(false)
-  const [activeView, setActiveView] = useState('my') // 'my' | 'all'
+  const [activeView, setActiveView] = useState('my')
   const [allConversations, setAllConversations] = useState(null)
   const [allLoading, setAllLoading] = useState(false)
   const [allError, setAllError] = useState(null)
@@ -34,7 +35,7 @@ const Conversations = () => {
 
   const [filters, setFilters] = useState({
     owner_email: '',
-    is_active: '', // '', true, false
+    is_active: '',
     recently_updated_days: '',
     recently_created_days: '',
     min_comment_count: '',
@@ -72,7 +73,6 @@ const Conversations = () => {
             qs.set('min_participant_count', String(filters.min_participant_count))
           if (sort.sort_by) qs.set('sort_by', sort.sort_by)
           if (sort.sort_dir) qs.set('sort_dir', sort.sort_dir)
-          // pagination
           if (allPagination?.limit) qs.set('limit', String(allPagination.limit))
           if (allPagination?.offset !== undefined) qs.set('offset', String(allPagination.offset))
 
@@ -87,7 +87,6 @@ const Conversations = () => {
             )
             .then((r) => r.json())
             .then((json) => {
-              // API returns { conversations: [], pagination: {...} }
               setAllConversations(json?.conversations || [])
               setAllPagination(json?.pagination || null)
             })
@@ -109,7 +108,6 @@ const Conversations = () => {
   ])
 
   useEffect(() => {
-    // Listen for auth ready event
     const handleAuthReady = () => {
       loadConversationsIfNeeded()
     }
@@ -151,13 +149,10 @@ const Conversations = () => {
     }
 
     if (location.pathname === 'other-conversations') {
-      // filter out conversations i do own
       include = !c.is_owner
     }
 
     if (location.pathname !== 'other-conversations' && !c.is_owner) {
-      // if it's not other convos and i'm not the owner, don't show it
-      // filter out convos i don't own
       include = false
     }
 
@@ -169,37 +164,35 @@ const Conversations = () => {
   const renderSwitcher = () => {
     if (!superAdmin) return null
     return (
-      <Box sx={{ mb: [3, null, 4] }}>
-        <Text
-          as="span"
+      <div className="mb-3 mb-xl-4">
+        <span
           onClick={() => setActiveView('my')}
-          sx={{
-            mr: 3,
+          className="me-3"
+          style={{
             cursor: 'pointer',
             fontWeight: activeView === 'my' ? 'bold' : 'normal',
             textDecoration: activeView === 'my' ? 'underline' : 'none'
           }}>
           {strings('convos_my')}
-        </Text>
-        <Text
-          as="span"
+        </span>
+        <span
           onClick={() => setActiveView('all')}
-          sx={{
+          style={{
             cursor: 'pointer',
             fontWeight: activeView === 'all' ? 'bold' : 'normal',
             textDecoration: activeView === 'all' ? 'underline' : 'none'
           }}>
           {strings('convos_all')}
-        </Text>
-      </Box>
+        </span>
+      </div>
     )
   }
 
   const renderAllControls = () => {
     if (!(activeView === 'all' && superAdmin)) return null
     return (
-      <Box sx={{ mb: [3] }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
+      <div className="mb-3">
+        <div className="d-flex flex-wrap align-items-center" style={{ gap: '12px' }}>
           <input
             type="text"
             placeholder={strings('convos_owner_email_placeholder')}
@@ -271,7 +264,7 @@ const Conversations = () => {
             }}>
             {strings('convos_apply')}
           </Button>
-        </Box>
+        </div>
         {allPagination ? (
           <Pagination
             pagination={allPagination}
@@ -283,124 +276,107 @@ const Conversations = () => {
             }}
           />
         ) : null}
-      </Box>
+      </div>
     )
   }
 
   return (
-    <Box>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4]
-        }}>
+    <div>
+      <h3 className="mb-3 mb-xl-4" style={{ fontSize: '20px', lineHeight: 1.5 }}>
         {strings('convos_heading')}
-      </Heading>
+      </h3>
       {interstitialVisible && (
-        <Box
-          sx={{
+        <div
+          className="d-flex align-items-center justify-content-center"
+          style={{
             position: 'fixed',
             top: 0,
             left: 0,
             width: '100vw',
             height: '100vh',
-            bg: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1000
           }}>
-          <Box
-            sx={{
-              bg: 'background',
-              p: 4,
+          <div
+            className="p-4 position-relative"
+            style={{
+              backgroundColor: '#fff',
               borderRadius: '8px',
               boxShadow: '0 0 20px rgba(0,0,0,0.3)',
-              width: ['90%', '70%', '60%'],
+              width: '90%',
               maxWidth: '1200px',
               maxHeight: '90vh',
-              overflowY: 'auto',
-              position: 'relative'
+              overflowY: 'auto'
             }}>
-            <Close
+            <CloseButton
               onClick={() => {
                 onNewClicked()
                 setInterstitialVisible(false)
               }}
-              sx={{
+              style={{
                 position: 'absolute',
                 top: '15px',
-                right: '15px',
-                cursor: 'pointer',
-                color: 'textSecondary'
+                right: '15px'
               }}
             />
-            <Heading as="h2" sx={{ mb: 3, fontSize: 5, color: 'primary' }}>
+            <h2 className="mb-3" style={{ fontSize: '32px', color: '#03a9f4' }}>
               {strings('convos_interstitial_heading')}
-            </Heading>
-            <Text sx={{ mb: 4, fontSize: 2, mt: 4 }}>
+            </h2>
+            <span className="mb-4 mt-4 d-block" style={{ fontSize: '16px' }}>
               {strings('convos_interstitial_desc')}
-            </Text>
+            </span>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: ['1fr', '1fr 1fr'], gap: 4, mb: 4 }}>
-              <Box>
-                <Heading as="h4" sx={{ mb: 2 }}>
+            <div className="row g-4 mb-4">
+              <div className="col-12 col-md-6">
+                <h4 className="mb-2">
                   {strings('convos_interstitial_analysis')}
-                </Heading>
-                <Image src="/bg_map.png" sx={{ width: '100%', borderRadius: '4px', mb: 2 }} />
-                <Text>
+                </h4>
+                <img src="/bg_map.png" className="w-100 mb-2" style={{ borderRadius: '4px' }} alt="" />
+                <span>
                   {strings('convos_interstitial_analysis_desc')}
-                </Text>
-              </Box>
-              <Box>
-                <Heading as="h4" sx={{ mb: 2 }}>
+                </span>
+              </div>
+              <div className="col-12 col-md-6">
+                <h4 className="mb-2">
                   {strings('convos_interstitial_reports')}
-                </Heading>
-                <Image
-                  src="/bg_collective.png"
-                  sx={{ width: '100%', borderRadius: '4px', mb: 2 }}
-                />
-                <Text>
+                </h4>
+                <img src="/bg_collective.png" className="w-100 mb-2" style={{ borderRadius: '4px' }} alt="" />
+                <span>
                   {strings('convos_interstitial_reports_desc')}
-                </Text>
-              </Box>
-            </Box>
+                </span>
+              </div>
+            </div>
 
-            <Box sx={{ bg: 'muted', p: 3, borderRadius: '4px', mb: 4 }}>
-              <Heading as="h4" sx={{ mb: 2 }}>
+            <div className="p-3 mb-4" style={{ backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
+              <h4 className="mb-2">
                 {strings('convos_interstitial_features')}
-              </Heading>
-              <ul sx={{ pl: 3, m: 0 }}>
+              </h4>
+              <ul className="ps-3 m-0">
                 <li>{strings('convos_interstitial_feature_1')}</li>
                 <li>{strings('convos_interstitial_feature_2')}</li>
                 <li>{strings('convos_interstitial_feature_3')}</li>
                 <li>{strings('convos_interstitial_feature_4')}</li>
               </ul>
-            </Box>
+            </div>
 
-            <Text sx={{ mb: 4, textAlign: 'center', fontSize: 2 }}>
+            <p className="mb-4 text-center" style={{ fontSize: '16px' }}>
               {strings('convos_interstitial_ready')}
               <br />
-              <Link
+              <a
                 href="https://pro.pol.is/"
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ fontWeight: 'bold' }}>
+                className="fw-bold">
                 {strings('convos_interstitial_upgrade')}
-              </Link>
-            </Text>
+              </a>
+            </p>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 3 }}>
+            <div className="d-flex justify-content-end align-items-center" style={{ gap: '12px' }}>
               <Button
                 variant="secondary"
                 onClick={() => {
                   onNewClicked()
                   setInterstitialVisible(false)
-                }}
-                sx={{
-                  cursor: 'pointer'
                 }}>
                 {strings('convos_interstitial_later')}
               </Button>
@@ -408,27 +384,20 @@ const Conversations = () => {
                 onClick={() => {
                   onNewClicked()
                   setInterstitialVisible(false)
-                }}
-                sx={{
-                  cursor: 'pointer',
-                  bg: 'primary',
-                  '&:hover': {
-                    bg: 'text'
-                  }
                 }}>
                 {strings('convos_interstitial_create')}
               </Button>
-            </Box>
-          </Box>
-        </Box>
+            </div>
+          </div>
+        </div>
       )}
-      <Box sx={{ mb: [3, null, 4] }}>
+      <div className="mb-3 mb-xl-4">
         <Button onClick={() => setInterstitialVisible(true)}>{strings('convos_create_new')}</Button>
-      </Box>
+      </div>
       {renderSwitcher()}
       {renderAllControls()}
-      <Box>
-        <Box sx={{ mb: [3] }}>
+      <div>
+        <div className="mb-3">
           {activeView === 'all'
             ? allLoading
               ? strings('convos_loading')
@@ -436,98 +405,79 @@ const Conversations = () => {
             : loading
               ? strings('convos_loading')
               : null}
-        </Box>
-        {err ? <Text>{strings('convos_error')}</Text> : null}
+        </div>
+        {err ? <span>{strings('convos_error')}</span> : null}
         {activeView === 'all' && superAdmin ? (
-          <Box>
+          <div>
             {/* Headers for desktop table view */}
-            <Box
-              sx={{
-                display: ['none', 'grid'],
+            <div
+              className="d-none d-md-grid p-2 fw-bold"
+              style={{
                 gridTemplateColumns: '3fr 1fr 1fr 1.5fr 1.5fr 2fr 1fr',
-                gap: 3,
-                p: 2,
-                borderBottom: '2px solid',
-                borderColor: 'lightGray',
-                fontWeight: 'bold'
+                gap: '12px',
+                borderBottom: '2px solid #9ca3af'
               }}>
-              <Text>{strings('convos_col_topic')}</Text>
-              <Text sx={{ textAlign: 'right' }}>{strings('convos_col_participants')}</Text>
-              <Text sx={{ textAlign: 'right' }}>{strings('convos_col_comments')}</Text>
-              <Text sx={{ textAlign: 'right' }}>{strings('convos_col_updated')}</Text>
-              <Text sx={{ textAlign: 'right' }}>{strings('convos_col_created')}</Text>
-              <Text>{strings('convos_col_owner_email')}</Text>
-              <Text sx={{ textAlign: 'center' }}>{strings('convos_col_active')}</Text>
-            </Box>
-            {/* Conversation list (cards on mobile, rows on desktop) */}
+              <span>{strings('convos_col_topic')}</span>
+              <span className="text-end">{strings('convos_col_participants')}</span>
+              <span className="text-end">{strings('convos_col_comments')}</span>
+              <span className="text-end">{strings('convos_col_updated')}</span>
+              <span className="text-end">{strings('convos_col_created')}</span>
+              <span>{strings('convos_col_owner_email')}</span>
+              <span className="text-center">{strings('convos_col_active')}</span>
+            </div>
             {(allConversations || []).map((c) => (
-              <Box
+              <div
                 key={c.conversation_id}
                 onClick={goToConversation(c.conversation_id)}
-                sx={{
+                className="p-3 p-md-2 mb-3 mb-md-0"
+                style={{
                   cursor: 'pointer',
-                  p: 3,
-                  border: '1px solid',
-                  borderColor: 'lightGray',
-                  borderRadius: 4,
-                  mb: 3,
-                  '&:hover': { bg: 'lightGray' },
-                  display: ['block', 'grid'],
-                  gap: [2, 3],
-                  gridTemplateColumns: [null, '3fr 1fr 1fr 1.5fr 1.5fr 2fr 1fr'],
-                  alignItems: 'center',
-                  // Reset some card styles for table view
-                  '@media (min-width: 48em)': {
-                    border: 'none',
-                    borderBottom: '1px solid',
-                    borderRadius: 0,
-                    mb: 0,
-                    p: 2
-                  }
+                  border: '1px solid #9ca3af',
+                  borderRadius: 4
                 }}>
-                <Box>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_topic')} </Text>
-                  {c.topic}
-                </Box>
-                <Box sx={{ textAlign: [null, 'right'] }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>
-                    {strings('convos_label_participants')}{' '}
-                  </Text>
-                  {c.participant_count || 0}
-                </Box>
-                <Box sx={{ textAlign: [null, 'right'] }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_comments')} </Text>
-                  {c.comment_count || 0}
-                </Box>
-                <Box sx={{ textAlign: [null, 'right'] }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_updated')} </Text>
-                  {new Date(c.modified).toLocaleDateString(getLocale(), {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </Box>
-                <Box sx={{ textAlign: [null, 'right'] }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_created')} </Text>
-                  {new Date(c.created).toLocaleDateString(getLocale(), {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </Box>
-                <Box>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_owner')} </Text>
-                  {c.owner_email || ''}
-                </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Text sx={{ display: ['inline', 'none'], fontWeight: 'bold' }}>{strings('convos_label_active')} </Text>
-                  {c.is_active ? '✅' : '❌'}
-                </Box>
-              </Box>
+                <div className="d-block d-md-grid" style={{ gridTemplateColumns: '3fr 1fr 1fr 1.5fr 1.5fr 2fr 1fr', gap: '12px', alignItems: 'center' }}>
+                  <div>
+                    <span className="fw-bold d-inline d-md-none">{strings('convos_label_topic')} </span>
+                    {c.topic}
+                  </div>
+                  <div className="text-md-end">
+                    <span className="fw-bold d-inline d-md-none">{strings('convos_label_participants')} </span>
+                    {c.participant_count || 0}
+                  </div>
+                  <div className="text-md-end">
+                    <span className="fw-bold d-inline d-md-none">{strings('convos_label_comments')} </span>
+                    {c.comment_count || 0}
+                  </div>
+                  <div className="text-md-end">
+                    <span className="fw-bold d-inline d-md-none">{strings('convos_label_updated')} </span>
+                    {new Date(c.modified).toLocaleDateString(getLocale(), {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </div>
+                  <div className="text-md-end">
+                    <span className="fw-bold d-inline d-md-none">{strings('convos_label_created')} </span>
+                    {new Date(c.created).toLocaleDateString(getLocale(), {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </div>
+                  <div>
+                    <span className="fw-bold d-inline d-md-none">{strings('convos_label_owner')} </span>
+                    {c.owner_email || ''}
+                  </div>
+                  <div className="text-center">
+                    <span className="fw-bold d-inline d-md-none">{strings('convos_label_active')} </span>
+                    {c.is_active ? '✅' : '❌'}
+                  </div>
+                </div>
+              </div>
             ))}
-          </Box>
+          </div>
         ) : conversations ? (
           conversations.map((c, i) => {
             return filterCheck(c) ? (
@@ -540,8 +490,8 @@ const Conversations = () => {
             ) : null
           })
         ) : null}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 

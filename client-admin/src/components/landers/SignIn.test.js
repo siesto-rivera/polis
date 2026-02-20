@@ -1,10 +1,8 @@
 import { BrowserRouter as Router } from 'react-router'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import { mockAuth } from '../../test-utils'
 import SignIn from './SignIn'
-import theme from '../../theme'
 
 // Mock the useAuth hook directly for this test file
 jest.mock('react-oidc-context', () => ({
@@ -29,7 +27,7 @@ const renderWithProviders = (component, options = {}) => {
         v7_startTransition: true,
         v7_relativeSplatPath: true
       }}>
-      <ThemeUIProvider theme={theme}>{component}</ThemeUIProvider>
+      {component}
     </Router>,
     options
   )

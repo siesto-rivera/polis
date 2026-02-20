@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types'
-import { Box } from 'theme-ui'
 import { Link } from 'react-router'
 import Logomark from './framework/Logomark'
 import strings from '../strings/strings'
@@ -7,48 +6,33 @@ import strings from '../strings/strings'
 
 const InteriorHeader = ({ children }) => {
   return (
-    <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-      <Box
-        sx={{
-          width: '100%',
-          backgroundColor: 'primary',
-          color: 'background',
+    <div style={{ width: '100%', overflowX: 'hidden' }}>
+      <div
+        className="d-flex align-items-center justify-content-between w-100 py-2 py-xl-3 px-2 px-md-3 px-xl-4"
+        style={{
+          backgroundColor: '#03a9f4',
+          color: '#fff',
           zIndex: 1000,
-          py: [2, 2, 3],
-          px: [2, 3, 4],
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: [1, 2, 3],
           minHeight: 0
         }}>
         <Link
-          sx={{
-            variant: 'links.header',
-            display: 'flex',
-            alignItems: 'center',
-            gap: [1, 2, 2],
-            flexShrink: 0
-          }}
+          className="polis-header-link d-flex align-items-center flex-shrink-0"
+          style={{ gap: '4px' }}
           to="/">
           <Logomark style={{ position: 'relative', top: 2 }} fill={'white'} />
-          <Box sx={{ fontSize: [2, 2, 2], whiteSpace: 'nowrap' }}>{strings('nav_polis')}</Box>
+          <span style={{ fontSize: '16px', whiteSpace: 'nowrap' }}>{strings('nav_polis')}</span>
         </Link>
         <Link
           id="signoutLink"
-          sx={{
-            variant: 'links.header',
-            fontSize: [1, 2, 2],
-            whiteSpace: 'nowrap',
-            flexShrink: 0
-          }}
+          className="polis-header-link flex-shrink-0"
+          style={{ fontSize: '14px', whiteSpace: 'nowrap' }}
           to="/signout">
           {strings('nav_sign_out')}
         </Link>
-      </Box>
+      </div>
       {/* <DonationBanner /> */}
-      <Box sx={{ width: '100%', overflowX: 'auto' }}>{children}</Box>
-    </Box>
+      <div style={{ width: '100%', overflowX: 'auto' }}>{children}</div>
+    </div>
   )
 }
 

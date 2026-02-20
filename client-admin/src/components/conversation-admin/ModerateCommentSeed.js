@@ -1,6 +1,6 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Box, Text, Button, Link, Heading } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import { useSelector, useDispatch } from 'react-redux'
 import { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
@@ -11,6 +11,18 @@ import {
   handleSeedCommentSubmit,
   seedCommentChanged
 } from '../../actions'
+
+const textareaStyle = {
+  fontFamily: "'Space Mono', monospace",
+  fontSize: '16px',
+  width: '100%',
+  maxWidth: '35em',
+  height: '7em',
+  resize: 'none',
+  padding: '8px',
+  borderRadius: 2,
+  border: '1px solid #60656f'
+}
 
 const ModerateCommentsSeed = ({ params }) => {
   const dispatch = useDispatch()
@@ -74,52 +86,35 @@ const ModerateCommentsSeed = ({ params }) => {
   }
 
   return (
-    <Box sx={{ mb: [4] }}>
+    <div className="mb-4">
       {params.uploadOnly ? null : (
         <>
-          <Text sx={{ mb: [2] }}>
+          <span className="mb-2 d-block">
             {strings('seed_add')}{' '}
-            <Link target="_blank" href="https://compdemocracy.org/seed-comments">
+            <a target="_blank" href="https://compdemocracy.org/seed-comments" rel="noreferrer">
               {strings('seed_link_text')}
-            </Link>{' '}{strings('seed_for_participants')}
-          </Text>
-          <Box sx={{ mb: [2] }}>
+            </a>{' '}{strings('seed_for_participants')}
+          </span>
+          <div className="mb-2">
             <textarea
-              sx={{
-                fontFamily: 'body',
-                fontSize: [2],
-                width: ['100%', '100%', '35em'],
-                maxWidth: ['100%', '100%', '35em'],
-                height: '7em',
-                resize: 'none',
-                padding: [2],
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: 'mediumGray'
-              }}
+              style={textareaStyle}
               onChange={handleTextareaChange}
               maxLength="400"
               data-testid="seed_form"
               value={seedText}
               ref={seedFormRef}
             />
-          </Box>
-          <Box>
+          </div>
+          <div>
             <Button onClick={handleSubmitSeed}>{getButtonText()}</Button>
-            {error ? <Text>{strings(error)}</Text> : null}
-          </Box>
+            {error ? <span>{strings(error)}</span> : null}
+          </div>
         </>
       )}
-      <Box sx={{ mt: 2, display: 'block' }}>
-        <Heading
-          as="h6"
-          sx={{
-            fontSize: [1, null, 2],
-            lineHeight: 'body',
-            my: [3, null, 4]
-          }}>
+      <div className="mt-2 d-block">
+        <h6 className="my-3 my-xl-4" style={{ fontSize: '14px', lineHeight: 1.5 }}>
           {strings('seed_upload_csv_heading')}
-        </Heading>
+        </h6>
         {params.uploadOnly ? (
           <>
             {strings('seed_csv_format')}
@@ -148,7 +143,7 @@ const ModerateCommentsSeed = ({ params }) => {
             </pre>
           </>
         )}
-        <Box sx={{ mt: 2, display: 'block' }}>
+        <div className="mt-2 d-block">
           <input onChange={handleFileChange} type="file" id="csvFile" accept=".csv"></input>
           <Button
             disabled={loading || !csvText}
@@ -156,10 +151,10 @@ const ModerateCommentsSeed = ({ params }) => {
             data-testid="upload-csv-button">
             {getButtonText()}
           </Button>
-          {error ? <Text>{strings(error)}</Text> : null}
-        </Box>
-      </Box>
-    </Box>
+          {error ? <span>{strings(error)}</span> : null}
+        </div>
+      </div>
+    </div>
   )
 }
 

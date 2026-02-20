@@ -1,4 +1,4 @@
-import { Text, Card } from 'theme-ui'
+import Card from 'react-bootstrap/Card'
 import PropTypes from 'prop-types'
 import strings from '../../strings/strings'
 
@@ -6,22 +6,23 @@ function Conversation({ c, i, goToConversation }) {
   return (
     <Card
       onClick={goToConversation}
-      sx={{ cursor: 'pointer', overflowWrap: 'break-word', mb: [3] }}
+      className="mb-3 polis-card"
+      style={{ cursor: 'pointer', overflowWrap: 'break-word' }}
       key={i}>
-      <Text as="span" sx={{ fontWeight: 700, mb: [2] }}>
-        {c.topic}
-      </Text>
-      {c.description && <Text as="span"> {c.description}</Text>}
-      {c.parent_url && (
-        <Text as="span" data-testid="embed-page">
+      <Card.Body>
+        <span className="fw-bold mb-2">{c.topic}</span>
+        {c.description && <span> {c.description}</span>}
+        {c.parent_url && (
+          <span data-testid="embed-page">
+            {' '}
+            {strings('convos_embedded_on', { url: c.parent_url })}
+          </span>
+        )}
+        <span className="ms-2 text-polis-secondary" style={{ fontSize: '14px' }}>
           {' '}
-          {strings('convos_embedded_on', { url: c.parent_url })}
-        </Text>
-      )}
-      <Text as="span" sx={{ ml: [2], color: 'textSecondary', fontSize: [1] }}>
-        {' '}
-        {strings('convos_participants_count', { count: c.participant_count })}
-      </Text>
+          {strings('convos_participants_count', { count: c.participant_count })}
+        </span>
+      </Card.Body>
     </Card>
   )
 }

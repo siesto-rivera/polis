@@ -2,12 +2,10 @@ import { BrowserRouter } from 'react-router'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import { mockAuth } from './test-utils'
 import App from './app'
 import rootReducer from './reducers'
-import theme from './theme'
 
 // Mock the useAuth hook directly for this test file
 jest.mock('react-oidc-context', () => ({
@@ -28,11 +26,9 @@ const store = configureStore({
 
 const renderWithProviders = (component) => {
   return render(
-    <ThemeUIProvider theme={theme}>
-      <Provider store={store}>
-        <BrowserRouter>{component}</BrowserRouter>
-      </Provider>
-    </ThemeUIProvider>
+    <Provider store={store}>
+      <BrowserRouter>{component}</BrowserRouter>
+    </Provider>
   )
 }
 

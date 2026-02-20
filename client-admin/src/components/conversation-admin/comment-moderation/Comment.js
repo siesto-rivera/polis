@@ -2,7 +2,8 @@
 
 import { useRef } from 'react'
 import PropTypes from 'prop-types'
-import { Flex, Box, Text, Button, Card, Link } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
+import Card from 'react-bootstrap/Card'
 import strings from '../../../strings/strings'
 
 const Comment = ({
@@ -31,23 +32,18 @@ const Comment = ({
   }
 
   return (
-    <Card sx={{ mb: [3], minWidth: ['auto', 'auto', '35em'] }} data-testid="pending-comment">
-      <Box>
-        <Text sx={{ mb: [3], color: 'error', fontSize: 12 }}>
+    <Card className="mb-3 polis-card" style={{ minWidth: '35em' }} data-testid="pending-comment">
+      <Card.Body>
+        <span className="mb-3 d-block" style={{ color: '#f06273', fontSize: 12 }}>
           {comment.active
             ? null
             : strings('mod_flag_warning')}
-        </Text>
-        <Text sx={{ mb: [3] }}>{comment.txt}</Text>
-        <Flex
-          sx={{
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%'
-          }}>
-          <Box>
+        </span>
+        <span className="mb-3 d-block">{comment.txt}</span>
+        <div className="d-flex justify-content-between align-items-center w-100">
+          <div>
             {acceptButton ? (
-              <Button variant="success" sx={{ mr: [3] }} onClick={onAcceptClicked}>
+              <Button variant="success" className="me-3" onClick={onAcceptClicked}>
                 {acceptButtonText}
               </Button>
             ) : null}
@@ -56,11 +52,11 @@ const Comment = ({
                 {rejectButtonText}
               </Button>
             ) : null}
-          </Box>
-          <Flex sx={{ alignItems: 'center' }}>
-            <Link target="_blank" sx={{ mr: [2] }} href="https://compdemocracy.org/metadata">
+          </div>
+          <div className="d-flex align-items-center">
+            <a target="_blank" className="me-2" href="https://compdemocracy.org/metadata" rel="noreferrer">
               {isMetaCheckbox ? strings('mod_metadata') : null}
-            </Link>
+            </a>
             {isMetaCheckbox ? (
               <input
                 type="checkbox"
@@ -70,9 +66,9 @@ const Comment = ({
                 onChange={onIsMetaClicked}
               />
             ) : null}
-          </Flex>
-        </Flex>
-      </Box>
+          </div>
+        </div>
+      </Card.Body>
     </Card>
   )
 }

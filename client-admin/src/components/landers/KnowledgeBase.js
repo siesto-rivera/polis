@@ -1,15 +1,14 @@
 import PropTypes from 'prop-types'
-import { Box, Link } from 'theme-ui'
 import emoji from 'react-easy-emoji'
 
 const KnowledgeBase = ({ e, url, txt }) => {
   return (
-    <Box sx={{ my: [3] }}>
-      <Link target="_blank" href={url}>
+    <div className="my-3">
+      <a target="_blank" href={url} rel="noreferrer">
         <span style={{ marginRight: 12 }}>{emoji(e)}</span>
         {txt}
-      </Link>
-    </Box>
+      </a>
+    </div>
   )
 }
 

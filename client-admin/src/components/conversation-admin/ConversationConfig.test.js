@@ -1,12 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import { ConversationDataProvider } from '../../util/conversation_data'
 import * as actions from '../../actions'
 import ConversationConfig from './ConversationConfig'
-import theme from '../../theme'
 
 // Mock child components
 jest.mock('./CheckboxField', () => ({
@@ -63,11 +61,9 @@ const createMockStore = (initialState = {}) => {
 const renderWithProviders = (component, { store } = {}) => {
   const mockStore = store || createMockStore()
   return render(
-    <ThemeUIProvider theme={theme}>
-      <Provider store={mockStore}>
-        <ConversationDataProvider>{component}</ConversationDataProvider>
-      </Provider>
-    </ThemeUIProvider>
+    <Provider store={mockStore}>
+      <ConversationDataProvider>{component}</ConversationDataProvider>
+    </Provider>
   )
 }
 
@@ -97,13 +93,11 @@ describe('ConversationConfig', () => {
     // Update to loading state
     const loadingStore = createMockStore({ loading: true })
     rerender(
-      <ThemeUIProvider theme={theme}>
-        <Provider store={loadingStore}>
-          <ConversationDataProvider>
-            <ConversationConfig />
-          </ConversationDataProvider>
-        </Provider>
-      </ThemeUIProvider>
+      <Provider store={loadingStore}>
+        <ConversationDataProvider>
+          <ConversationConfig />
+        </ConversationDataProvider>
+      </Provider>
     )
 
     // Refs are now set, so it should show the form with saving status instead of spinner
@@ -339,7 +333,7 @@ describe('ConversationConfig', () => {
     it('maintains proper spacing with margin bottom classes', () => {
       renderWithProviders(<ConversationConfig />)
 
-      // Verify that key elements are rendered (spacing is handled by theme-ui sx prop)
+      // Verify that key elements are rendered
       expect(screen.getByTestId('topic')).toBeInTheDocument()
       expect(screen.getByTestId('description')).toBeInTheDocument()
     })

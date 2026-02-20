@@ -1,0 +1,29 @@
+// Polis color overrides for Bootstrap 5
+$primary: #03a9f4;
+$success: #4dd599;
+$danger: #f06273;
+$warning: #ffb74d;
+$info: #03a9f4;
+$secondary: #f6f7f8;
+$light: #f3f4f6;
+
+$body-color: #60656f;
+$body-bg: #fff;
+
+$font-family-base: 'Space Mono', monospace;
+
+$border-color: #e5e7eb;
+$border-radius: 4px;
+$border-radius-sm: 2px;
+$border-radius-lg: 8px;
+
+$box-shadow: 0 0 8px rgba(0, 0, 0, 0.125);
+$box-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+$box-shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.15);
+
+$link-color: #03a9f4;
+$link-decoration: none;
+$link-hover-decoration: none;
+
+// Import Bootstrap
+@import "bootstrap/scss/bootstrap";

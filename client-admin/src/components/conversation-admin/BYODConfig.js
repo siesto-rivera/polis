@@ -1,6 +1,6 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Heading, Box, Text, Button } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import { useRef, useState } from 'react'
 import { useConversationData } from '../../util/conversation_data'
 import ModerateCommentsSeed from './ModerateCommentSeed'
@@ -21,7 +21,6 @@ const BYODConfig = () => {
   const [csvText, setCsvText] = useState(undefined)
   const handleFileChange = (e) => {
     const file = e.target.files[0]
-    // Check if file size is > 50MB (50 * 1024 * 1024 bytes)
     if (!file || file.size > 50 * 1024 * 1024) {
       alert('File is too big! Maximum size is 50MB.')
       return
@@ -42,7 +41,7 @@ const BYODConfig = () => {
       conversation_id: conversationData.conversation_id
     })
       .then(
-        (res) => {
+        () => {
           setVoteSubmissionLoading(false)
           setCsvText(undefined)
           setImportSuccessful(true)
@@ -57,37 +56,25 @@ const BYODConfig = () => {
   }
 
   return (
-    <Box>
-      <Heading
-        as="h3"
-        sx={{
-          fontSize: [3, null, 4],
-          lineHeight: 'body',
-          mb: [3, null, 4]
-        }}>
+    <div>
+      <h3 className="mb-3 mb-xl-4" style={{ fontSize: '20px', lineHeight: 1.5 }}>
         {strings('import_heading')}
-      </Heading>
+      </h3>
       {importSuccessful ? (
-        <Text sx={{ color: 'green' }}>
+        <span style={{ color: 'green' }}>
           {strings('import_success')}
-        </Text>
+        </span>
       ) : (
         <>
-          <Box sx={{ mb: [4] }}>
-            <Text>
+          <div className="mb-4">
+            <span>
               {strings('import_desc')}
-            </Text>
-          </Box>
+            </span>
+          </div>
 
-          <Heading
-            as="h6"
-            sx={{
-              fontSize: [1, null, 2],
-              lineHeight: 'body',
-              my: [3, null, 4]
-            }}>
+          <h6 className="my-3 my-xl-4" style={{ fontSize: '14px', lineHeight: 1.5 }}>
             {strings('import_comments_heading')}
-          </Heading>
+          </h6>
           <ModerateCommentsSeed
             params={{
               conversation_id: conversationData.conversation_id,
@@ -96,16 +83,10 @@ const BYODConfig = () => {
             }}
           />
           <>
-            <Box sx={{ mt: 2, display: 'block' }}>
-              <Heading
-                as="h6"
-                sx={{
-                  fontSize: [1, null, 2],
-                  lineHeight: 'body',
-                  my: [3, null, 4]
-                }}>
+            <div className="mt-2 d-block">
+              <h6 className="my-3 my-xl-4" style={{ fontSize: '14px', lineHeight: 1.5 }}>
                 {strings('import_votes_heading')}
-              </Heading>
+              </h6>
               <>
                 CSV Format:
                 <pre>
@@ -120,7 +101,7 @@ const BYODConfig = () => {
                 {strings('import_votes_note')}
                 <br />
               </>
-              <Box sx={{ mt: 2, display: 'block' }}>
+              <div className="mt-2 d-block">
                 <input onChange={handleFileChange} type="file" id="csvFile" accept=".csv"></input>
                 <Button
                   disabled={voteSubmissionLoading || !csvText}
@@ -130,14 +111,14 @@ const BYODConfig = () => {
                 </Button>
                 <br />
                 {voteSubmissionError ? (
-                  <Text sx={{ color: 'red' }}>{voteSubmissionError}</Text>
+                  <span style={{ color: 'red' }}>{voteSubmissionError}</span>
                 ) : null}
-              </Box>
-            </Box>
+              </div>
+            </div>
           </>
         </>
       )}
-    </Box>
+    </div>
   )
 }
 

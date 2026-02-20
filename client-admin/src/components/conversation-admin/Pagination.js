@@ -1,4 +1,4 @@
-import { Box, Button, Text } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import PropTypes from 'prop-types'
 import strings from '../../strings/strings'
 
@@ -42,111 +42,51 @@ const Pagination = ({ pagination, onPageChange, loading = false }) => {
   const endItem = Math.min(offset + limit, total)
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: ['column', 'row'],
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: [3, 0],
-        mt: [3],
-        pt: [3],
-        borderTop: '1px solid',
-        borderColor: 'lightGray'
-      }}>
-      <Text sx={{ fontSize: [1], mb: [3, 0] }}>
+    <div
+      className="d-flex flex-column flex-md-row align-items-center justify-content-between mt-3 pt-3"
+      style={{ borderTop: '1px solid #9ca3af' }}>
+      <span className="mb-3 mb-md-0" style={{ fontSize: '14px' }}>
         {strings('pagination_showing', { start: startItem, end: endItem, total })}
-      </Text>
+      </span>
 
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: [2]
-        }}>
+      <div className="d-flex align-items-center flex-wrap justify-content-center" style={{ gap: '8px' }}>
         <Button
-          variant="outline"
-          size="small"
+          variant="outline-primary"
+          size="sm"
           onClick={handleFirst}
-          disabled={offset === 0 || loading}
-          sx={{
-            fontSize: [0],
-            px: [2],
-            py: [1],
-            '&:disabled': {
-              backgroundColor: 'lightGray',
-              borderColor: 'mediumGray',
-              color: 'gray',
-              cursor: 'not-allowed'
-            }
-          }}>
+          disabled={offset === 0 || loading}>
           {strings('pagination_first')}
         </Button>
 
         <Button
-          variant="outline"
-          size="small"
+          variant="outline-primary"
+          size="sm"
           onClick={handlePrevious}
-          disabled={offset === 0 || loading}
-          sx={{
-            fontSize: [0],
-            px: [2],
-            py: [1],
-            '&:disabled': {
-              backgroundColor: 'lightGray',
-              borderColor: 'mediumGray',
-              color: 'gray',
-              cursor: 'not-allowed'
-            }
-          }}>
+          disabled={offset === 0 || loading}>
           {strings('pagination_previous')}
         </Button>
 
-        <Text sx={{ fontSize: [1], mx: [2] }}>
+        <span className="mx-2" style={{ fontSize: '14px' }}>
           {strings('pagination_page', { current: currentPage, totalPages })}
-        </Text>
+        </span>
 
         <Button
-          variant="outline"
-          size="small"
+          variant="outline-primary"
+          size="sm"
           onClick={handleNext}
-          disabled={!hasMore || loading}
-          sx={{
-            fontSize: [0],
-            px: [2],
-            py: [1],
-            '&:disabled': {
-              backgroundColor: 'lightGray',
-              borderColor: 'mediumGray',
-              color: 'gray',
-              cursor: 'not-allowed'
-            }
-          }}>
+          disabled={!hasMore || loading}>
           {strings('pagination_next')}
         </Button>
 
         <Button
-          variant="outline"
-          size="small"
+          variant="outline-primary"
+          size="sm"
           onClick={handleLast}
-          disabled={!hasMore || loading}
-          sx={{
-            fontSize: [0],
-            px: [2],
-            py: [1],
-            '&:disabled': {
-              backgroundColor: 'lightGray',
-              borderColor: 'mediumGray',
-              color: 'gray',
-              cursor: 'not-allowed'
-            }
-          }}>
+          disabled={!hasMore || loading}>
           {strings('pagination_last')}
         </Button>
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 

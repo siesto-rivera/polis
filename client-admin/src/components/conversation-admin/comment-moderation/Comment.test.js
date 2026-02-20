@@ -1,10 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import Comment from './Comment'
-import theme from '../../../theme'
 
 // Create a mock store
 const createMockStore = (conversationData = {}) => {
@@ -21,11 +19,7 @@ const createMockStore = (conversationData = {}) => {
 // Wrapper to provide theme and store context
 const renderWithProviders = (component, { store } = {}) => {
   const mockStore = store || createMockStore()
-  return render(
-    <ThemeUIProvider theme={theme}>
-      <Provider store={mockStore}>{component}</Provider>
-    </ThemeUIProvider>
-  )
+  return render(<Provider store={mockStore}>{component}</Provider>)
 }
 
 describe('Comment', () => {

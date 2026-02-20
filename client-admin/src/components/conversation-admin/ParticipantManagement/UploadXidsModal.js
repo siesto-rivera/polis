@@ -1,4 +1,4 @@
-import { Box, Text, Button, Flex, Heading } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import { useState, useRef, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import strings from '../../../strings/strings'
@@ -189,8 +189,8 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
   }
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -201,13 +201,13 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: [3]
+        padding: '1rem'
       }}
       onClick={handleClose}>
-      <Box
-        sx={{
-          backgroundColor: 'background',
-          borderRadius: 2,
+      <div
+        style={{
+          backgroundColor: '#fff',
+          borderRadius: '0.25rem',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
           maxWidth: '600px',
           width: '100%',
@@ -218,53 +218,34 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
         }}
         onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <Flex
-          sx={{
-            p: [3],
-            borderBottom: '1px solid',
-            borderColor: 'lightGray',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-          <Heading
-            as="h3"
-            sx={{
-              fontSize: [3],
-              lineHeight: 'body',
-              m: 0
-            }}>
+        <div
+          className="d-flex p-3 justify-content-between align-items-center"
+          style={{ borderBottom: '1px solid #eee' }}>
+          <h3 style={{ lineHeight: 1.5, margin: 0 }}>
             {strings('participants_upload_heading')}
-          </Heading>
-          <Button variant="outline" size="small" onClick={handleClose}>
-            ✕
+          </h3>
+          <Button variant="outline-secondary" size="sm" onClick={handleClose}>
+            &#10005;
           </Button>
-        </Flex>
+        </div>
 
         {/* Content */}
-        <Box sx={{ p: [3], overflow: 'auto', flex: 1 }}>
-          <Text sx={{ mb: [3], color: 'text', fontSize: [1] }}>
+        <div className="p-3" style={{ overflow: 'auto', flex: 1 }}>
+          <span className="mb-3" style={{ color: 'inherit', fontSize: '0.875rem' }}>
             {strings('participants_upload_desc')}
-          </Text>
+          </span>
 
           {/* Drop zone */}
-          <Box
+          <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            sx={{
-              border: '2px dashed',
-              borderColor: isDragging ? 'primary' : 'mediumGray',
-              borderRadius: 2,
-              p: [3],
-              mb: [3],
-              backgroundColor: isDragging ? 'lightGray' : 'background',
-              textAlign: 'center',
+            className="rounded p-3 mb-3 text-center"
+            style={{
+              border: `2px dashed ${isDragging ? 'var(--bs-primary)' : '#ccc'}`,
+              backgroundColor: isDragging ? '#f0f0f0' : '#fff',
               cursor: 'pointer',
-              transition: 'all 0.2s',
-              '&:hover': {
-                borderColor: 'primary',
-                backgroundColor: 'lightGray'
-              }
+              transition: 'all 0.2s'
             }}
             onClick={() => fileInputRef.current?.click()}>
             <input
@@ -275,100 +256,90 @@ const UploadXidsModal = ({ isOpen, onClose, onUpload, conversationId }) => {
               style={{ display: 'none' }}
             />
             {isProcessing ? (
-              <Text sx={{ color: 'mediumGray' }}>{strings('participants_processing')}</Text>
+              <span style={{ color: '#999' }}>{strings('participants_processing')}</span>
             ) : (
               <>
-                <Text sx={{ mb: [2], color: 'text', fontSize: [1] }}>
+                <span className="mb-2 d-block" style={{ fontSize: '0.875rem' }}>
                   {isDragging ? strings('participants_drop_here') : strings('participants_browse_or_drop')}
-                </Text>
-                <Text sx={{ color: 'mediumGray', fontSize: [0] }}>{strings('participants_supports_csv')}</Text>
+                </span>
+                <span style={{ color: '#999', fontSize: '0.75rem' }}>{strings('participants_supports_csv')}</span>
               </>
             )}
-          </Box>
+          </div>
 
           {/* Text input */}
-          <Box sx={{ mb: [3] }}>
-            <Text
-              as="label"
-              sx={{
-                display: 'block',
-                mb: [2],
+          <div className="mb-3">
+            <label
+              className="d-block mb-2"
+              style={{
                 fontWeight: 'bold',
-                fontSize: [1]
+                fontSize: '0.875rem'
               }}>
               {strings('participants_allowed_xids')}
-            </Text>
-            <Box
-              as="textarea"
+            </label>
+            <textarea
               ref={textareaRef}
               value={xidsText}
               onChange={(e) => setXidsText(e.target.value)}
               placeholder={strings('participants_paste_placeholder')}
-              sx={{
-                fontFamily: 'mono',
-                fontSize: [1],
+              style={{
+                fontFamily: 'monospace',
+                fontSize: '0.875rem',
                 width: '100%',
                 minHeight: '300px',
                 maxHeight: '400px',
                 resize: 'vertical',
-                padding: [2],
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: 'mediumGray',
-                backgroundColor: 'background'
+                padding: '0.5rem',
+                borderRadius: '0.25rem',
+                border: '1px solid #ccc',
+                backgroundColor: '#fff'
               }}
             />
-          </Box>
+          </div>
 
           {/* Replace all checkbox */}
-          <Flex sx={{ alignItems: 'flex-start', mb: [2] }}>
-            <Box sx={{ flexShrink: 0, position: 'relative', top: -0.5 }}>
+          <div className="d-flex align-items-start mb-2">
+            <div style={{ flexShrink: 0, position: 'relative', top: -0.5 }}>
               <input
                 type="checkbox"
                 id="replaceAll"
                 checked={replaceAll}
                 onChange={(e) => setReplaceAll(e.target.checked)}
               />
-            </Box>
-            <Box
-              sx={{
-                ml: [2],
+            </div>
+            <div
+              className="ms-2"
+              style={{
                 flex: '1 1 auto',
-                maxWidth: ['100%', '100%', '35em'],
+                maxWidth: '35em',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word'
               }}>
-              <Text
-                as="label"
+              <label
                 htmlFor="replaceAll"
-                sx={{
+                style={{
                   cursor: 'pointer',
-                  fontSize: [1]
+                  fontSize: '0.875rem'
                 }}>
                 {strings('participants_replace_all')}
-              </Text>
-            </Box>
-          </Flex>
-        </Box>
+              </label>
+            </div>
+          </div>
+        </div>
 
         {/* Footer */}
-        <Flex
-          sx={{
-            p: [3],
-            borderTop: '1px solid',
-            borderColor: 'lightGray',
-            justifyContent: 'flex-end',
-            gap: [2]
-          }}>
-          <Button variant="outline" onClick={handleClose}>
+        <div
+          className="d-flex p-3 justify-content-end"
+          style={{ borderTop: '1px solid #eee', gap: '0.5rem' }}>
+          <Button variant="outline-secondary" onClick={handleClose}>
             {strings('participants_cancel')}
           </Button>
           <Button onClick={handleUpload} disabled={!xidsText.trim()}>
             {strings('participants_upload_xids')}
           </Button>
-        </Flex>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   )
 }
 

@@ -2,15 +2,12 @@ import { BrowserRouter as Router } from 'react-router'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
-
 import { ConversationDataProvider } from '../../../util/conversation_data'
 import { mockAuth } from '../../../test-utils'
 import { UserProvider } from '../../../util/auth'
 import * as actions from '../../../actions'
 import PolisNet from '../../../util/net'
 import ReportsList from './ReportsList'
-import theme from '../../../theme'
 
 // Mock dependencies
 jest.mock('../../../util/net')
@@ -78,13 +75,11 @@ const renderWithProviders = (component, { store } = {}) => {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-        <ThemeUIProvider theme={theme}>
-          <Provider store={mockStore}>
+        <Provider store={mockStore}>
             <UserProvider>
               <ConversationDataProvider>{component}</ConversationDataProvider>
             </UserProvider>
           </Provider>
-        </ThemeUIProvider>
       </Router>
     )
   }
@@ -155,11 +150,9 @@ describe('ReportsList', () => {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-        <ThemeUIProvider theme={theme}>
-          <Provider store={store}>
-            <ReportsList />
-          </Provider>
-        </ThemeUIProvider>
+        <Provider store={store}>
+          <ReportsList />
+        </Provider>
       </Router>
     )
 
@@ -190,11 +183,9 @@ describe('ReportsList', () => {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-        <ThemeUIProvider theme={theme}>
-          <Provider store={store}>
-            <ReportsList />
-          </Provider>
-        </ThemeUIProvider>
+        <Provider store={store}>
+          <ReportsList />
+        </Provider>
       </Router>
     )
 
@@ -234,11 +225,9 @@ describe('ReportsList', () => {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-        <ThemeUIProvider theme={theme}>
-          <Provider store={store}>
-            <ReportsList />
-          </Provider>
-        </ThemeUIProvider>
+        <Provider store={store}>
+          <ReportsList />
+        </Provider>
       </Router>
     )
 

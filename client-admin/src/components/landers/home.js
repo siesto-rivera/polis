@@ -1,5 +1,4 @@
 import Layout from './lander-layout'
-import { Heading, Box, Text, Link } from 'theme-ui'
 import ExploreKnowledgeBase from './ExploreKnowledgeBase'
 import Press from './Press'
 
@@ -7,42 +6,38 @@ const Index = () => {
   return (
     <Layout>
       <>
-        <Heading as="h1" sx={{ my: [4, null, 5], fontSize: [6, null, 7] }}>
+        <h1 className="my-4 my-xl-5" style={{ fontSize: '48px' }}>
           Input Crowd, Output Meaning
-        </Heading>
-        <Heading
-          as="h3"
-          sx={{
-            fontSize: [3, null, 4],
-            lineHeight: 'body',
-            mb: [4, null, 5]
-          }}>
+        </h1>
+        <h3
+          className="mb-4 mb-xl-5"
+          style={{ fontSize: '20px', lineHeight: 1.5 }}>
           Polis is a real-time system for gathering, analyzing and understanding what large groups
           of people think in their own words, enabled by advanced statistics and machine learning.
-        </Heading>
-        <Box sx={{ mb: [4, null, 5] }}>
-          <Text>
+        </h3>
+        <div className="mb-4 mb-xl-5">
+          <span>
             Polis has been used all over the world by governments, academics, independent media and
             citizens, and is completely open source.
-          </Text>
-        </Box>
-        <Heading as="h3" sx={{ fontSize: [4], lineHeight: 'body', mb: [2, null, 3] }}>
+          </span>
+        </div>
+        <h3 className="mb-2 mb-xl-3" style={{ fontSize: '24px', lineHeight: 1.5 }}>
           Get Started
-        </Heading>
-        <Box sx={{ mb: [4, null, 5] }}>
-          <Link href="/signin">Sign in</Link>
-        </Box>
+        </h3>
+        <div className="mb-4 mb-xl-5">
+          <a href="/signin">Sign in</a>
+        </div>
         <Press />
         <ExploreKnowledgeBase />
-        <Heading as="h3" sx={{ fontSize: [4], lineHeight: 'body', my: [2, null, 3] }}>
+        <h3 className="my-2 my-xl-3" style={{ fontSize: '24px', lineHeight: 1.5 }}>
           Contribute
-        </Heading>
-        <Box sx={{ mb: [4, null, 5] }}>
+        </h3>
+        <div className="mb-4 mb-xl-5">
           Explore the code and join the developer community{' '}
-          <Link target="_blank" href="https://github.com/compdemocracy/">
+          <a target="_blank" href="https://github.com/compdemocracy/" rel="noreferrer">
             on Github
-          </Link>
-        </Box>
+          </a>
+        </div>
       </>
     </Layout>
   )

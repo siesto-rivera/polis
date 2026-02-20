@@ -3,8 +3,9 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { Box, Flex, Heading, Text, Button, Select } from 'theme-ui'
-import theme from '../../../theme'
+import Button from 'react-bootstrap/Button'
+import Form from 'react-bootstrap/Form'
+import colors from '../../../theme/colors'
 
 const ProximityVisualization = () => {
   const [proximityData, setProximityData] = useState([])
@@ -32,7 +33,7 @@ const ProximityVisualization = () => {
     const yValues = data.map((d) => d.umap_y).filter((y) => y !== undefined)
 
     if (xValues.length === 0 || yValues.length === 0) {
-      svgElement.innerHTML = `<text x="50%" y="50%" text-anchor="middle" fill="${theme.colors.gray}">No coordinate data available</text>`
+      svgElement.innerHTML = `<text x="50%" y="50%" text-anchor="middle" fill="${colors.gray}">No coordinate data available</text>`
       return
     }
 
@@ -50,15 +51,15 @@ const ProximityVisualization = () => {
       switch (status) {
         case 'accepted':
         case 1:
-          return theme.colors.primary
+          return colors.primary
         case 'rejected':
         case -1:
-          return theme.colors.error
+          return colors.error
         case 'meta':
         case 0:
-          return theme.colors.lightGray
+          return colors.lightGray
         default:
-          return theme.colors.gray
+          return colors.gray
       }
     }
 
@@ -91,8 +92,8 @@ const ProximityVisualization = () => {
       circle.setAttribute('cx', centerX)
       circle.setAttribute('cy', centerY)
       circle.setAttribute('r', maxRadius)
-      circle.setAttribute('fill', theme.colors.clusterBg)
-      circle.setAttribute('stroke', theme.colors.clusterStroke)
+      circle.setAttribute('fill', colors.clusterBg)
+      circle.setAttribute('stroke', colors.clusterStroke)
       circle.setAttribute('stroke-width', '1')
       circle.setAttribute('opacity', '0.3')
       svgElement.appendChild(circle)
@@ -102,7 +103,7 @@ const ProximityVisualization = () => {
       text.setAttribute('x', centerX)
       text.setAttribute('y', centerY - maxRadius + 15)
       text.setAttribute('text-anchor', 'middle')
-      text.setAttribute('fill', theme.colors.gray)
+      text.setAttribute('fill', colors.gray)
       text.setAttribute('font-size', '12')
       text.textContent = `Cluster ${clusterId}`
       svgElement.appendChild(text)
@@ -138,7 +139,7 @@ const ProximityVisualization = () => {
     xAxis.setAttribute('y1', height - margin)
     xAxis.setAttribute('x2', width - margin)
     xAxis.setAttribute('y2', height - margin)
-    xAxis.setAttribute('stroke', theme.colors.clusterStroke)
+    xAxis.setAttribute('stroke', colors.clusterStroke)
     xAxis.setAttribute('stroke-width', '1')
     svgElement.appendChild(xAxis)
 
@@ -147,7 +148,7 @@ const ProximityVisualization = () => {
     yAxis.setAttribute('y1', margin)
     yAxis.setAttribute('x2', margin)
     yAxis.setAttribute('y2', height - margin)
-    yAxis.setAttribute('stroke', theme.colors.clusterStroke)
+    yAxis.setAttribute('stroke', colors.clusterStroke)
     yAxis.setAttribute('stroke-width', '1')
     svgElement.appendChild(yAxis)
 
@@ -156,7 +157,7 @@ const ProximityVisualization = () => {
     xLabel.setAttribute('x', width / 2)
     xLabel.setAttribute('y', height - 10)
     xLabel.setAttribute('text-anchor', 'middle')
-    xLabel.setAttribute('fill', theme.colors.gray)
+    xLabel.setAttribute('fill', colors.gray)
     xLabel.textContent = 'UMAP Dimension 1'
     svgElement.appendChild(xLabel)
 
@@ -164,7 +165,7 @@ const ProximityVisualization = () => {
     yLabel.setAttribute('x', 15)
     yLabel.setAttribute('y', height / 2)
     yLabel.setAttribute('text-anchor', 'middle')
-    yLabel.setAttribute('fill', theme.colors.gray)
+    yLabel.setAttribute('fill', colors.gray)
     yLabel.setAttribute('transform', `rotate(-90, 15, ${height / 2})`)
     yLabel.textContent = 'UMAP Dimension 2'
     svgElement.appendChild(yLabel)
@@ -202,114 +203,114 @@ const ProximityVisualization = () => {
 
   if (loading) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>Loading proximity visualization...</Text>
-      </Box>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+        <span>Loading proximity visualization...</span>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text sx={{ color: 'error' }}>Error: {error}</Text>
-        <Button sx={{ mt: 2, ml: 3 }} onClick={loadProximityData}>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+        <span style={{ color: colors.error }}>Error: {error}</span>
+        <Button style={{ marginTop: 8, marginLeft: 12 }} onClick={loadProximityData}>
           Retry
         </Button>
-      </Box>
+      </div>
     )
   }
 
   return (
-    <Box>
-      <Flex
-        sx={{
-          alignItems: ['flex-start', 'center', 'center'],
+    <div>
+      <div
+        className="d-flex"
+        style={{
+          alignItems: 'center',
           justifyContent: 'space-between',
-          mb: 4,
-          flexDirection: ['column', 'row', 'row'],
-          gap: [2, 0, 0]
+          marginBottom: 16,
+          flexDirection: 'row',
+          gap: 0
         }}>
-        <Heading as="h3" sx={{ fontSize: [2, 3, 3] }}>
+        <h3 style={{ fontSize: 20 }}>
           Proximity Visualization
-        </Heading>
-        <Flex sx={{ alignItems: 'center', gap: 2 }}>
-          <Text sx={{ fontSize: [1, 2, 2] }}>Layer:</Text>
-          <Select
+        </h3>
+        <div className="d-flex" style={{ alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>Layer:</span>
+          <Form.Select
             value={selectedLayer}
             onChange={(e) => setSelectedLayer(e.target.value)}
-            sx={{ width: ['80px', '100px', '120px'], fontSize: [1, 2, 2] }}>
+            style={{ width: 120, fontSize: 16 }}>
             <option value="0">Layer 0</option>
             <option value="1">Layer 1</option>
             <option value="2">Layer 2</option>
-          </Select>
-        </Flex>
-      </Flex>
+          </Form.Select>
+        </div>
+      </div>
 
-      <Text sx={{ mb: 4, color: 'textSecondary' }}>
+      <span className="text-polis-secondary" style={{ marginBottom: 16, display: 'block' }}>
         This visualization shows comments positioned by semantic similarity using UMAP coordinates.
         Comments that are closer together are more semantically similar.
-      </Text>
+      </span>
 
       {proximityData.length > 0 ? (
-        <Box>
-          <Box sx={{ mb: 3 }}>
-            <Flex sx={{ gap: [2, 3, 3], alignItems: 'center', fontSize: 0, flexWrap: 'wrap' }}>
-              <Flex sx={{ alignItems: 'center', gap: 1 }}>
-                <Box
-                  sx={{
-                    width: '12px',
-                    height: '12px',
-                    bg: 'gray',
+        <div>
+          <div style={{ marginBottom: 12 }}>
+            <div className="d-flex" style={{ gap: 12, alignItems: 'center', fontSize: 12, flexWrap: 'wrap' }}>
+              <div className="d-flex" style={{ alignItems: 'center', gap: 4 }}>
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    backgroundColor: colors.gray,
                     borderRadius: '50%',
                     flexShrink: 0
                   }}
                 />
-                <Text sx={{ whiteSpace: 'nowrap' }}>Pending</Text>
-              </Flex>
-              <Flex sx={{ alignItems: 'center', gap: 1 }}>
-                <Box
-                  sx={{
-                    width: '12px',
-                    height: '12px',
-                    bg: 'primary',
+                <span style={{ whiteSpace: 'nowrap' }}>Pending</span>
+              </div>
+              <div className="d-flex" style={{ alignItems: 'center', gap: 4 }}>
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    backgroundColor: colors.primary,
                     borderRadius: '50%',
                     flexShrink: 0
                   }}
                 />
-                <Text sx={{ whiteSpace: 'nowrap' }}>Accepted</Text>
-              </Flex>
-              <Flex sx={{ alignItems: 'center', gap: 1 }}>
-                <Box
-                  sx={{
-                    width: '12px',
-                    height: '12px',
-                    bg: 'error',
+                <span style={{ whiteSpace: 'nowrap' }}>Accepted</span>
+              </div>
+              <div className="d-flex" style={{ alignItems: 'center', gap: 4 }}>
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    backgroundColor: colors.error,
                     borderRadius: '50%',
                     flexShrink: 0
                   }}
                 />
-                <Text sx={{ whiteSpace: 'nowrap' }}>Rejected</Text>
-              </Flex>
-              <Flex sx={{ alignItems: 'center', gap: 1 }}>
-                <Box
-                  sx={{
-                    width: '12px',
-                    height: '12px',
-                    bg: 'lightGray',
+                <span style={{ whiteSpace: 'nowrap' }}>Rejected</span>
+              </div>
+              <div className="d-flex" style={{ alignItems: 'center', gap: 4 }}>
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    backgroundColor: colors.lightGray,
                     borderRadius: '50%',
                     flexShrink: 0
                   }}
                 />
-                <Text sx={{ whiteSpace: 'nowrap' }}>Meta</Text>
-              </Flex>
-            </Flex>
-          </Box>
+                <span style={{ whiteSpace: 'nowrap' }}>Meta</span>
+              </div>
+            </div>
+          </div>
 
-          <Box
-            sx={{
-              border: '1px solid',
-              borderColor: 'border',
-              borderRadius: 'default',
+          <div
+            style={{
+              border: `1px solid ${colors.border}`,
+              borderRadius: 4,
               overflow: 'auto',
               width: '100%'
             }}>
@@ -325,18 +326,18 @@ const ProximityVisualization = () => {
                 maxWidth: '100%',
                 height: 'auto'
               }}></svg>
-          </Box>
+          </div>
 
-          <Text sx={{ mt: 2, fontSize: 0, color: 'textSecondary', textAlign: 'center' }}>
+          <span className="text-polis-secondary" style={{ marginTop: 8, fontSize: 12, textAlign: 'center', display: 'block' }}>
             Hover over points to see comment details. Points are grouped by semantic clusters.
-          </Text>
-        </Box>
+          </span>
+        </div>
       ) : (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Text>No proximity data available for this layer.</Text>
-        </Box>
+        <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+          <span>No proximity data available for this layer.</span>
+        </div>
       )}
-    </Box>
+    </div>
   )
 }
 

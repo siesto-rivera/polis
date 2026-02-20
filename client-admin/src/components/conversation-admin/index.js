@@ -1,6 +1,5 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Flex, Box } from 'theme-ui'
 import { Routes, Route, Link, useParams, useLocation } from 'react-router'
 import { useAuth } from 'react-oidc-context'
 import { useEffect, useState } from 'react'
@@ -33,14 +32,7 @@ const ConversationAdmin = () => {
   const [permissionState, setPermissionState] = useState('CHECKING') // CHECKING, PERMITTED, DENIED
 
   useEffect(() => {
-    // This effect determines the user's permission level for the conversation.
-    // It runs when the user or conversation changes, or when the metadata loads.
-    // It's "sticky": once permission is PERMITTED or DENIED, it won't change
-    // until the user or conversation_id changes, avoiding flicker from
-    // optimistic updates.
-
     if (conversationData.loading || !conversationData || !userContext.user) {
-      // Not ready to check permissions yet.
       return
     }
 
@@ -51,12 +43,18 @@ const ConversationAdmin = () => {
   }, [userContext, conversationData, permissionState])
 
   useEffect(() => {
-    // Reset permission check when conversation changes
     setPermissionState('CHECKING')
   }, [params.conversation_id])
 
   const url = location.pathname.split('/')[3]
   const baseUrl = `/m/${params.conversation_id}`
+
+  const navLinkClass = (linkUrl) => {
+    if (linkUrl === undefined) {
+      return url ? 'polis-nav-link' : 'polis-nav-link-active'
+    }
+    return url === linkUrl ? 'polis-nav-link-active' : 'polis-nav-link'
+  }
 
   const renderContent = () => {
     switch (permissionState) {
@@ -96,147 +94,95 @@ const ConversationAdmin = () => {
   }
 
   return (
-    <Flex
-      sx={{
-        flexDirection: ['column', 'column', 'row'], // Column on mobile/tablet/iPad, row on desktop
-        width: '100%',
-        maxWidth: '100vw',
-        overflowX: 'hidden'
-      }}>
-      {/* Conversation Navigation - horizontal on mobile/tablet/iPad, sidebar on large desktop */}
-      <Box
-        sx={{
-          py: [2, 2, 4],
-          px: [2, 3, 4],
+    <div
+      className="d-flex flex-column flex-xl-row w-100"
+      style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
+      {/* Conversation Navigation */}
+      <div
+        className="d-flex flex-row flex-xl-column flex-wrap flex-xl-nowrap justify-content-start py-2 py-xl-4 px-2 px-md-3 px-xl-4"
+        style={{
           flex: '0 0 auto',
-          width: ['100%', '100%', 'auto'],
-          borderBottom: ['2px solid', '2px solid', 'none'],
-          borderBottomColor: ['secondary', 'secondary', 'transparent'],
-          display: 'flex',
-          flexDirection: ['row', 'row', 'column'],
-          columnGap: [2, 3, 0],
-          rowGap: [2, 2, 0],
-          flexWrap: ['wrap', 'wrap', 'nowrap'],
-          justifyContent: ['flex-start', 'flex-start', 'flex-start'],
-          overflowX: ['auto', 'auto', 'visible'],
+          columnGap: '8px',
+          rowGap: '8px',
+          borderBottom: '2px solid #f6f7f8',
+          overflowX: 'auto',
           minWidth: 0
         }}>
-        <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-          <Link sx={{ variant: 'links.nav' }} to={`/`}>
+        <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+          <Link className="polis-nav-link" to={`/`}>
             {strings('nav_all')}
           </Link>
-        </Box>
-        <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-          <Link sx={{ variant: url ? 'links.nav' : 'links.activeNav' }} to={baseUrl}>
+        </div>
+        <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+          <Link className={navLinkClass(undefined)} to={baseUrl}>
             {strings('nav_configure')}
           </Link>
-        </Box>
-        <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-          <Link
-            sx={{
-              variant: url === 'share' ? 'links.activeNav' : 'links.nav'
-            }}
-            to={`${baseUrl}/share`}>
+        </div>
+        <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+          <Link className={navLinkClass('share')} to={`${baseUrl}/share`}>
             {strings('nav_distribute')}
           </Link>
-        </Box>
-        <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
+        </div>
+        <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
           <Link
-            sx={{
-              variant: url === 'comments' ? 'links.activeNav' : 'links.nav'
-            }}
+            className={navLinkClass('comments')}
             data-testid="moderate-comments"
             to={`${baseUrl}/comments`}>
             {strings('nav_moderate')}
           </Link>
-        </Box>
-        <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-          <Link
-            sx={{
-              variant: url === 'stats' ? 'links.activeNav' : 'links.nav'
-            }}
-            to={`${baseUrl}/stats`}>
+        </div>
+        <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+          <Link className={navLinkClass('stats')} to={`${baseUrl}/stats`}>
             {strings('nav_monitor')}
           </Link>
-        </Box>
-        <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-          <Link
-            sx={{
-              variant: url === 'reports' ? 'links.activeNav' : 'links.nav'
-            }}
-            to={`${baseUrl}/reports`}>
+        </div>
+        <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+          <Link className={navLinkClass('reports')} to={`${baseUrl}/reports`}>
             {strings('nav_reports')}
           </Link>
-        </Box>
-        {/* <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-          <Link
-            sx={{
-              variant: url === 'topics' ? 'links.activeNav' : 'links.nav'
-            }}
-            data-test-id="moderate-topics"
-            to={`${baseUrl}/topics`}>
-            Topic Mod
-          </Link>
-        </Box> */}
-        <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-          <Link
-            sx={{
-              variant: url === 'invite-tree' ? 'links.activeNav' : 'links.nav'
-            }}
-            to={`${baseUrl}/invite-tree`}>
+        </div>
+        <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+          <Link className={navLinkClass('invite-tree')} to={`${baseUrl}/invite-tree`}>
             {strings('nav_invite_tree')}
           </Link>
-        </Box>
+        </div>
         {conversationData?.treevite_enabled && (
-          <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-            <Link
-              sx={{
-                variant: url === 'invite-codes' ? 'links.activeNav' : 'links.nav'
-              }}
-              to={`${baseUrl}/invite-codes`}>
+          <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+            <Link className={navLinkClass('invite-codes')} to={`${baseUrl}/invite-codes`}>
               {strings('nav_invite_codes')}
             </Link>
-          </Box>
+          </div>
         )}
         {hasDelphiEnabled(authUser) && (
-          <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-            <Link
-              sx={{
-                variant: url === 'participants' ? 'links.activeNav' : 'links.nav'
-              }}
-              to={`${baseUrl}/participants`}>
+          <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+            <Link className={navLinkClass('participants')} to={`${baseUrl}/participants`}>
               {strings('nav_participants')}
             </Link>
-          </Box>
+          </div>
         )}
         {hasDelphiEnabled(authUser) && (
-          <Box sx={{ mb: [0, 0, 3], whiteSpace: 'nowrap' }}>
-            <Link
-              sx={{
-                variant: url === 'import' ? 'links.activeNav' : 'links.nav'
-              }}
-              to={`${baseUrl}/import`}>
+          <div className="mb-0 mb-xl-3" style={{ whiteSpace: 'nowrap' }}>
+            <Link className={navLinkClass('import')} to={`${baseUrl}/import`}>
               {strings('nav_import')}
             </Link>
-          </Box>
+          </div>
         )}
-      </Box>
+      </div>
       {/* Content Area */}
-      <Box
-        sx={{
-          p: [2, 3, 4],
+      <div
+        className="p-2 p-md-3 p-xl-4 mx-0 mx-xl-4"
+        style={{
           flex: '1 1 auto',
-          maxWidth: ['100%', '100%', '60em'],
+          maxWidth: '60em',
           width: '100%',
           minWidth: 0,
-          mx: [0, 0, 4],
-          overflowX: 'auto', // Allow horizontal scroll if content needs it
+          overflowX: 'auto',
           wordWrap: 'break-word',
           overflowWrap: 'break-word'
         }}>
         {renderContent()}
-      </Box>
-    </Flex>
+      </div>
+    </div>
   )
 }
 

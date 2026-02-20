@@ -1,11 +1,8 @@
 import { render } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
-import theme from '../../theme'
 import Logomark from './Logomark'
 
-// Wrapper to provide theme context
 const renderWithTheme = (component) => {
-  return render(<ThemeUIProvider theme={theme}>{component}</ThemeUIProvider>)
+  return render(component)
 }
 
 describe('Logomark', () => {

@@ -1,4 +1,4 @@
-import { Box, Text, Button, Flex } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import PolisNet from '../../../util/net'
@@ -112,145 +112,128 @@ const XidAllowListTable = ({ conversationId }) => {
   }
 
   if (error) {
-    return <Text sx={{ color: 'error', mb: [3] }}>{error}</Text>
+    return <span className="mb-3" style={{ color: 'var(--bs-danger)' }}>{error}</span>
   }
 
   if (xids.length === 0) {
     return (
       <>
-        <Flex sx={{ justifyContent: 'flex-end', mb: [2], gap: [2] }}>
+        <div className="d-flex justify-content-end mb-2" style={{ gap: '0.5rem' }}>
           <Button
-            variant="outline"
-            size="small"
+            variant="outline-secondary"
+            size="sm"
             onClick={() => setIsUploadModalOpen(true)}
             disabled={!conversationId}>
             {strings('participants_upload_xids')}
           </Button>
           <Button
-            variant="outline"
-            size="small"
+            variant="outline-secondary"
+            size="sm"
             onClick={handleDownloadCsv}
             disabled={downloadLoading || !conversationId}>
             {downloadLoading ? strings('participants_preparing') : strings('participants_download_csv')}
           </Button>
-        </Flex>
+        </div>
         <UploadXidsModal
           isOpen={isUploadModalOpen}
           onClose={() => setIsUploadModalOpen(false)}
           onUpload={handleUploadXids}
           conversationId={conversationId}
         />
-        <Text sx={{ color: 'mediumGray', mb: [3] }}>
+        <span className="mb-3" style={{ color: '#999' }}>
           {strings('participants_no_allow_list')}
-        </Text>
+        </span>
       </>
     )
   }
 
   return (
     <>
-      <Flex sx={{ justifyContent: 'flex-end', mb: [2], gap: [2] }}>
+      <div className="d-flex justify-content-end mb-2" style={{ gap: '0.5rem' }}>
         <Button
-          variant="outline"
-          size="small"
+          variant="outline-secondary"
+          size="sm"
           onClick={() => setIsUploadModalOpen(true)}
           disabled={!conversationId}>
           {strings('participants_upload_xids')}
         </Button>
         <Button
-          variant="outline"
-          size="small"
+          variant="outline-secondary"
+          size="sm"
           onClick={handleDownloadCsv}
           disabled={downloadLoading || !conversationId}>
           {downloadLoading ? strings('participants_preparing') : strings('participants_download_csv')}
         </Button>
-      </Flex>
+      </div>
       <UploadXidsModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onUpload={handleUploadXids}
         conversationId={conversationId}
       />
-      <Box
-        as="table"
-        sx={{
+      <table
+        className="mb-3"
+        style={{
           width: '100%',
-          borderCollapse: 'collapse',
-          mb: [3]
+          borderCollapse: 'collapse'
         }}>
-        <Box
-          as="thead"
-          sx={{
-            backgroundColor: 'lightGray',
-            borderBottom: '2px solid',
-            borderColor: 'mediumGray'
+        <thead
+          style={{
+            backgroundColor: '#f0f0f0',
+            borderBottom: '2px solid #ccc'
           }}>
-          <Box as="tr">
-            <Box
-              as="th"
-              sx={{
-                px: [2, 3],
-                py: [2],
+          <tr>
+            <th
+              style={{
+                padding: '0.5rem 1rem',
                 textAlign: 'left',
                 fontWeight: 'bold',
-                fontSize: [1],
-                borderRight: '1px solid',
-                borderColor: 'mediumGray'
+                fontSize: '0.875rem',
+                borderRight: '1px solid #ccc'
               }}>
               {strings('participants_col_pid')}
-            </Box>
-            <Box
-              as="th"
-              sx={{
-                px: [2, 3],
-                py: [2],
+            </th>
+            <th
+              style={{
+                padding: '0.5rem 1rem',
                 textAlign: 'left',
                 fontWeight: 'bold',
-                fontSize: [1]
+                fontSize: '0.875rem'
               }}>
               {strings('participants_col_xid')}
-            </Box>
-          </Box>
-        </Box>
-        <Box as="tbody">
+            </th>
+          </tr>
+        </thead>
+        <tbody>
           {xids.map((xidRecord, index) => (
-            <Box
+            <tr
               key={`${xidRecord.xid}-${index}`}
-              as="tr"
-              sx={{
-                borderBottom: '1px solid',
-                borderColor: 'lightGray',
-                '&:hover': {
-                  backgroundColor: 'lightGray'
-                }
+              className="polis-table-row-hover"
+              style={{
+                borderBottom: '1px solid #eee'
               }}>
-              <Box
-                as="td"
-                sx={{
-                  px: [2, 3],
-                  py: [2],
-                  fontSize: [1],
-                  borderRight: '1px solid',
-                  borderColor: 'lightGray',
-                  color: xidRecord.pid ? 'text' : 'mediumGray',
+              <td
+                style={{
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.875rem',
+                  borderRight: '1px solid #eee',
+                  color: xidRecord.pid ? 'inherit' : '#999',
                   fontStyle: xidRecord.pid ? 'normal' : 'italic'
                 }}>
-                {xidRecord.pid ?? '—'}
-              </Box>
-              <Box
-                as="td"
-                sx={{
-                  px: [2, 3],
-                  py: [2],
-                  fontSize: [1],
+                {xidRecord.pid ?? '\u2014'}
+              </td>
+              <td
+                style={{
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.875rem',
                   wordBreak: 'break-all'
                 }}>
                 {xidRecord.xid}
-              </Box>
-            </Box>
+              </td>
+            </tr>
           ))}
-        </Box>
-      </Box>
+        </tbody>
+      </table>
       <Pagination pagination={pagination} onPageChange={handlePageChange} loading={loading} />
     </>
   )

@@ -4,8 +4,6 @@ import { render } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import { BrowserRouter as Router } from 'react-router'
-import { ThemeUIProvider } from 'theme-ui'
-import theme from './theme'
 import rootReducer from './reducers'
 import { AuthContext } from 'react-oidc-context'
 
@@ -127,17 +125,15 @@ export const renderWithProviders = (
 
   function Wrapper({ children }) {
     return (
-      <ThemeUIProvider theme={theme}>
-        <Provider store={store}>
-          <Router
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true
-            }}>
-            {children}
-          </Router>
-        </Provider>
-      </ThemeUIProvider>
+      <Provider store={store}>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}>
+          {children}
+        </Router>
+      </Provider>
     )
   }
 

@@ -3,14 +3,14 @@
 import PropTypes from 'prop-types'
 
 import { createRoot } from 'react-dom/client'
-import { ThemeUIProvider } from 'theme-ui'
 import { AuthProvider } from 'react-oidc-context'
 import { WebStorageStateStore } from 'oidc-client-ts'
 import { Provider } from 'react-redux'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router'
 import App from './app'
 import store from './store'
-import theme from './theme'
+import './styles/custom-bootstrap.scss'
+import './styles/polis.css'
 
 // OIDC configuration - now required
 const authority = process.env.AUTH_ISSUER
@@ -66,21 +66,19 @@ OidcProvider.propTypes = {
 }
 
 const Root = () => (
-  <ThemeUIProvider theme={theme}>
-    <Provider store={store}>
-      <Router
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true
-        }}>
-        <OidcProvider>
-          <Routes>
-            <Route path="/*" element={<App />} />
-          </Routes>
-        </OidcProvider>
-      </Router>
-    </Provider>
-  </ThemeUIProvider>
+  <Provider store={store}>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}>
+      <OidcProvider>
+        <Routes>
+          <Route path="/*" element={<App />} />
+        </Routes>
+      </OidcProvider>
+    </Router>
+  </Provider>
 )
 
 const root = createRoot(document.getElementById('root'))

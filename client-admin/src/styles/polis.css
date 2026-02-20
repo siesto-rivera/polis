@@ -1,0 +1,125 @@
+/* Polis custom styles - supplements Bootstrap */
+
+/* Global box-sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal scroll on mobile */
+body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Nav link styles (replicating theme-ui nav link variant) */
+.polis-nav-link {
+  color: inherit;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.polis-nav-link:hover,
+.polis-nav-link.active {
+  color: #03a9f4;
+  border-bottom-color: #03a9f4;
+}
+
+.polis-nav-link-active {
+  color: inherit;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 2px solid #60656f;
+}
+
+.polis-nav-link-active:hover,
+.polis-nav-link-active.active {
+  color: #03a9f4;
+  border-bottom-color: #03a9f4;
+}
+
+/* Header link styles */
+.polis-header-link {
+  color: inherit;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.polis-header-link:hover,
+.polis-header-link.active {
+  color: #fff;
+}
+
+/* Generic anchor style matching theme-ui root */
+a {
+  color: #03a9f4;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+a:hover {
+  color: #03a9f4;
+  border-bottom-color: #03a9f4;
+}
+
+/* Form elements respect viewport */
+input, textarea, select {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Prevent text overflow */
+p, h1, h2, h3, h4, h5, h6 {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Label styling */
+label {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Text colors as utility classes */
+.text-polis-secondary {
+  color: #8a9099;
+}
+
+.text-polis-gray {
+  color: #6b7280;
+}
+
+.text-polis-light-gray {
+  color: #9ca3af;
+}
+
+/* Card hover effect */
+.polis-card {
+  transition: all 0.2s ease;
+}
+
+.polis-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Table row hover effect */
+.polis-table-row-hover:hover {
+  background-color: #f0f0f0;
+}
+
+/* Button font family override */
+.btn {
+  font-family: 'Space Mono', monospace;
+}

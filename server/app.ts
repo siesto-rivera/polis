@@ -2161,6 +2161,7 @@ helpersInitialized.then(
     // proxy static files
     app.get(/^\/cached\/.*/, proxy);
     app.get(/^\/font\/.*/, proxy);
+    app.get(/^\/static\/.*/, proxy);
     app.get(/^\/.*embed.*js\/.*/, proxy);
     app.get(/^\/report_bundle.*\.js$/, proxy);
     app.get(/^\/report_style.*\.css$/, proxy);

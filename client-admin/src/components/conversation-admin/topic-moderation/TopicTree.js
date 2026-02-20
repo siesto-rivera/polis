@@ -2,10 +2,11 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useState, useEffect } from 'react'
-import { Box, Flex, Heading, Text, Button } from 'theme-ui'
+import Button from 'react-bootstrap/Button'
 import { Link, useParams } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import strings from '../../../strings/strings'
+import colors from '../../../theme/colors'
 
 const TopicTree = ({ conversation_id }) => {
   const [selectedLayer, setSelectedLayer] = useState('0')
@@ -50,11 +51,11 @@ const TopicTree = ({ conversation_id }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'accepted':
-        return 'primary'
+        return colors.primary
       case 'rejected':
-        return 'error'
+        return colors.error
       default:
-        return 'gray'
+        return colors.gray
     }
   }
 
@@ -89,190 +90,168 @@ const TopicTree = ({ conversation_id }) => {
     const status = topic.moderation?.status || 'pending'
     const commentCount = Number(topic.moderation?.comment_count || 0)
     return (
-      <Box
+      <div
         key={topicKey}
-        sx={{
-          border: '1px solid',
-          borderColor: 'border',
-          borderRadius: 'default',
-          p: [2, 3, 3],
-          mb: 2,
-          bg: 'background'
+        style={{
+          border: `1px solid ${colors.border}`,
+          borderRadius: 4,
+          padding: 12,
+          marginBottom: 8,
+          backgroundColor: colors.background
         }}>
-        <Flex
-          sx={{
-            alignItems: ['flex-start', 'center', 'center'],
+        <div
+          className="d-flex"
+          style={{
+            alignItems: 'center',
             justifyContent: 'space-between',
-            flexDirection: ['column', 'row', 'row'],
-            gap: [2, 0, 0]
+            flexDirection: 'row',
+            gap: 0
           }}>
-          <Box sx={{ flex: 1, width: ['100%', 'auto', 'auto'] }}>
-            <Flex sx={{ alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: [1, 2, 2] }}>
+          <div style={{ flex: 1 }}>
+            <div className="d-flex" style={{ alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
               <Button
-                variant="outline"
-                size="small"
+                variant="outline-secondary"
+                size="sm"
                 onClick={() => toggleTopic(topicKey)}
-                sx={{ p: 1, fontSize: 0, minWidth: '32px' }}>
+                style={{ padding: 4, fontSize: 12, minWidth: 32 }}>
                 {isExpanded ? '−' : '+'}
               </Button>
-              <Text sx={{ fontWeight: 'bold', color: getStatusColor(status), fontSize: [1, 2, 2] }}>
+              <span style={{ fontWeight: 'bold', color: getStatusColor(status), fontSize: 16 }}>
                 {strings('topic_layer', { id: layerId })}, {strings('topic_cluster', { id: clusterId })}
-              </Text>
-              <Text sx={{ fontSize: 0, color: 'textSecondary', ml: 2 }}>{strings('topic_status_label', { status })}</Text>
-            </Flex>
-            <Text sx={{ mb: 2, fontSize: [1, 2, 2], wordWrap: 'break-word' }}>
+              </span>
+              <span className="text-polis-secondary" style={{ fontSize: 12, marginLeft: 8 }}>{strings('topic_status_label', { status })}</span>
+            </div>
+            <span style={{ marginBottom: 8, fontSize: 16, wordWrap: 'break-word', display: 'block' }}>
               {topic.topic_name || strings('topic_unnamed')}
-            </Text>
-            <Text sx={{ fontSize: 0, color: 'textSecondary', ml: 2 }}>
+            </span>
+            <span className="text-polis-secondary" style={{ fontSize: 12, marginLeft: 8 }}>
               {commentCount > 0 ? strings('topic_n_comments', { count: commentCount }) : strings('topic_no_comments')}
-            </Text>
-          </Box>
-          <Flex
-            sx={{
-              gap: [1, 2, 2],
-              flexDirection: ['column', 'row', 'row'],
-              width: ['100%', 'auto', 'auto'],
-              flexWrap: ['nowrap', 'wrap', 'nowrap']
+            </span>
+          </div>
+          <div
+            className="d-flex"
+            style={{
+              gap: 8,
+              flexDirection: 'row',
+              flexWrap: 'nowrap'
             }}>
             <Button
               variant="primary"
-              size="small"
+              size="sm"
               onClick={() => moderateTopic(topicKey, 'accept')}
               disabled={status === 'accepted'}
-              sx={{
-                fontSize: [0, 1, 1],
-                px: [2, 2, 2],
-                py: [1, 1, 1],
-                width: ['100%', 'auto', 'auto']
-              }}>
+              style={{ fontSize: 14, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4 }}>
               {strings('topic_accept')}
             </Button>
             <Button
               variant="danger"
-              size="small"
+              size="sm"
               onClick={() => moderateTopic(topicKey, 'reject')}
               disabled={status === 'rejected'}
-              sx={{
-                fontSize: [0, 1, 1],
-                px: [2, 2, 2],
-                py: [1, 1, 1],
-                width: ['100%', 'auto', 'auto']
-              }}>
+              style={{ fontSize: 14, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4 }}>
               {strings('topic_reject')}
             </Button>
-            <Link
-              to={`/m/${conversation_id}/topics/topic/${encodeURIComponent(topicKey)}`}
-              sx={{ width: ['100%', 'auto', 'auto'] }}>
+            <Link to={`/m/${conversation_id}/topics/topic/${encodeURIComponent(topicKey)}`}>
               <Button
-                variant="outline"
-                size="small"
-                sx={{ fontSize: [0, 1, 1], px: [2, 2, 2], py: [1, 1, 1], width: '100%' }}>
+                variant="outline-secondary"
+                size="sm"
+                style={{ fontSize: 14, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, width: '100%' }}>
                 {strings('topic_view_comments')}
               </Button>
             </Link>
-          </Flex>
-        </Flex>
+          </div>
+        </div>
         {isExpanded && (
-          <Box sx={{ mt: 3, pl: 4, borderLeft: '2px solid', borderColor: 'border' }}>
-            <Text sx={{ fontSize: 0, color: 'textSecondary', mb: 2 }}>
+          <div style={{ marginTop: 12, paddingLeft: 16, borderLeft: `2px solid ${colors.border}` }}>
+            <span className="text-polis-secondary" style={{ fontSize: 12, marginBottom: 8, display: 'block' }}>
               {strings('topic_model', { model: topic.model_name || strings('topic_unknown') })}
-            </Text>
-            <Text sx={{ fontSize: 0, color: 'textSecondary' }}>
+            </span>
+            <span className="text-polis-secondary" style={{ fontSize: 12, display: 'block' }}>
               {strings('topic_created_at', { date: topic.created_at ? new Date(topic.created_at).toLocaleString() : strings('topic_unknown') })}
-            </Text>
+            </span>
             {topic.moderation?.moderator && (
-              <Text sx={{ fontSize: 0, color: 'textSecondary', mt: 1 }}>
+              <span className="text-polis-secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
                 {strings('topic_moderated_by', { moderator: topic.moderation.moderator })}
-              </Text>
+              </span>
             )}
-          </Box>
+          </div>
         )}
-      </Box>
+      </div>
     )
   }
 
   const renderLayer = (layerId, topics) => {
     const layerTopics = Object.entries(topics).sort(([a], [b]) => parseInt(a) - parseInt(b))
     return (
-      <Box key={layerId} sx={{ mb: 4 }}>
-        <Heading as="h4" sx={{ mb: 3, fontSize: 2 }}>
+      <div key={layerId} style={{ marginBottom: 16 }}>
+        <h4 style={{ marginBottom: 12, fontSize: 16 }}>
           {strings('topic_layer_count', { id: layerId, count: layerTopics.length })}
-        </Heading>
+        </h4>
         {layerTopics.map(([clusterId, topic]) => renderTopic(topic, layerId, clusterId))}
-      </Box>
+      </div>
     )
   }
 
   if (loading) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>{strings('topic_loading_topics')}</Text>
-      </Box>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+        <span>{strings('topic_loading_topics')}</span>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text sx={{ color: 'error' }}>{strings('topic_error', { error })}</Text>
-        <Button sx={{ mt: 2 }} onClick={loadTopics}>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+        <span style={{ color: colors.error }}>{strings('topic_error', { error })}</span>
+        <Button style={{ marginTop: 8 }} onClick={loadTopics}>
           {strings('topic_retry')}
         </Button>
-      </Box>
+      </div>
     )
   }
 
   if (!topicsData || Object.keys(topicsData).length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>{strings('topic_no_topics')}</Text>
-        <Text sx={{ fontSize: 0, color: 'textSecondary', mt: 2 }}>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+        <span>{strings('topic_no_topics')}</span>
+        <span className="text-polis-secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
           {strings('topic_no_topics_hint')}
-        </Text>
-      </Box>
+        </span>
+      </div>
     )
   }
 
   const layers = Object.entries(topicsData).sort(([a], [b]) => parseInt(a) - parseInt(b))
 
   return (
-    <Box>
-      <Box sx={{ mb: 4 }}>
-        <Text sx={{ fontWeight: 'bold', mb: [2], display: 'block' }}>{strings('topic_view_layer')}</Text>
-        <Flex sx={{ gap: 2, flexWrap: 'wrap' }}>
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <span style={{ fontWeight: 'bold', marginBottom: 8, display: 'block' }}>{strings('topic_view_layer')}</span>
+        <div className="d-flex" style={{ gap: 8, flexWrap: 'wrap' }}>
           {layers.map(([layerId]) => (
             <Button
               key={layerId}
-              variant={selectedLayer === layerId ? 'primary' : 'outline'}
-              size="small"
+              variant={selectedLayer === layerId ? 'primary' : 'outline-secondary'}
+              size="sm"
               onClick={() => setSelectedLayer(layerId)}
-              sx={{
-                fontSize: [1, 2, 2],
-                px: [2, 3, 3],
-                py: [1, 2, 2],
-                minWidth: ['auto', 'auto', 'auto']
-              }}>
+              style={{ fontSize: 16, paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}>
               {strings('topic_layer', { id: layerId })}
             </Button>
           ))}
           <Button
-            variant={selectedLayer === 'all' ? 'primary' : 'outline'}
-            size="small"
+            variant={selectedLayer === 'all' ? 'primary' : 'outline-secondary'}
+            size="sm"
             onClick={() => setSelectedLayer('all')}
-            sx={{
-              fontSize: [1, 2, 2],
-              px: [2, 3, 3],
-              py: [1, 2, 2],
-              minWidth: ['auto', 'auto', 'auto']
-            }}>
+            style={{ fontSize: 16, paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}>
             {strings('topic_all_layers')}
           </Button>
-        </Flex>
-      </Box>
+        </div>
+      </div>
       {selectedLayer === 'all'
         ? layers.map(([layerId, topics]) => renderLayer(layerId, topics))
         : topicsData[selectedLayer] && renderLayer(selectedLayer, topicsData[selectedLayer])}
-    </Box>
+    </div>
   )
 }
 

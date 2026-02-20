@@ -1,11 +1,8 @@
 import { render, screen } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
-import theme from '../../../theme'
 import NumberCard from './NumberCard'
 
-// Wrapper to provide theme context
 const renderWithTheme = (component) => {
-  return render(<ThemeUIProvider theme={theme}>{component}</ThemeUIProvider>)
+  return render(component)
 }
 
 describe('NumberCard', () => {

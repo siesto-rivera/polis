@@ -1,11 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 
 import ModerateCommentsSeed from './ModerateCommentSeed'
 import * as actions from '../../actions'
-import theme from '../../theme'
 
 // Mock actions
 jest.mock('../../actions', () => ({
@@ -39,9 +37,7 @@ const createMockStore = (initialState = {}) => {
 const renderWithProviders = (component, { store } = {}) => {
   const mockStore = store || createMockStore()
   return render(
-    <ThemeUIProvider theme={theme}>
-      <Provider store={mockStore}>{component}</Provider>
-    </ThemeUIProvider>
+    <Provider store={mockStore}>{component}</Provider>
   )
 }
 
@@ -368,22 +364,18 @@ describe('ModerateCommentsSeed', () => {
       // Change to loading
       const loadingStore = createMockStore({ loading: true })
       rerender(
-        <ThemeUIProvider theme={theme}>
-          <Provider store={loadingStore}>
-            <ModerateCommentsSeed {...defaultProps} />
-          </Provider>
-        </ThemeUIProvider>
+        <Provider store={loadingStore}>
+          <ModerateCommentsSeed {...defaultProps} />
+        </Provider>
       )
       expect(screen.getAllByText('Saving...').length).toBeGreaterThan(0)
 
       // Change to success
       const successStore = createMockStore({ success: true })
       rerender(
-        <ThemeUIProvider theme={theme}>
-          <Provider store={successStore}>
-            <ModerateCommentsSeed {...defaultProps} />
-          </Provider>
-        </ThemeUIProvider>
+        <Provider store={successStore}>
+          <ModerateCommentsSeed {...defaultProps} />
+        </Provider>
       )
       expect(screen.getAllByText('Success!').length).toBeGreaterThan(0)
     })

@@ -2,22 +2,27 @@
 // Copyright (C) 2012-present, The Authors. This program is free software: you can redistribute it and/or  modify it under the terms of the GNU Affero General Public License, version 3, as published by the Free Software Foundation. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useState, useEffect } from 'react'
-import { Box, Flex, Heading, Text, Card } from 'theme-ui'
 import PropTypes from 'prop-types'
 import strings from '../../../strings/strings'
+import colors from '../../../theme/colors'
 
-const StatCard = ({ title, value, color = 'primary' }) => (
-  <Card
-    sx={{
-      p: [2, 3, 3],
-      textAlign: 'center',
-      minWidth: ['120px', '140px', '150px'],
-      flex: ['1 1 45%', '0 0 auto', '0 0 auto']
-    }}>
-    <Text sx={{ fontSize: [2, 3, 3], fontWeight: 'bold', color: color }}>{value}</Text>
-    <Text sx={{ fontSize: [0, 1, 1], color: 'textSecondary', mt: 1, ml: [1, 2, 2] }}>{title}</Text>
-  </Card>
-)
+const StatCard = ({ title, value, color = 'primary' }) => {
+  const colorValue = colors[color] || color
+  return (
+    <div
+      style={{
+        padding: 12,
+        textAlign: 'center',
+        minWidth: 150,
+        border: `1px solid ${colors.border}`,
+        borderRadius: 4,
+        backgroundColor: colors.background
+      }}>
+      <span style={{ fontSize: 20, fontWeight: 'bold', color: colorValue, display: 'block' }}>{value}</span>
+      <span className="text-polis-secondary" style={{ fontSize: 14, marginTop: 4, marginLeft: 8, display: 'block' }}>{title}</span>
+    </div>
+  )
+}
 
 StatCard.propTypes = {
   title: PropTypes.string.isRequired,
@@ -56,25 +61,25 @@ const TopicStats = ({ conversation_id }) => {
 
   if (loading) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>{strings('topic_loading_statistics')}</Text>
-      </Box>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+        <span>{strings('topic_loading_statistics')}</span>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text sx={{ color: 'error' }}>{strings('topic_error', { error })}</Text>
-      </Box>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+        <span style={{ color: colors.error }}>{strings('topic_error', { error })}</span>
+      </div>
     )
   }
 
   if (!stats) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Text>{strings('topic_stats_no_data')}</Text>
-      </Box>
+      <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
+        <span>{strings('topic_stats_no_data')}</span>
+      </div>
     )
   }
 
@@ -84,85 +89,86 @@ const TopicStats = ({ conversation_id }) => {
       : 0
 
   return (
-    <Box>
-      <Heading as="h3" sx={{ mb: 4 }}>
+    <div>
+      <h3 style={{ marginBottom: 16 }}>
         {strings('topic_stats_heading')}
-      </Heading>
+      </h3>
 
-      <Flex sx={{ gap: 3, mb: 4, flexWrap: 'wrap' }}>
+      <div className="d-flex" style={{ gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <StatCard title={strings('topic_stats_total')} value={stats.total_topics} />
         <StatCard title={strings('topic_stats_pending')} value={stats.pending} color="gray" />
         <StatCard title={strings('topic_stats_accepted')} value={stats.accepted} color="primary" />
         <StatCard title={strings('topic_stats_rejected')} value={stats.rejected} color="error" />
         <StatCard title={strings('topic_stats_completion')} value={`${completionRate}%`} color="info" />
-      </Flex>
+      </div>
 
-      <Box sx={{ mt: 4 }}>
-        <Heading as="h4" sx={{ mb: 3, fontSize: 2 }}>
+      <div style={{ marginTop: 16 }}>
+        <h4 style={{ marginBottom: 12, fontSize: 16 }}>
           {strings('topic_stats_progress_heading')}
-        </Heading>
+        </h4>
 
-        <Box sx={{ bg: 'muted', borderRadius: 'default', p: 3 }}>
-          <Flex sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Text sx={{ fontWeight: 'bold' }}>{strings('topic_stats_overall')}</Text>
-            <Text sx={{ fontSize: 1 }}>{strings('topic_stats_complete', { rate: completionRate })}</Text>
-          </Flex>
+        <div style={{ backgroundColor: colors.muted, borderRadius: 4, padding: 12 }}>
+          <div className="d-flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontWeight: 'bold' }}>{strings('topic_stats_overall')}</span>
+            <span style={{ fontSize: 14 }}>{strings('topic_stats_complete', { rate: completionRate })}</span>
+          </div>
 
-          <Box
-            sx={{
-              bg: 'background',
-              borderRadius: 'default',
+          <div
+            style={{
+              backgroundColor: colors.background,
+              borderRadius: 4,
               overflow: 'hidden',
-              height: '20px'
+              height: 20
             }}>
-            <Flex sx={{ height: '100%' }}>
-              <Box
-                sx={{
-                  bg: 'primary',
+            <div className="d-flex" style={{ height: '100%' }}>
+              <div
+                style={{
+                  backgroundColor: colors.primary,
                   width: `${
                     stats.total_topics > 0 ? (stats.accepted / stats.total_topics) * 100 : 0
                   }%`,
                   transition: 'width 0.3s ease'
                 }}
               />
-              <Box
-                sx={{
-                  bg: 'error',
+              <div
+                style={{
+                  backgroundColor: colors.error,
                   width: `${
                     stats.total_topics > 0 ? (stats.rejected / stats.total_topics) * 100 : 0
                   }%`,
                   transition: 'width 0.3s ease'
                 }}
               />
-            </Flex>
-          </Box>
+            </div>
+          </div>
 
-          <Flex
-            sx={{
+          <div
+            className="d-flex"
+            style={{
               justifyContent: 'space-between',
-              mt: 2,
-              fontSize: 0,
+              marginTop: 8,
+              fontSize: 12,
               flexWrap: 'wrap',
-              gap: [1, 2, 2]
+              gap: 8
             }}>
-            <Text sx={{ color: 'primary', whiteSpace: 'nowrap' }}>{strings('topic_stats_accepted_count', { count: stats.accepted })}</Text>
-            <Text sx={{ color: 'error', whiteSpace: 'nowrap' }}>{strings('topic_stats_rejected_count', { count: stats.rejected })}</Text>
-            <Text sx={{ color: 'gray', whiteSpace: 'nowrap' }}>{strings('topic_stats_pending_count', { count: stats.pending })}</Text>
-          </Flex>
-        </Box>
-      </Box>
+            <span style={{ color: colors.primary, whiteSpace: 'nowrap' }}>{strings('topic_stats_accepted_count', { count: stats.accepted })}</span>
+            <span style={{ color: colors.error, whiteSpace: 'nowrap' }}>{strings('topic_stats_rejected_count', { count: stats.rejected })}</span>
+            <span style={{ color: colors.gray, whiteSpace: 'nowrap' }}>{strings('topic_stats_pending_count', { count: stats.pending })}</span>
+          </div>
+        </div>
+      </div>
 
       {stats.total_topics === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4, mt: 4 }}>
-          <Text sx={{ color: 'textSecondary' }}>
+        <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16, marginTop: 16 }}>
+          <span className="text-polis-secondary">
             {strings('topic_stats_no_topics')}
-          </Text>
-          <Text sx={{ fontSize: 0, color: 'textSecondary', mt: 2 }}>
+          </span>
+          <span className="text-polis-secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
             {strings('topic_stats_run_pipeline')}
-          </Text>
-        </Box>
+          </span>
+        </div>
       )}
-    </Box>
+    </div>
   )
 }
 

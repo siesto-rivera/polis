@@ -3,14 +3,12 @@ import { MemoryRouter, Routes, Route } from 'react-router'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 import { render, screen, waitFor } from '@testing-library/react'
-import { ThemeUIProvider } from 'theme-ui'
 import PropTypes from 'prop-types'
 
 import * as actions from '../../actions'
 import * as authUtils from '../../util/auth'
 import * as conversationDataUtils from '../../util/conversation_data'
 import ConversationAdminContainer from './index'
-import theme from '../../theme'
 
 // Mock child components to simplify testing
 jest.mock('./ConversationConfig', () => {
@@ -122,19 +120,17 @@ const renderWithProviders = (component, { store, route = '/m/test-conv-123', aut
   const mockStore = store || createMockStore()
 
   return render(
-    <ThemeUIProvider theme={theme}>
-      <MockAuthProvider authValue={authValue}>
-        <Provider store={mockStore}>
-          <MemoryRouter
-            initialEntries={[route]}
-            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Routes>
-              <Route path="/m/:conversation_id/*" element={component} />
-            </Routes>
-          </MemoryRouter>
-        </Provider>
-      </MockAuthProvider>
-    </ThemeUIProvider>
+    <MockAuthProvider authValue={authValue}>
+      <Provider store={mockStore}>
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Routes>
+            <Route path="/m/:conversation_id/*" element={component} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    </MockAuthProvider>
   )
 }
 

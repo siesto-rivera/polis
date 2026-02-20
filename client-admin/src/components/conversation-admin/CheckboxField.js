@@ -1,4 +1,3 @@
-import { Box, Flex, Text } from 'theme-ui'
 import { useDispatch } from 'react-redux'
 import { useState } from 'react'
 import PropTypes from 'prop-types'
@@ -33,8 +32,8 @@ export const CheckboxField = ({ field, label = '', children, isIntegerBool = fal
   }
 
   return (
-    <Flex sx={{ alignItems: 'flex-start', mb: [3] }}>
-      <Box sx={{ flexShrink: 0, position: 'relative', top: -0.5 }}>
+    <div className="d-flex align-items-start mb-3">
+      <div className="flex-shrink-0" style={{ position: 'relative', top: -0.5 }}>
         <input
           type="checkbox"
           label={label}
@@ -48,18 +47,18 @@ export const CheckboxField = ({ field, label = '', children, isIntegerBool = fal
               : () => handleBoolValueChange(field)
           }
         />
-      </Box>
-      <Box
-        sx={{
-          ml: [2],
+      </div>
+      <div
+        className="ms-2"
+        style={{
           flex: '1 1 auto',
-          maxWidth: ['100%', '100%', '35em'],
+          maxWidth: '35em',
           wordWrap: 'break-word',
           overflowWrap: 'break-word'
         }}>
-        <Text>{children}</Text>
-      </Box>
-    </Flex>
+        <span>{children}</span>
+      </div>
+    </div>
   )
 }
 CheckboxField.propTypes = {
