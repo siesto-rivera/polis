@@ -26,9 +26,23 @@ if (!authority || !clientId || !audience) {
   throw new Error('OIDC configuration is required')
 }
 
+// The OIDC simulator serves over HTTPS internally, so tokens always have an https:// issuer
+// even when accessed via HTTP through nginx. Build inline metadata to handle this mismatch.
+const tokenIssuer = authority.replace(/^http:\/\//, 'https://')
+const oidcMetadata = {
+  issuer: tokenIssuer,
+  authorization_endpoint: `${authority}authorize`,
+  token_endpoint: `${authority}oauth/token`,
+  userinfo_endpoint: `${authority}userinfo`,
+  jwks_uri: `${authority}.well-known/jwks.json`
+}
+
 const OidcProvider = ({ children }) => {
   const navigate = useNavigate()
 
+  // Disable PKCE when not in a secure context (HTTP), since crypto.subtle
+  // is only available over HTTPS or localhost.
+  const isSecureContext = window.isSecureContext
   const oidcConfig = {
     authority,
     client_id: clientId,
@@ -37,6 +51,8 @@ const OidcProvider = ({ children }) => {
     scope: 'openid profile email',
     userStore: new WebStorageStateStore({ store: window.localStorage }),
     extraQueryParams: { audience },
+    disablePKCE: !isSecureContext,
+    metadata: oidcMetadata,
     onSigninCallback: (user) => {
       navigate(user?.state?.returnTo || window.location.pathname)
     }

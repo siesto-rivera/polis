@@ -11,17 +11,30 @@ import strings from '../../strings/strings'
 const SignIn = ({ authed }) => {
   const auth = useAuth()
 
+  const handleSignIn = () => {
+    auth.signinRedirect({
+      state: { returnTo: window.location.pathname }
+    }).catch((err) => {
+      console.error('signinRedirect error:', err)
+      alert('Sign in error: ' + (err.message || err))
+    })
+  }
+
   const drawLoginForm = () => {
     return (
       <Box>
+        {auth.error && (
+          <Box sx={{ color: 'red', my: [2], p: [2], bg: '#fee', borderRadius: 4 }}>
+            Auth error: {auth.error.message}
+          </Box>
+        )}
+        {auth.isLoading && (
+          <Box sx={{ color: 'gray', my: [2] }}>Loading auth...</Box>
+        )}
         <Button
           sx={{ my: [2] }}
           id="signinButton"
-          onClick={() =>
-            auth.signinRedirect({
-              state: { returnTo: window.location.pathname }
-            })
-          }>
+          onClick={handleSignIn}>
           {strings('auth_sign_in')}
         </Button>
       </Box>
