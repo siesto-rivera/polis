@@ -1,0 +1,170 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-ec2
+  cancel-in-progress: false
+
+env:
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_USER: ubuntu
+  SSH_OPTS: -i ~/.ssh/ec2.pem -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=60
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      client-admin: ${{ steps.changes.outputs.client-admin }}
+      server-side: ${{ steps.changes.outputs.server-side }}
+      services: ${{ steps.changes.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed paths
+        id: changes
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          # Client-admin only needs bundle build + copy
+          if echo "$CHANGED" | grep -q '^client-admin/'; then
+            echo "client-admin=true" >> $GITHUB_OUTPUT
+          else
+            echo "client-admin=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Build list of services that need rebuild on EC2
+          SERVICES=""
+          if echo "$CHANGED" | grep -q '^server/'; then
+            SERVICES="${SERVICES} server"
+          fi
+          if echo "$CHANGED" | grep -q '^file-server/nginx/'; then
+            SERVICES="${SERVICES} nginx-proxy"
+          fi
+          if echo "$CHANGED" | grep -q '^delphi/'; then
+            SERVICES="${SERVICES} delphi"
+          fi
+          if echo "$CHANGED" | grep -q '^client-participation/\|^client-report/'; then
+            SERVICES="${SERVICES} file-server"
+          fi
+
+          SERVICES=$(echo "$SERVICES" | xargs)
+          echo "services=${SERVICES}" >> $GITHUB_OUTPUT
+
+          if [ -n "$SERVICES" ] || echo "$CHANGED" | grep -q '^docker-compose'; then
+            echo "server-side=true" >> $GITHUB_OUTPUT
+          else
+            echo "server-side=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ===================================================
+  # Build client-admin bundle and deploy via SCP
+  # ===================================================
+  deploy-client-admin:
+    name: Deploy Client Admin
+    needs: detect-changes
+    if: needs.detect-changes.outputs.client-admin == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: client-admin/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client-admin
+        run: npm ci --production=false
+
+      - name: Build client-admin
+        working-directory: client-admin
+        env:
+          AUTH_ISSUER: ${{ vars.AUTH_ISSUER }}
+          AUTH_AUDIENCE: ${{ vars.AUTH_AUDIENCE }}
+          AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
+          AUTH_NAMESPACE: ${{ vars.AUTH_NAMESPACE }}
+          NODE_ENV: production
+        run: npm run build:prod
+
+      - name: Package build artifacts
+        run: tar -czf admin-build.tar.gz -C client-admin/build .
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
+          chmod 600 ~/.ssh/ec2.pem
+
+      - name: Deploy admin bundle to EC2
+        run: |
+          scp ${{ env.SSH_OPTS }} admin-build.tar.gz ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:/tmp/
+
+          ssh ${{ env.SSH_OPTS }} ${{ env.EC2_USER }}@${{ env.EC2_HOST }} 'bash -s' << 'EOF'
+          set -e
+          cd /tmp
+          rm -rf admin-build && mkdir admin-build
+          tar -xzf admin-build.tar.gz -C admin-build
+
+          CONTAINER=$(docker ps --format '{{.Names}}' | grep file-server | head -1)
+          if [ -z "$CONTAINER" ]; then
+            echo "ERROR: file-server container not found"
+            exit 1
+          fi
+
+          docker cp /tmp/admin-build/. "$CONTAINER":/app/build/
+          echo "Deployed admin bundle to $CONTAINER"
+
+          rm -rf /tmp/admin-build /tmp/admin-build.tar.gz
+          EOF
+
+  # ===================================================
+  # Rebuild server-side services on EC2
+  # ===================================================
+  deploy-server-services:
+    name: Deploy Server Services
+    needs: detect-changes
+    if: needs.detect-changes.outputs.server-side == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
+          chmod 600 ~/.ssh/ec2.pem
+
+      - name: Pull and rebuild on EC2
+        env:
+          SERVICES: ${{ needs.detect-changes.outputs.services }}
+        run: |
+          ssh ${{ env.SSH_OPTS }} ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "bash -s -- '$SERVICES'" << 'EOF'
+          set -e
+          SERVICES="$1"
+          cd ~/polis
+
+          echo "==> Pulling latest code..."
+          git pull origin main
+
+          if [ -n "$SERVICES" ]; then
+            echo "==> Rebuilding: $SERVICES"
+            docker compose build $SERVICES
+            docker compose up -d $SERVICES
+          else
+            echo "==> Compose config changed, recreating..."
+            docker compose up -d --force-recreate
+          fi
+
+          echo "==> Done"
+          docker compose ps
+          EOF
+        timeout-minutes: 30
