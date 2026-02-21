@@ -9,6 +9,6 @@ export function getPooledTestUser(index: number): {
   return {
     email: `test.user.${index}@polis.test`,
     name: `Test User ${index}`,
-    password: `Te$tP@ssw0rd*`,
+    password: `Polis@dmin2026!`,
   };
 }

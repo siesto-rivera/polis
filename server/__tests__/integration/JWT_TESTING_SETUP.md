@@ -34,10 +34,10 @@ The OIDC simulator comes pre-configured with test users:
 
 | Email | Password | Role |
 |-------|----------|------|
-| `admin@polis.test` | `Te$tP@ssw0rd*` | Admin |
-| `moderator@polis.test` | `Te$tP@ssw0rd*` | Moderator |
-| `test.user.0@polis.test` | `Te$tP@ssw0rd*` | Standard User |
-| `test.user.1@polis.test` | `Te$tP@ssw0rd*` | Standard User |
+| `admin@polis.test` | `Polis@dmin2026!` | Admin |
+| `moderator@polis.test` | `Polis@dmin2026!` | Moderator |
+| `test.user.0@polis.test` | `Polis@dmin2026!` | Standard User |
+| `test.user.1@polis.test` | `Polis@dmin2026!` | Standard User |
 | ... | ... | ... |
 
 ## Test Structure

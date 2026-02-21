@@ -14,7 +14,7 @@ describe('Embedded Conversations', function () {
       topic,
       description,
       userEmail: 'admin@polis.test',
-      userPassword: 'Te$tP@ssw0rd*',
+      userPassword: 'Polis@dmin2026!',
     }).then((conversationId) => {
       cy.wrap(conversationId).as('convoId')
 

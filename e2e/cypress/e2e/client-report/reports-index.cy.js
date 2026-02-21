@@ -12,7 +12,7 @@ describe('Reports - Admin Interface', () => {
     // Phase 1: Admin setup (isolated window context)
     cy.window().then(() => {
       // Use API-only approach for faster, more reliable setup
-      cy.loginStandardUserAPI('admin@polis.test', 'Te$tP@ssw0rd*').then(() => {
+      cy.loginStandardUserAPI('admin@polis.test', 'Polis@dmin2026!').then(() => {
         cy.log('✅ Admin authenticated via API')
 
         // Create conversation using helper
@@ -43,7 +43,7 @@ describe('Reports - Admin Interface', () => {
     cy.log(`🔄 Setting up test - conversationId: ${conversationId}`)
 
     // Login as admin and navigate to reports section
-    cy.loginStandardUser('admin@polis.test', 'Te$tP@ssw0rd*')
+    cy.loginStandardUser('admin@polis.test', 'Polis@dmin2026!')
 
     // Visit the reports URL directly instead of using the helper
     cy.visit(`/m/${conversationId}/reports`)

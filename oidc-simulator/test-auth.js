@@ -35,7 +35,7 @@ async function testAuth() {
       body: JSON.stringify({
         grant_type: 'password',
         username: 'admin@polis.test',
-        password: 'Te$tP@ssw0rd*',
+        password: 'Polis@dmin2026!',
         client_id: clientId,
         audience: audience,
         scope: 'openid profile email'

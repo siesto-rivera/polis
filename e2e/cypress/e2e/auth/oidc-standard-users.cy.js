@@ -61,7 +61,7 @@ describe('OIDC Standard User Authentication', () => {
 
   it('should authenticate admin user via OIDC simulator', () => {
     const email = 'admin@polis.test'
-    const password = 'Te$tP@ssw0rd*'
+    const password = 'Polis@dmin2026!'
     const timeout = Cypress.env('CI') ? 15000 : 10000
 
     loginStandardUser(email, password, { timeout })
@@ -98,7 +98,7 @@ describe('OIDC Standard User Authentication', () => {
 
   it('should authenticate moderator user via OIDC simulator', () => {
     const email = 'moderator@polis.test'
-    const password = 'Te$tP@ssw0rd*'
+    const password = 'Polis@dmin2026!'
     const timeout = Cypress.env('CI') ? 15000 : 10000
 
     loginStandardUser(email, password, { timeout })
@@ -157,7 +157,7 @@ describe('OIDC Standard User Authentication', () => {
 
   it('should verify custom claims in JWT token', () => {
     const email = 'admin@polis.test'
-    const password = 'Te$tP@ssw0rd*'
+    const password = 'Polis@dmin2026!'
     const timeout = Cypress.env('CI') ? 15000 : 10000
 
     loginStandardUser(email, password, { timeout })

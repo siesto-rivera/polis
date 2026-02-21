@@ -63,7 +63,7 @@ describe("Authentication with Supertest", () => {
       const pooledUser = {
         email: "test.user.0@polis.test",
         hname: "Test User 0",
-        password: "Te$tP@ssw0rd*",
+        password: "Polis@dmin2026!",
       };
       const { agent } = await getJwtAuthenticatedAgent(pooledUser);
 
@@ -88,7 +88,7 @@ describe("Authentication with Supertest", () => {
       const pooledUser = {
         email: "test.user.0@polis.test",
         hname: "Test User 0",
-        password: "Te$tP@ssw0rd*",
+        password: "Polis@dmin2026!",
       };
 
       // Get JWT authenticated agent

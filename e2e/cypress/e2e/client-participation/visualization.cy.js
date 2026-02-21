@@ -20,7 +20,7 @@ describe('Visualization', function () {
       body: {
         grant_type: 'password',
         username: 'admin@polis.test',
-        password: 'Te$tP@ssw0rd*',
+        password: 'Polis@dmin2026!',
         audience: Cypress.env('AUTH_AUDIENCE'),
         client_id: Cypress.env('AUTH_CLIENT_ID'),
         scope: 'openid profile email',
@@ -56,7 +56,7 @@ describe('Visualization', function () {
           body: {
             grant_type: 'password',
             username: 'admin@polis.test',
-            password: 'Te$tP@ssw0rd*',
+            password: 'Polis@dmin2026!',
             audience: Cypress.env('AUTH_AUDIENCE'),
             client_id: Cypress.env('AUTH_CLIENT_ID'),
             scope: 'openid profile email',
@@ -95,7 +95,7 @@ describe('Visualization', function () {
           body: {
             grant_type: 'password',
             username: 'admin@polis.test',
-            password: 'Te$tP@ssw0rd*',
+            password: 'Polis@dmin2026!',
             audience: Cypress.env('AUTH_AUDIENCE'),
             client_id: Cypress.env('AUTH_CLIENT_ID'),
             scope: 'openid profile email',

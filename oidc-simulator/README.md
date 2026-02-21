@@ -100,16 +100,9 @@ The simulator is configured through environment variables:
 
 The simulator comes with a pool of test users for consistent testing:
 
-### Standard Users (for OIDC authentication)
+### Production User
 
-- `admin@polis.test` / `Te$tP@ssw0rd*`
-- `moderator@polis.test` / `Te$tP@ssw0rd*`
-- `jwt.test@polis.test` / `Te$tP@ssw0rd*`
-
-### Additional Test Users
-
-- `test.user.0@polis.test` through `test.user.49@polis.test`
-- All use password: `Te$tP@ssw0rd*`
+- `admin@peoplepower21.org` / `Polis@dmin2026!`
 
 ## Usage
 

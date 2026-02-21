@@ -20,7 +20,7 @@ describe("JWT-Only Authentication Tests", () => {
       const pooledUser = {
         email: "test.user.0@polis.test",
         hname: "Test User 0",
-        password: "Te$tP@ssw0rd*",
+        password: "Polis@dmin2026!",
       };
 
       const { agent, token } = await getJwtAuthenticatedAgent(pooledUser);
@@ -48,7 +48,7 @@ describe("JWT-Only Authentication Tests", () => {
       const pooledUser = {
         email: "test.user.0@polis.test",
         hname: "Test User 0",
-        password: "Te$tP@ssw0rd*",
+        password: "Polis@dmin2026!",
       };
       const { agent } = await getJwtAuthenticatedAgent(pooledUser);
 
@@ -152,7 +152,7 @@ describe("JWT-Only Authentication Tests", () => {
       const pooledUser = {
         email: "test.user.0@polis.test",
         hname: "Test User 0",
-        password: "Te$tP@ssw0rd*",
+        password: "Polis@dmin2026!",
       };
       const { agent } = await getJwtAuthenticatedAgent(pooledUser);
 
