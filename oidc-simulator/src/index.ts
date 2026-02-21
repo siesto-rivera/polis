@@ -35,17 +35,12 @@ function createUserPool(size = 50): Array<{
     created_at?: string;
   }> = [];
 
-  // Add specific test fixture users for standard users only (those who use OIDC)
+  // Production users
   const standardUsers = [
     {
-      email: "admin@polis.test",
-      name: "Test Admin",
-      password: "Te$tP@ssw0rd*",
-    },
-    {
-      email: "moderator@polis.test",
-      name: "Test Moderator",
-      password: "Te$tP@ssw0rd*",
+      email: "admin@peoplepower21.org",
+      name: "Admin",
+      password: "Polis@dmin2026!",
     },
   ];
 
@@ -53,33 +48,9 @@ function createUserPool(size = 50): Array<{
     users.push({
       ...user,
       email_verified: true,
-      user_id: `auth0|test_${index}`,
-      created_at: new Date(
-        Date.now() - (standardUsers.length - index) * 86400000
-      ).toISOString(), // Stagger creation dates
+      user_id: `auth0|prod_${index}`,
+      created_at: new Date().toISOString(),
     });
-  });
-
-  // Add additional test users
-  for (let i = 0; i < size; i++) {
-    users.push({
-      email: `test.user.${i}@polis.test`,
-      name: `Test User ${i}`,
-      password: `Te$tP@ssw0rd*`,
-      email_verified: true,
-      user_id: `auth0|test_user_${i}`,
-      created_at: new Date(Date.now() - i * 3600000).toISOString(), // Hourly stagger
-    });
-  }
-
-  // Add JWT test user
-  users.push({
-    email: "jwt.test@polis.test",
-    name: "JWT Test User",
-    password: "Te$tP@ssw0rd*",
-    email_verified: true,
-    user_id: "auth0|jwt_test",
-    created_at: new Date().toISOString(),
   });
 
   return users;
@@ -115,7 +86,7 @@ async function start() {
     }
 
     // Create the OIDC simulator with a pool of test users
-    const userPool = createUserPool(50);
+    const userPool = createUserPool(0);
     console.log("OIDC simulator user pool created:");
     console.table(userPool.slice(0, 10), [
       "email",
@@ -188,7 +159,7 @@ async function start() {
     console.log(`Auth Audience: ${AUTH_AUDIENCE}`);
     console.log(`Pre-populated with ${userPool.length} test users`);
     console.log(
-      `Standard users (OIDC): admin@polis.test, moderator@polis.test`
+      `Standard users (OIDC): admin@peoplepower21.org`
     );
     console.log(`Note: Participants use custom JWTs, not OIDC`);
     if (fs.existsSync(rulesDirectory)) {

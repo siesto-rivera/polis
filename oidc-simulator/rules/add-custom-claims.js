@@ -46,8 +46,7 @@ function mergeUsers(user, context, callback) {
 
     // Add delphi_enabled role for specific test users in development
     const delphiEnabledUsers = [
-      'admin@polis.test',
-      'moderator@polis.test'
+      'admin@peoplepower21.org'
     ];
     
     if (delphiEnabledUsers.includes(user.email)) {

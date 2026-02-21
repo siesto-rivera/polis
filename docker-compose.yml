@@ -167,6 +167,22 @@ services:
     profiles:
       - postgres
 
+  oidc-simulator:
+    build:
+      context: ./oidc-simulator
+      dockerfile: Dockerfile
+    ports:
+      - "${AUTH_SIMULATOR_PORT:-3100}:${AUTH_SIMULATOR_PORT:-3100}"
+    environment:
+      - AUTH_AUDIENCE=${AUTH_AUDIENCE:-users}
+      - AUTH_CLIENT_ID=${AUTH_CLIENT_ID:-dev-client-id}
+      - AUTH_ISSUER=${AUTH_ISSUER}
+      - AUTH_NAMESPACE=${AUTH_NAMESPACE:-https://pol.is/}
+      - AUTH_SIMULATOR_PORT=${AUTH_SIMULATOR_PORT:-3100}
+    networks:
+      - "polis-net"
+    restart: unless-stopped
+
   nginx-proxy:
     image: docker.io/compdem/polis-nginx-proxy:${TAG:-dev}
     build:
@@ -180,6 +196,7 @@ services:
     depends_on:
       - "client-participation-alpha"
       - "server"
+      - "oidc-simulator"
     networks:
       - "polis-net"
     ports:
