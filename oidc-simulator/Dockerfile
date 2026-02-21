@@ -3,7 +3,11 @@ FROM node:24-slim
 
 # Install curl for health checks, openssl for certificate generation, and create certificate directory
 RUN apt-get update && apt-get install -y curl openssl && rm -rf /var/lib/apt/lists/* && \
-    mkdir -p /root/.simulacrum/certs
+    mkdir -p /root/.simulacrum/certs && \
+    openssl req -x509 -newkey rsa:2048 -keyout /root/.simulacrum/certs/localhost-key.pem \
+      -out /root/.simulacrum/certs/localhost.pem -days 3650 -nodes \
+      -subj "/CN=localhost" \
+      -addext "subjectAltName=DNS:localhost,DNS:oidc-simulator,DNS:host.docker.internal,IP:127.0.0.1"
 
 # Set the working directory in the container
 WORKDIR /app
