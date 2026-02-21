@@ -61,6 +61,6 @@ RUN apk del .build
 
 COPY . .
 
-RUN npm run build
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
 CMD npm run serve
